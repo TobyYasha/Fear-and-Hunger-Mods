@@ -2,6 +2,17 @@
 	// TY_ModLoader.js -- Author: Toby Yasha
 //==========================================================
 
+// Exploring some different naming styles for the mods.
+// FnH_ModLoader -- because we can just add an Author tag here or in-game via TY.Scope.modLoader.MOD_INFO
+// FnH_Invincibility
+// FnH_InvincibleMod? uh..no
+//
+// TY_Invincibility -- sure, its more simple but i want to differentiate from my usual style.
+// TY_FnHInvincibility -- and this is the old format
+// TY_FnH_Invincibility - so...why not just have a compromise between the two? this looks pretty good.
+//
+// TY_FnH_ModLoader -- Damn this slaps.
+
 //==========================================================
 	// Global Variables
 //==========================================================
