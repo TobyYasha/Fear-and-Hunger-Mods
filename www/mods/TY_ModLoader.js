@@ -64,11 +64,82 @@ TY.Utils.isModCompatible = function(mod) {
 	// if game is termina and trying to load fnh 1 mod return false
 }
 
+// Is it really worth storing these in the utils..even though
+// this is technically intended for utility purposes..
+//
+// May remove these honestly
+
+TY.Utils.setSwitchLock = function(switchId, isLocked) {
+	$gameSwitches.setValueLock(switchId, isLocked);
+}
+
+TY.Utils.setVariableLock = function(variableId, isLocked) {
+	$gameVariables.setValueLock(variableId, isLocked);
+}
+
 // Alternatively you can wrap the code with TY.Utils.isMattieModManager here
+
+//==========================================================
+	// Game_Switches
+//==========================================================
+
+// This doesn't look like a bad format for aliasing
+// My only worry is that it will get long.
+// I'll leave it like this for now...
+
+// Should aliasing be mod scoped? 
+// TY.Scope.modLoader.ALIAS.Game_Switches.clear = Game_Switches.prototype.clear;
+// TY.Alias.Game_Switches.clear = Game_Switches.prototype.clear;
+
+// God that looks awful, never again.
+
+TY.Alias.Game_Switches.clear = Game_Switches.prototype.clear;
+Game_Switches.prototype.clear = function() {
+    TY.Alias.Game_Switches.clear.call(this);
+	this._lockedData = [];
+};
+
+Game_Switches.prototype.isValueLocked = function(switchId) {
+    return this._lockedData.includes(switchId);
+};
+
+// Hmm..should this be split into 2 different methods // addValueLock | removeValueLock
+
+Game_Switches.prototype.setValueLock = function(switchId, isLocked) {
+	if (!this.isValueLocked(switchId) && isLocked) {
+		this._lockedData.push(switchId);
+	} else if (this.isValueLocked(switchId) && !isLocked) {
+		this._lockedData.remove(switchId);
+	}
+};
+
+// Prevents a switch value from changing unless it's unlocked
+// The purpose of this implementation is to make the invincibility mod
+// to have customizeable parameters.
+// Maybe i don't want to be god, maybe i just want to have a little more strength.
+
+// Plus who knows...maybe this could be useful outside of the invincibility mod?
+// Or it could event be made into a version where you set a value and then lock it
+
+// Example:
+// $gameSwitches.setValue(7, true); // set switch 7 to true
+// $gameSwitches.setValueLock(7, true); // then lock the value
+//
+// $gameSwitches.lockValue(7, value); // this format could work aswell but "setValueLock" isn't bad either.
+
+TY.Alias.Game_Switches.setValue = Game_Switches.prototype.setValue;
+Game_Switches.prototype.setValue = function(switchId) {
+    if (!this.isValueLocked(switchId)) {
+		TY.Alias.Game_Switches.setValue.call(this, switchId);
+	}
+};
 
 //==========================================================
 	// Window_TitleCommand
 //==========================================================
+
+// This is a looooong boi
+// TY.Alias.Window_TitleCommand.makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 
 TY.Alias.makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
@@ -106,6 +177,11 @@ Scene_Title.prototype.commandMods = function() {
 //==========================================================
 	// Mod Interface
 //==========================================================
+
+// Creates a mod manager interface similar to MattieFM's.
+// [Note] Due to compatibility reasons and the fact that
+// MattieFM's mod manager interface is way better we only
+// allow this interface only if not using MattieFM's.
 
 TY.Scope.modLoader.interface = function() {
     this.initialize(...arguments);
