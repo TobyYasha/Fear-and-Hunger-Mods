@@ -231,17 +231,17 @@ TY.Scope.modLoader.interface.prototype.initialize = function() {
     Window_Command.prototype.initialize.call(this, 50, 50);
 }
 
-/*
-TY.Scope.modLoader.interface.prototype.itemRect = function(index) {
-    const rect = new Rectangle();
-    const maxCols = this.maxCols();
-    rect.width = this.itemWidth();
-    rect.height = this.itemHeight();
-    rect.x = index % maxCols * (rect.width + this.spacing()) - this._scrollX;
-    rect.y = Math.min((Math.floor(index / maxCols) * rect.height) + this.lineHeight(), this.lineHeight() * 10); // [Note] please improve or store this somewhere else
-    return rect;
+// We basically offset the cursor by 1 index with "this.lineHeight()".
+TY.Scope.modLoader.interface.prototype.itemY = function(index) {
+    return Math.floor(index / this.maxCols()) * this.itemHeight() + this.lineHeight();
 };
-*/
+
+// Then we make sure that it doesn't go beyond the limit of "maxPageRows".
+TY.Scope.modLoader.interface.prototype.itemRect = function(index) {
+	const rect = Window_Command.prototype.itemRect.call(this, index);
+    rect.y = Math.min(this.itemY(index), this.lineHeight() * this.maxPageRows());
+	return rect;
+};
 
 TY.Scope.modLoader.interface.prototype.maxItems = function() {
     return 20; // we can base this off of TY.Scope.modLoader.MOD_LIST.length;
@@ -264,15 +264,38 @@ TY.Scope.modLoader.interface.prototype.processOk = function() {
 	console.log(`Current mod index is ${this.index()}`);
 };
 
+TY.Scope.modLoader.interface.prototype.drawTitle = function() {
+	this.contents.fontSize = 32;
+	this.drawText("Mod Loader", 0, 0, 700, "center"); // draw in the top middle
+};
+
 // [Note] This is way better than using drawItem
+// [Note] For now this will be left in 1 method until i can better
+// figure out how i want everything to work but so far this is promising.
 TY.Scope.modLoader.interface.prototype.drawAllItems = function() {
+	this.createContents(); // remove all text so it doesn't overlap
 	this.contents.fontSize = 21;
 	const startIndex = this.topIndex() + 1;
 	for (let i = 0; i < 10; i++) {
-		const yOffset = this.itemHeight() * i;
+		const yOffset = this.itemHeight() * (i + 1);
 		this.drawText(`${startIndex + i}. Fear & Hunger - Mod Loader`, 10, yOffset, 700, "left");
-		this.drawText(`Status: OFF`, 500, yOffset, 700, "left");
+		this.drawText("Status:", 540, yOffset, 700, "left");
+		if (Math.random() < 0.5) { // simulate a list of mods
+			//this.changeTextColor(this.textColor(3));
+			//this.changeTextColor("#baeb34");
+			this.changeTextColor("#26b5fc"); // blue
+			this.drawText("ON", 602, yOffset, 700, "left");
+		} else {
+			//this.changeTextColor(this.textColor(10));
+			//this.changeTextColor("#eb8034");
+			this.changeTextColor("#fc5126"); // orange
+			this.drawText("OFF", 602, yOffset, 700, "left");
+		}
+		this.resetTextColor();
 	}
+	//
+	this.drawTitle();
+	//
 };
 
 //==========================================================
