@@ -157,7 +157,7 @@ Game_Variables.prototype.setLock = function(variableId, isLocking) {
 };
 
 // Checks if the variable is locked before changing its value
-TY.Alias.variableSetValue = Game_Switches.prototype.setValue;
+TY.Alias.variableSetValue = Game_Variables.prototype.setValue;
 Game_Variables.prototype.setValue = function(variableId, value) {
     if (!this.isLocked(variableId)) {
 		TY.Alias.variableSetValue.call(this, variableId, value);
