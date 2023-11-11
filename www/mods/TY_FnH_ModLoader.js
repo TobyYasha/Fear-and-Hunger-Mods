@@ -45,6 +45,8 @@ TY.Scope.modLoader.MOD_INFO = {
 	status: false
 }
 
+TY.Scope.modLoader.MOD_LIST.push(TY.Scope.modLoader.MOD_INFO);
+
 // TY.Scope.modLoader:
 // Declares a mod in the "TY.Scope" object.
 
@@ -229,6 +231,7 @@ TY.Scope.modLoader.interface.prototype.initialize = function() {
     Window_Command.prototype.initialize.call(this, 50, 50);
 }
 
+/*
 TY.Scope.modLoader.interface.prototype.itemRect = function(index) {
     const rect = new Rectangle();
     const maxCols = this.maxCols();
@@ -238,13 +241,14 @@ TY.Scope.modLoader.interface.prototype.itemRect = function(index) {
     rect.y = Math.min((Math.floor(index / maxCols) * rect.height) + this.lineHeight(), this.lineHeight() * 10); // [Note] please improve or store this somewhere else
     return rect;
 };
+*/
 
 TY.Scope.modLoader.interface.prototype.maxItems = function() {
     return 20; // we can base this off of TY.Scope.modLoader.MOD_LIST.length;
 };
 
 TY.Scope.modLoader.interface.prototype.maxPageRows = function() {
-    return 11;
+    return 10;
 };
 
 TY.Scope.modLoader.interface.prototype.windowWidth = function() {
@@ -255,15 +259,21 @@ TY.Scope.modLoader.interface.prototype.windowHeight = function() {
     return Graphics.boxHeight - 100;
 };
 
-TY.Scope.modLoader.interface.prototype.drawItem = function(index) {
-	this.contents.fontSize = 21;
-	this.drawText(`${index+1}. Fear & Hunger - Mod Loader      Author: Toby Yasha      Status: OFF`, 10, this.itemHeight() * (index % 11), 700, "left");
-	//this.drawText(`${index+1}. Fear & Hunger - Mod Loader      Author: Toby Yasha      Status: OFF`, 10, this.itemHeight() * (index % 11), 700, "left");
-	//this.drawText(`${index+1}. Fear & Hunger - Mod Loader      Author: Toby Yasha      Status: OFF`, 10, this.itemHeight() * ((index + 1) % 11), 700, "left");
-	//this.drawText(`${index+1}. Fear & Hunger - Mod Loader      Author: Toby Yasha      Status: OFF`, 10, this.itemHeight() * Math.min(index, 11), 700, "left");
+TY.Scope.modLoader.interface.prototype.processOk = function() {
+    Window_Command.prototype.processOk.call(this);
+	console.log(`Current mod index is ${this.index()}`);
 };
 
-// maybe just overwrite "drawAllItems" so it draws max items - current index
+// [Note] This is way better than using drawItem
+TY.Scope.modLoader.interface.prototype.drawAllItems = function() {
+	this.contents.fontSize = 21;
+	const startIndex = this.topIndex() + 1;
+	for (let i = 0; i < 10; i++) {
+		const yOffset = this.itemHeight() * i;
+		this.drawText(`${startIndex + i}. Fear & Hunger - Mod Loader`, 10, yOffset, 700, "left");
+		this.drawText(`Status: OFF`, 500, yOffset, 700, "left");
+	}
+};
 
 //==========================================================
 	// Mod Scene
