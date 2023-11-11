@@ -45,6 +45,7 @@ TY.Scope.modLoader.MOD_INFO = {
 	status: false
 }
 
+// debug only
 TY.Scope.modLoader.MOD_LIST.push(TY.Scope.modLoader.MOD_INFO);
 
 // TY.Scope.modLoader:
@@ -99,6 +100,12 @@ TY.Utils.isModCompatible = function(mod) {
 //==========================================================
 	// Game_Switches
 //==========================================================
+
+// You can add parameters like this to the invincibility mod.
+// All you'll need to do is add a way to configure the mod(even in-game).
+// And have methods for each parameter which is linked to the configuration.
+// "Allow Limb Loss"
+// "Instant Rev Refill"
 
 // Make sure we have an array to store locked switches
 TY.Alias.switchClear = Game_Switches.prototype.clear;
