@@ -2,17 +2,6 @@
 	// TY_ModLoader.js -- Author: Toby Yasha
 //==========================================================
 
-// Exploring some different naming styles for the mods.
-// FnH_ModLoader -- because we can just add an Author tag here or in-game via TY.Scope.modLoader.MOD_INFO
-// FnH_Invincibility
-// FnH_InvincibleMod? uh..no
-//
-// TY_Invincibility -- sure, its more simple but i want to differentiate from my usual style.
-// TY_FnHInvincibility -- and this is the old format
-// TY_FnH_Invincibility - so...why not just have a compromise between the two? this looks pretty good.
-//
-// TY_FnH_ModLoader -- Damn this slaps.
-
 //==========================================================
 	// Global Variables
 //==========================================================
@@ -21,9 +10,6 @@ var TY = TY || {};
 TY.Utils = TY.Utils || {};
 TY.Alias = TY.Alias || {};
 TY.Scope = TY.Scope || {};
-
-// don't forget to add the global variables to all mods
-// if TY.Scope.modLoader is non existent throw an error
 
 //==========================================================
 	// Mod Parameters
@@ -36,19 +22,43 @@ TY.Scope.modLoader.MOD_TERM = "Mods";
 TY.Scope.modLoader.MOD_INFO = {
 	name: "Fear & Hunger - Mod Loader",
 	author: "Toby Yasha",
-	version: "2.0.0",
+	version: "1.0.0",
 	description: `
 		A mod loader which can be used to add
 		modded content to the Fear & Hunger games.
 	`,
 	compatibility: "fnh-any",
 	dependencies: [],
-	loaded: true
+	loaded: false
 }
 
-// dependencies: ["modLoader",] this is the format
-// compatibility: "fnh-any", "fnh-1", "fnh-2"
-//
+// TY.Scope.modLoader.MOD_LIST -> 
+// The array which will be used to store the mods to be loaded in-game.
+
+// TY.Scope.modLoader.MOD_PATH ->
+// The folder path where mods are stored and loaded from.
+// The mods folder may additionally be used to store mod configurations.
+
+// TY.Scope.modLoader.MOD_TERM ->
+// The string used to represent the "Mods" command on the title scene.
+
+// TY.Scope.modLoader.MOD_INFO ->
+// The object containing the information data of a mod.
+// [name, author, version, description] ->
+// These properties not mandatory and only used to differentiate the mods from one another.
+
+// [compatibility, dependencies, loaded] ->
+// These properties are actually very important and i will explain them below.
+
+// dependencies: ["modLoader",] ->
+// This is an array which can be configured to include the mods required for a mod to function.
+
+// compatibility: "fnh-any", "fnh-1", "fnh-2" ->
+// This is a string which determines the intended game a mod was made for,
+// it can be used to check whether or not a mod should be loaded depending on the game you are playing.
+
+
+
 // if a mod does not have info still allow it but
 // consider it a "SecurityError".
 //
@@ -56,6 +66,8 @@ TY.Scope.modLoader.MOD_INFO = {
 // most unsafe mods won't really need those.
 //
 // default value should always be false "loaded: true"
+// While the modloader itself won't be loaded into the
+// game as a mod i still think it deserves a mod info section.
 
 //==========================================================
 	// Utility Methods
@@ -75,82 +87,83 @@ TY.Utils.isModCompatible = function(mod) {
 	// if game is termina and trying to load fnh 1 mod return false
 }
 
-// Is it really worth storing these in the utils..even though
-// this is technically intended for utility purposes..
-//
-// May remove these honestly
-
-TY.Utils.setSwitchLock = function(switchId, isLocked) {
-	$gameSwitches.setValueLock(switchId, isLocked);
-}
-
-TY.Utils.setVariableLock = function(variableId, isLocked) {
-	$gameVariables.setValueLock(variableId, isLocked);
-}
-
 // Alternatively you can wrap the code with TY.Utils.isMattieModManager here
 
 //==========================================================
 	// Game_Switches
 //==========================================================
 
-// This doesn't look like a bad format for aliasing
-// My only worry is that it will get long.
-// I'll leave it like this for now...
-
-// Should aliasing be mod scoped? 
-// TY.Scope.modLoader.ALIAS.Game_Switches.clear = Game_Switches.prototype.clear;
-// TY.Alias.Game_Switches.clear = Game_Switches.prototype.clear;
-
-// God that looks awful, never again.
-
-TY.Alias.Game_Switches.clear = Game_Switches.prototype.clear;
+// Make sure we have an array to store locked switches
+TY.Alias.switchClear = Game_Switches.prototype.clear;
 Game_Switches.prototype.clear = function() {
-    TY.Alias.Game_Switches.clear.call(this);
+    TY.Alias.switchClear.call(this);
 	this._lockedData = [];
 };
 
-Game_Switches.prototype.isValueLocked = function(switchId) {
+// Check if a switch is currently locked
+Game_Switches.prototype.isLocked = function(switchId) {
     return this._lockedData.includes(switchId);
 };
 
-// Hmm..should this be split into 2 different methods // addValueLock | removeValueLock
-
-Game_Switches.prototype.setValueLock = function(switchId, isLocked) {
-	if (!this.isValueLocked(switchId) && isLocked) {
+// Locks a switch, preventing its value from changing.
+// Unlocks a locked switch, allowing for its value to be changed.
+Game_Switches.prototype.setLock = function(switchId, isLocking) {
+	if (!this.isLocked(switchId) && isLocking) {
 		this._lockedData.push(switchId);
-	} else if (this.isValueLocked(switchId) && !isLocked) {
+	} else if (this.isLocked(switchId) && !isLocking) {
 		this._lockedData.remove(switchId);
 	}
 };
 
-// Prevents a switch value from changing unless it's unlocked
-// The purpose of this implementation is to make the invincibility mod
-// to have customizeable parameters.
-// Maybe i don't want to be god, maybe i just want to have a little more strength.
-
-// Plus who knows...maybe this could be useful outside of the invincibility mod?
-// Or it could event be made into a version where you set a value and then lock it
-
-// Example:
-// $gameSwitches.setValue(7, true); // set switch 7 to true
-// $gameSwitches.setValueLock(7, true); // then lock the value
-//
-// $gameSwitches.lockValue(7, value); // this format could work aswell but "setValueLock" isn't bad either.
-
-TY.Alias.Game_Switches.setValue = Game_Switches.prototype.setValue;
-Game_Switches.prototype.setValue = function(switchId) {
-    if (!this.isValueLocked(switchId)) {
-		TY.Alias.Game_Switches.setValue.call(this, switchId);
+// Checks if the switch is locked before changing its value
+TY.Alias.switchSetValue = Game_Switches.prototype.setValue;
+Game_Switches.prototype.setValue = function(switchId, value) {
+    if (!this.isLocked(switchId)) {
+		TY.Alias.switchSetValue.call(this, switchId, value);
 	}
 };
+
+// $gameSwitches.setLock(7, true);
+
+//==========================================================
+	// Game_Variables
+//==========================================================
+
+// Make sure we have an array to store locked variables
+TY.Alias.variableClear = Game_Switches.prototype.clear;
+Game_Variables.prototype.clear = function() {
+    TY.Alias.variableClear.call(this);
+	this._lockedData = [];
+};
+
+// Check if a variable is currently locked
+Game_Variables.prototype.isLocked = function(variableId) {
+    return this._lockedData.includes(variableId);
+};
+
+// Locks a variable, preventing its value from changing.
+// Unlocks a locked variable, allowing for its value to be changed.
+Game_Variables.prototype.setLock = function(variableId, isLocking) {
+	if (!this.isLocked(variableId) && isLocking) {
+		this._lockedData.push(variableId);
+	} else if (this.isLocked(variableId) && !isLocking) {
+		this._lockedData.remove(variableId);
+	}
+};
+
+// Checks if the variable is locked before changing its value
+TY.Alias.variableSetValue = Game_Switches.prototype.setValue;
+Game_Variables.prototype.setValue = function(variableId, value) {
+    if (!this.isLocked(variableId)) {
+		TY.Alias.variableSetValue.call(this, variableId, value);
+	}
+};
+
+// $gameVariables.setLock(7, true);
 
 //==========================================================
 	// Window_TitleCommand
 //==========================================================
-
-// This is a looooong boi
-// TY.Alias.Window_TitleCommand.makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 
 TY.Alias.makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 Window_TitleCommand.prototype.makeCommandList = function() {
@@ -181,6 +194,8 @@ Scene_Title.prototype.addModsCommand = function() {
 };
 
 Scene_Title.prototype.commandMods = function() {
+	// [Note] May or not leave this as a window,
+	//	initially i was planning of using a separate scene for this.
 	this._modWindow = new TY.Scope.modLoader.interface();
 	this.addWindow(this._modWindow);
 };
@@ -193,6 +208,10 @@ Scene_Title.prototype.commandMods = function() {
 // [Note] Due to compatibility reasons and the fact that
 // MattieFM's mod manager interface is way better we only
 // allow this interface only if not using MattieFM's.
+
+// 11/11/2023 - 6:40 PM
+// First you need to integrate mod configuration options
+// before ensuring compatibility.
 
 TY.Scope.modLoader.interface = function() {
     this.initialize(...arguments);
