@@ -1,5 +1,5 @@
 //==========================================================
-	// TY_ModLoader.js -- Author: Toby Yasha
+	// TY_FnH_ModLoader.js -- Author: Toby Yasha
 //==========================================================
 
 //==========================================================
@@ -10,6 +10,18 @@ var TY = TY || {};
 TY.Utils = TY.Utils || {};
 TY.Alias = TY.Alias || {};
 TY.Scope = TY.Scope || {};
+
+// TY:
+// The namespace used by Toby Yasha for his mods.
+
+// TY.Utils:
+// Global object which stores utility methods
+
+// TY.Alias:
+// Global object storing aliased methods used for modifying RPG Maker methods.
+
+// TY.Scope:
+// Global object storing mod methods and data, used for declaring mods
 
 //==========================================================
 	// Mod Parameters
@@ -27,56 +39,51 @@ TY.Scope.modLoader.MOD_INFO = {
 		A mod loader which can be used to add
 		modded content to the Fear & Hunger games.
 	`,
+	key: "modLoader", 
 	compatibility: "fnh-any",
 	dependencies: [],
-	loaded: false
+	status: false
 }
 
-// TY.Scope.modLoader.MOD_LIST -> 
-// The array which will be used to store the mods to be loaded in-game.
+// TY.Scope.modLoader:
+// Declares a mod in the "TY.Scope" object.
 
-// TY.Scope.modLoader.MOD_PATH ->
-// The folder path where mods are stored and loaded from.
-// The mods folder may additionally be used to store mod configurations.
+// TY.Scope.modLoader.MOD_LIST: 
+// Array to store mods for in-game loading.
 
-// TY.Scope.modLoader.MOD_TERM ->
-// The string used to represent the "Mods" command on the title scene.
+// TY.Scope.modLoader.MOD_PATH:
+// Folder path for storing and loading mods, and mod configurations.
 
-// TY.Scope.modLoader.MOD_INFO ->
-// The object containing the information data of a mod.
-// [name, author, version, description] ->
-// These properties not mandatory and only used to differentiate the mods from one another.
+// TY.Scope.modLoader.MOD_TERM:
+// String representing the "Mods" command on the title scene.
 
-// [compatibility, dependencies, loaded] ->
-// These properties are actually very important and i will explain them below.
+// TY.Scope.modLoader.MOD_INFO:
+// Object containing mod information data.
+// Properties: [name, author, version, description] (optional).
 
-// dependencies: ["modLoader",] ->
-// This is an array which can be configured to include the mods required for a mod to function.
+// Properties: [key, compatibility, dependencies, loaded].
 
-// compatibility: "fnh-any", "fnh-1", "fnh-2" ->
-// This is a string which determines the intended game a mod was made for,
-// it can be used to check whether or not a mod should be loaded depending on the game you are playing.
+// key: Quick access string for the mod's scope in TY.Scope.
+// Used for dependencies in the "dependencies" array.
 
+// compatibility: String indicating the intended game version (e.g., "fnh-any", "fnh-1", "fnh-2").
+// Used to check if a mod should be loaded based on the game version.
 
+// dependencies: Array of mods required for the mod to function.
 
-// if a mod does not have info still allow it but
-// consider it a "SecurityError".
-//
-// at most dependencies are important but i'm sure
-// most unsafe mods won't really need those.
-//
-// default value should always be false "loaded: true"
-// While the modloader itself won't be loaded into the
-// game as a mod i still think it deserves a mod info section.
+// status: Indicates if the mod has loaded successfully.
+// We use this to avoid executing the entire mod's code; we just fetch its global "MOD_INFO."
 
 //==========================================================
 	// Utility Methods
 //==========================================================
 
+// Checks if the user is using MattieFM's Mod Manager 
 TY.Utils.isMattieModManager = function() {
 	return typeof MATTIE_ModManager !== "undefined";
 }
 
+// Checks if the current game version is termina or not
 TY.Utils.isGameTermina = function() {
 	return $dataSystem.gameTitle.includes("TERMINA");
 }
@@ -86,8 +93,6 @@ TY.Utils.isModCompatible = function(mod) {
 	// if game is fnh 1 and trying to load termina mod return false
 	// if game is termina and trying to load fnh 1 mod return false
 }
-
-// Alternatively you can wrap the code with TY.Utils.isMattieModManager here
 
 //==========================================================
 	// Game_Switches
