@@ -191,7 +191,7 @@ TY.Alias.Window_TitleCommand_makeCommandList = (
 	Window_TitleCommand.prototype.makeCommandList;
 )
 Window_TitleCommand.prototype.makeCommandList = function() {
-	TY.Alias.Window_TitleCommand.makeCommandList.call(this);
+	TY.Alias.Window_TitleCommand_makeCommandList.call(this);
 	this.addModsCommand();
 };
 
