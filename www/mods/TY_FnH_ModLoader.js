@@ -108,9 +108,11 @@ TY.Utils.isModCompatible = function(mod) {
 // "Instant Rev Refill"
 
 // Make sure we have an array to store locked switches
-TY.Alias.switchClear = Game_Switches.prototype.clear;
+TY.Alias.Game_Switches_clear = (
+	Game_Switches.prototype.clear;
+)
 Game_Switches.prototype.clear = function() {
-    TY.Alias.switchClear.call(this);
+    TY.Alias.Game_Switches_clear.call(this);
 	this._lockedData = [];
 };
 
@@ -130,10 +132,12 @@ Game_Switches.prototype.setLock = function(switchId, isLocking) {
 };
 
 // Checks if the switch is locked before changing its value
-TY.Alias.switchSetValue = Game_Switches.prototype.setValue;
+TY.Alias.Game_Switches_setValue = (
+	Game_Switches.prototype.setValue;
+)
 Game_Switches.prototype.setValue = function(switchId, value) {
     if (!this.isLocked(switchId)) {
-		TY.Alias.switchSetValue.call(this, switchId, value);
+		TY.Alias.Game_Switches_setValue.call(this, switchId, value);
 	}
 };
 
@@ -144,9 +148,11 @@ Game_Switches.prototype.setValue = function(switchId, value) {
 //==========================================================
 
 // Make sure we have an array to store locked variables
-TY.Alias.variableClear = Game_Switches.prototype.clear;
+TY.Alias.Game_Variables_clear = (
+	Game_Switches.prototype.clear;
+)
 Game_Variables.prototype.clear = function() {
-    TY.Alias.variableClear.call(this);
+    TY.Alias.Game_Variables_clear.call(this);
 	this._lockedData = [];
 };
 
@@ -166,10 +172,12 @@ Game_Variables.prototype.setLock = function(variableId, isLocking) {
 };
 
 // Checks if the variable is locked before changing its value
-TY.Alias.variableSetValue = Game_Variables.prototype.setValue;
+TY.Alias.Game_Variables_setValue = (
+	Game_Variables.prototype.setValue
+)
 Game_Variables.prototype.setValue = function(variableId, value) {
     if (!this.isLocked(variableId)) {
-		TY.Alias.variableSetValue.call(this, variableId, value);
+		TY.Alias.Game_Variables_setValue.call(this, variableId, value);
 	}
 };
 
@@ -179,9 +187,11 @@ Game_Variables.prototype.setValue = function(variableId, value) {
 	// Window_TitleCommand
 //==========================================================
 
-TY.Alias.makeCommandList = Window_TitleCommand.prototype.makeCommandList;
+TY.Alias.Window_TitleCommand_makeCommandList = (
+	Window_TitleCommand.prototype.makeCommandList;
+)
 Window_TitleCommand.prototype.makeCommandList = function() {
-	TY.Alias.makeCommandList.call(this);
+	TY.Alias.Window_TitleCommand.makeCommandList.call(this);
 	this.addModsCommand();
 };
 
@@ -195,9 +205,11 @@ Window_TitleCommand.prototype.addModsCommand = function() {
 	// Scene_Title
 //==========================================================
 
-TY.Alias.createCommandWindow = Scene_Title.prototype.createCommandWindow;
+TY.Alias.Scene_Title_createCommandWindow = (
+	Scene_Title.prototype.createCommandWindow;
+)
 Scene_Title.prototype.createCommandWindow = function() {
-	TY.Alias.createCommandWindow.call(this);
+	TY.Alias.Scene_Title_createCommandWindow.call(this);
 	this.addModsCommand();
 };
 
