@@ -18,63 +18,23 @@
 	];
 
 	const FNH2_SKILLS = [
-		{skillId: 802, switchIds: []},
-		802, // Moth swarm
-		451, // Masturbation
-		450, // Blood sacrifice
-		146, // En garde
-		475, // Burry the trauma
-		476, // Order, charge!
-		446, // Greater meditation
-		338, // meditation
-		447, // spice forge
-		444, // La danse macabre
-		472, // Explosives
-		471, // Killing intent
-		470, // intimidate
-		473, // steal
-		798, // red arc
+		{ skillId: 802, switchIds: [1453] }, // Moth swarm
+		{ skillId: 451, switchIds: [1998] }, // Masturbation
+		{ skillId: 450, switchIds: [1996] }, // Blood sacrifice
+		{ skillId: 146, switchIds: [1186, 1964] }, // En garde
+		{ skillId: 146, switchIds: [1986] }, // Burry the trauma
+		{ skillId: 476, switchIds: [ ] }, // Order, charge!
+		{ skillId: 446, switchIds: [ ] }, // Greater meditation
+		{ skillId: 338, switchIds: [ ] }, // meditation
+		{ skillId: 447, switchIds: [ ] }, // spice forge
+		{ skillId: 444, switchIds: [ ] }, // La danse macabre
+		{ skillId: 472, switchIds: [ ] }, // Explosives
+		{ skillId: 471, switchIds: [ ] }, // Killing intent
+		{ skillId: 470, switchIds: [ ] }, // intimidate
+		{ skillId: 473, switchIds: [ ] }, // steal
+		{ skillId: 798, switchIds: [ ] }, // red arc
 	];
-	/*
-	const FNH2_SKILLS = [
-		802, // Moth swarm
-		451, // Masturbation
-		450, // Blood sacrifice
-		146, // En garde
-		475, // Burry the trauma
-		476, // Order, charge!
-		446, // Greater meditation
-		338, // meditation
-		447, // spice forge
-		444, // La danse macabre
-		472, // Explosives
-		471, // Killing intent
-		470, // intimidate
-		473, // steal
-		798, // red arc
-	];
-	*/
-	/*
-	const FNH2_SKILL_SWITCHES = [
-		1453, // Moth swarm
-		1998, // Masturbation
-		1996, // Blood sacrifice
-		1186, // En garde(backstab) 1
-		1964, // En garde 2
-		1986, // Burry the trauma
-		476, // Order, charge!
-		446, // Greater meditation
-		338, // meditation
-		447, // spice forge
-		444, // La danse macabre
-		472, // Explosives
-		471, // Killing intent
-		470, // intimidate
-		473, // steal
-		798, // red arc
-		
-	];
-	*/
+	
 	//==========================================================
 		// Mod Configurations -- 
 	//==========================================================
