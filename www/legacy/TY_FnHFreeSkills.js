@@ -41,6 +41,20 @@
 		{ skillId: 367, switchIds: [1541] }, // medicinal
 		{ skillId: 366, switchIds: [] }, // organ harvest(with medicinal)
 		{ skillId: 454, switchIds: [1938] }, // slow_metabolism
+		{ skillId: 461, switchIds: [1944] }, // advanced_botanism -- gain item 331 for recipe
+		{ skillId: 324, switchIds: [733] }, // gunslinger
+		{ skillId: 554, switchIds: [1545] }, // wrenchtoss
+		{ skillId: 325, switchIds: [732] }, // executioner
+		{ skillId: 373, switchIds: [1547] }, // shortcircuit
+		{ skillId: 482, switchIds: [1950] }, // persuade
+		{ skillId: 326, switchIds: [731] }, // marksmanship
+		{ skillId: 371, switchIds: [1549] }, // trapcraft -- gain item 249 for recipe
+		{ skillId: 480, switchIds: [1185, 1952] }, // lockpicking
+		{ skillId: 464, switchIds: [1974] }, // fast_stance
+		{ skillId: 467, switchIds: [1972] }, // adrenaline_rush
+		{ skillId: 466, switchIds: [1970] }, // counter_stance
+		{ skillId: 637, switchIds: [2079] }, // perfect_guard
+		{ skillId: 637, switchIds: [2079] }, // perfect_guard
 		// TO DO: Make the below skills work
 		/*
 		{ skillId: 0,   switchIds: [1982] }, // state m.defense +1 -- 206 | state m.defense +2 -- 207
