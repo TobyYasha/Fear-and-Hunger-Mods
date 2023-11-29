@@ -54,10 +54,22 @@
 		{ skillId: 467, switchIds: [1972] }, // adrenaline_rush
 		{ skillId: 466, switchIds: [1970] }, // counter_stance
 		{ skillId: 637, switchIds: [2079] }, // perfect_guard
-		{ skillId: 637, switchIds: [2079] }, // perfect_guard
+		{ skillId: 465, switchIds: [1968] }, // bobandweave
+		{ skillId: 468, switchIds: [1966] }, // bare-fisted
+		{ skillId: 372, switchIds: [1551] }, // weaponcraft -- gain item 248 for recipe
+		{ skillId: 291, switchIds: [1954, 2766] }, // escape_plan
+		{ skillId: 496, switchIds: [1958] }, // war_cry
+		{ skillId: 483, switchIds: [2210] }, // diplomacy
+		{ skillId: 495, switchIds: [1960] }, // bloodlust
+		{ skillId: 314, switchIds: [1227] }, // flesh_puppetry -- variable 1875 stores the actor id of the person who learned it(we will set this to the player actor id then)
+		{ skillId: 498, switchIds: [2208] }, // sisu
+		{ skillId: 494, switchIds: [1962] }, // devour
+		{ skillId: 294, switchIds: [1221] }, // rot -- variable 1874 stores the actor id of the person who learned it(we will set this to the player actor id then)
+		{ skillId: 525, switchIds: [2206] }, // mischief_of_rats -- variable 1874 stores...etc.
 		// TO DO: Make the below skills work
 		/*
-		{ skillId: 0,   switchIds: [1982] }, // state m.defense +1 -- 206 | state m.defense +2 -- 207
+		{ skillId: 0,   switchIds: [1253] }, // change agility param by +1
+		{ skillId: 0,   switchIds: [1982] }, // state m.defense +1 -- 206 | state m.defense +2 -- 207(we probably just give the stronger variant here)
 		{ skillId: 0,   switchIds: [1984] }, // change m.attack param by +1
  		 */
 	];
