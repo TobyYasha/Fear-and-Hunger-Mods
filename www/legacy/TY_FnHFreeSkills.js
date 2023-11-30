@@ -13,6 +13,8 @@
 	// [Note] Some skills should only be given to the
 	// protagonist since they aren't needed for all characters.
 	
+	// $gameSwitches to denote whether or not a skill was acquired,
+	// or for events which may require them(ex. blood_portal).
 	const FNH1_SWITCHES = [
 		1185, // lockpicking
 		1186, // en_garde
@@ -33,81 +35,52 @@
 		1201, // black_orb
 		1202, // pheromones
 		1204, // healing_whispers
-		1205, // blood_portal
+		1167, // blood_portal(1)
+		1205, // blood_portal(2)
 		1206, // needle_worm
 		1207, // mastery_over_insects
 		1208, // locust_swarm
 		1209, // flock_of_crows
 		1211, // fast_stance
-		1167, // blood_portal
 	]
-	/*
-	const FNH1_SWITCHES = [
-		1197, // hurting
-		1199, // necromancy
-		1208, // locust_swarm
-		1198, // necromancy
-		1202, // pheromones
-		1207, // mastery_over_insects
-		1211, // fast_stance
-		1190, // counter
-		1189, // defense_stance
-		1187, // steal
-		1188, // dash
-		1185, // lockpicking
-		1196, // greater_blood_magic
-		1192, // devour
-		1194, // marksmanship
-		1195, // counter_magic
-		1206, // needle_worm
-		1191, // leg_sweep
-		1186, // en_garde
-		1167, // blood_portal
-		1205, // blood_portal
-		1209, // flock_of_crows
-		1201, // black_orb
-		1204, // healing_whispers
-		1200, // pyromancy
-		1193, // war_cry
-	]
-	*/
+	
+	// A list of skills which can be acquired by the characters
 	const FNH1_SKILLS = [
-		{ skillId: 12,  switchIds: [1197] }, // hurting
-		{ skillId: 21,  switchIds: [1199] }, // necromancy
-		{ skillId: 34,  switchIds: [] }, // suicide
-		{ skillId: 48,  switchIds: [1208] }, // locust_swarm
-		{ skillId: 51,  switchIds: [1198] }, // necromancy
-		{ skillId: 54,  switchIds: [] }, // demon_seed
-		{ skillId: 55,  switchIds: [1202] }, // pheromones
-		{ skillId: 56,  switchIds: [1207] }, // mastery_over_insects
-		{ skillId: 66,  switchIds: [1211] }, // fast_stance
-		{ skillId: 67,  switchIds: [1190] }, // counter
-		{ skillId: 68,  switchIds: [1189] }, // defense_stance
-		{ skillId: 70,  switchIds: [1187] }, // steal
-		{ skillId: 71,  switchIds: [1188] }, // dash
-		{ skillId: 72,  switchIds: [1185] }, // lockpicking
-		{ skillId: 74,  switchIds: [1196] }, // greater_blood_magic
-		{ skillId: 78,  switchIds: [1192] }, // devour
-		{ skillId: 79,  switchIds: [1194] }, // marksmanship
-		{ skillId: 80,  switchIds: [] }, // bloodlust
-		{ skillId: 115, switchIds: [1195] }, // counter_magic
-		{ skillId: 122, switchIds: [1206] }, // needle_worm
-		{ skillId: 136, switchIds: [1191] }, // leg_sweep
-		{ skillId: 146, switchIds: [1186] }, // en_garde
-		{ skillId: 148, switchIds: [1167, 1205] }, // blood_portal
-		{ skillId: 149, switchIds: [1209] }, // flock_of_crows
-		{ skillId: 150, switchIds: [1201] }, // black_orb
-		{ skillId: 151, switchIds: [1204] }, // healing_whispers
-		{ skillId: 188, switchIds: [] }, // walk_on_water
-		{ skillId: 189, switchIds: [] }, // simple_transmutation
-		{ skillId: 199, switchIds: [1200] }, // pyromancy
-		{ skillId: 200, switchIds: [] }, // combustion
-		{ skillId: 240, switchIds: [] }, // chains_of_torment
-		{ skillId: 283, switchIds: [1193] }, // war_cry
-		{ skillId: 290, switchIds: [] }, // rebirth_of_the_beloved -- if you don't want D'arce S ending skill then comment this line like the example below
-		//{ skillId: 290, switchIds: [] },
-		{ skillId: 291, switchIds: [] }, // escape_plan
-		{ skillId: 294, switchIds: [] } // phase_step
+		12,  // hurting
+		21,  // necromancy
+		34,  // suicide
+		48,  // locust_swarm
+		51,  // necromancy
+		54,  // demon_seed
+		55,  // pheromones
+		56,  // mastery_over_insects
+		66,  // fast_stance
+		67,  // counter
+		68,  // defense_stance
+		70,  // steal
+		71,  // dash
+		72,  // lockpicking
+		74,  // greater_blood_magic
+		78,  // devour
+		79,  // marksmanship
+		80,  // bloodlust
+		115, // counter_magic
+		122, // needle_worm
+		136, // leg_sweep
+		146, // en_garde
+		148, // blood_portal
+		149, // flock_of_crows
+		150, // black_orb
+		151, // healing_whispers
+		188, // walk_on_water
+		189, // simple_transmutation
+		199, // pyromancy
+		200, // combustion
+		240, // chains_of_torment
+		283, // war_cry
+		290, // rebirth_of_the_beloved
+		291, // escape_plan
+		294, // phase_step
 	];
 	
 	// $gameVariables which will be set to the protagonist's actorId
@@ -162,93 +135,267 @@
 		{ paramId: 6, value: 2,  switchIds: [1253, 1976] }, // change agility param by +1
 	]
 	
+	// $gameSwitches to denote whether or not a skill was acquired,
+	// or for events which may require them(ex. en_garde).
 	const FNH2_SWITCHES = [
-		
-	]
+		731, // marksmanship
+		732, // executioner
+		733, // gunslinger
+		1185, // lockpicking
+		1186, // en_garde
+		1207, // mastery_over_vermin
+		1210, // marksmanship
+		1221, // rot
+		1223, // mastery_over_vermin
+		1225, // necromancy
+		1227, // flesh_puppetry
+		1229, // mind_read
+		1231, // pheromones
+		1233, // loving_whispers
+		1235, // pyromancy
+		1237, // combustion
+		1239, // hurting
+		1241, // blood_golem
+		1246, // engrave
+		1248, // advanced_occultism
+		1449, // lunar_storm
+		1451, // lunar_meteorite
+		1541, // medicinal
+		1547, // shortcircuit
+		1549, // trapcraft
+		1551, // weaponcraft
+		1930, // greater_occulstism
+		1932, // diagnosis
+		1934, // precision_stance
+		1936, // magna_medicinal
+		1938, // slow_metabolism
+		1940, // melee_proficiency
+		1942, // masterchef
+		1944, // advanced_botanism
+		1946, // undergrowth_awareness
+		1948, // toxicology
+		1950, // persuade
+		1952, // lockpicking
+		1954, // escape_plan
+		1958, // war_cry
+		1960, // bloodlust
+		1962, // devour
+		1964, // en_garde
+		1966, // bare_fisted
+		1968, // bob_and_weave
+		1970, // counter_stance
+		1972, // adrenaline_rush
+		1974, // fast_stance
+		1986, // burry_the_trauma
+		1990, // order_charge
+		1992, // brainflower
+		1994, // heartflower
+		1996, // blood_sacrifice
+		1998, // masturbation
+		2002, // la_danse_macabre
+		2006, // meditation
+		2008, // greater_meditation
+		2010, // intimidate
+		2012, // steal
+		2014, // killing_intent
+		2018, // explosives
+		2022, // black_smog
+		2024, // black_orb
+		2026, // chains_of_torment
+		2030, // scorched_earth
+		2032, // roots_that_reap
+		2034, // spontaneous
+		2036, // photosynthesis
+		2038, // greater_photosynthesis
+		2043, // brainflower
+		2045, // heartflower
+		2079, // perfect_guard
+		2085, // healing_whispers
+		2089, // reveal_aura
+		2093, // golden_gates
+		2095, // blood_sword
+		2099, // longinus
+		2204, // inverse_Crown
+		2206, // mischief_of_rats
+		2208, // sisu
+		2210, // diplomacy
+		2212, // spice_forge
+		2214, // poison_tip
+		2766, // escape_plan
+	];
 	
-	// A list of skills which can be acquired,
-	// The switches are used to denote the skill was acquired.
+	/*
+	const FNH2_SWITCHES = [
+		1239, // hurting					
+		1225, // necromancy				
+		1241, // blood_golem				
+		1231, // pheromones				
+		1186, // en_garde					
+		1964, // en_garde					
+		2024, // black_orb				
+		1237, // combustion 				
+		1235, // pyromancy 				
+		2085, // healing_whispers 		
+		1233, // loving_whispers  		
+		1954, // escape_plan 				
+		2766, // escape_plan 				
+		1221, // rot 						
+		1207, // mastery_over_vermin	
+		1223, // mastery_over_vermin	
+		1227, // flesh_puppetry 			
+		1229, // mind_read 				
+		1924, // gun_proficiency	
+		733,  // gunslinger	
+		732,  // executioner	
+		731,  // marksmanship	
+		1246, // engrave 					
+		1248, // advanced_occultism	
+		2006, // meditation	
+		1541, // medicinal 				
+		1936, // magna_medicinal 			
+		1549, // trapcraft 				
+		1551, // weaponcraft 				
+		1547, // shortcircuit	
+		1930, // greater_occulstism	
+		1926, // warding_sigil	
+		2002, // la_danse_macabre	
+		2008, // greater_meditation	
+		2212, // spice_forge 				
+		1996, // blood_sacrifice 			
+		1998, // masturbation 			
+		1938, // slow_metabolism	
+		1942, // masterchef  				
+		1940, // melee_proficiency
+		1948, // toxicology  				
+		1946, // undergrowth_awareness 
+		1944, // advanced_botanism 		
+		2214, // poison_tip 				
+		1974, // fast_stance
+		1968, // bob_and_weave
+		1970, // counter_stance
+		1972, // adrenaline_rush
+		1966, // bare_fisted
+		2010, // intimidate 				
+		2014, // killing_intent 			
+		2018, // explosives 				
+		2012, // steal
+		1986, // burry_the_trauma
+		1990, // order_charge
+		1185, // lockpicking
+		1952, // lockpicking
+		1950, // persuade
+		2210, // diplomacy
+	    1934, // precision_stance
+	    1932, // diagnosis 				
+	    1962, // devour
+	    1960, // bloodlust
+	    1958, // war_cry
+	    2208, // sisu
+	    2022, // black_smog  				
+	    2030, // scorched_earth 			
+	    2032, // roots_that_reap 			
+	    2034, // spontaneous				
+	    2036, // photosynthesis
+	    2038, // greater_photosynthesis
+	    1992, // brainflower 				
+	    2043, // brainflower 				
+	    1994, // heartflower 				
+	    2045, // heartflower 				
+	    2093, // golden_gates 			
+	    2089, // reveal_aura  			
+	    2095, // blood_sword 				
+	    2099, // longinus 				
+	    2204, // inverse_Crown			
+	    2206, // mischief_of_rats 		
+	    2079, // perfect_guard
+	    1451, // lunar_meteorite
+	    2026, // chains_of_torment
+	    1449, // lunar_storm
+	];
+	*/
+	
+	// A list of skills which can be acquired by the actors
 	const FNH2_SKILLS = [
-		{ skillId: 12,  switchIds: [1239] }, // hurting					
-		{ skillId: 21,  switchIds: [1225] }, // necromancy				
-		{ skillId: 51,  switchIds: [1241] }, // blood_golem				
-		{ skillId: 55,  switchIds: [1231] }, // pheromones				
-		{ skillId: 146, switchIds: [1186, 1964] }, // en_garde					
-		{ skillId: 150, switchIds: [2024] }, // black_orb				
-		{ skillId: 190, switchIds: [1237] }, // combustion 				
-		{ skillId: 199, switchIds: [1235] }, // pyromancy 				
-		{ skillId: 218, switchIds: [2085] }, // healing_whispers 		
-		{ skillId: 238, switchIds: [1233] }, // loving_whispers  		
-		{ skillId: 291, switchIds: [1954, 2766] }, // escape_plan 				
-		{ skillId: 294, switchIds: [1221] }, // rot 						
-		{ skillId: 313, switchIds: [1207, 1223] }, // mastery_over_vermin	
-		{ skillId: 314, switchIds: [1227] }, // flesh_puppetry 			
-		{ skillId: 315, switchIds: [1229] }, // mind_read 				
-		{ skillId: 323, switchIds: [1924] }, // gun_proficiency	
-		{ skillId: 324, switchIds: [733] }, // gunslinger	
-		{ skillId: 325, switchIds: [732] }, // executioner	
-		{ skillId: 326, switchIds: [731] }, // marksmanship	
-		{ skillId: 335, switchIds: [1246] }, // engrave 					
-		{ skillId: 337, switchIds: [1248] }, // advanced_occultism	
-		{ skillId: 338, switchIds: [2006] }, // meditation	
-		{ skillId: 366, switchIds: []}, // organ_harvest 			
-		{ skillId: 367, switchIds: [1541] }, // medicinal 				
-		{ skillId: 368, switchIds: [1936] }, // magna_medicinal 			
-		{ skillId: 371, switchIds: [1549] }, // trapcraft 				
-		{ skillId: 372, switchIds: [1551] }, // weaponcraft 				
-		{ skillId: 373, switchIds: [1547] }, // shortcircuit	
-		{ skillId: 440, switchIds: [1930] }, // greater_occulstism	
-		{ skillId: 441, switchIds: [1926] }, // warding_sigil	
-		{ skillId: 444, switchIds: [2002] }, // la_danse_macabre	
-		{ skillId: 446, switchIds: [2008] }, // greater_meditation	
-		{ skillId: 447, switchIds: [2212] }, // spice_forge 				
-		{ skillId: 450, switchIds: [1996] }, // blood_sacrifice 			
-		{ skillId: 451, switchIds: [1998] }, // masturbation 			
-		{ skillId: 454, switchIds: [1938] }, // slow_metabolism	
-		{ skillId: 455, switchIds: [1942] }, // masterchef  				
-		{ skillId: 456, switchIds: [1940] }, // melee_proficiency
-		{ skillId: 459, switchIds: [1948] }, // toxicology  				
-		{ skillId: 460, switchIds: [1946] }, // undergrowth_awareness 
-		{ skillId: 461, switchIds: [1944] }, // advanced_botanism 		
-		{ skillId: 462, switchIds: [2214] }, // poison_tip 				
-		{ skillId: 464, switchIds: [1974] }, // fast_stance
-		{ skillId: 465, switchIds: [1968] }, // bob_and_weave
-		{ skillId: 466, switchIds: [1970] }, // counter_stance
-		{ skillId: 467, switchIds: [1972] }, // adrenaline_rush
-		{ skillId: 468, switchIds: [1966] }, // bare_fisted
-		{ skillId: 470, switchIds: [2010] }, // intimidate 				
-		{ skillId: 471, switchIds: [2014] }, // killing_intent 			
-		{ skillId: 472, switchIds: [2018] }, // explosives 				
-		{ skillId: 473, switchIds: [2012] }, // steal
-		{ skillId: 475, switchIds: [1986] }, // burry_the_trauma
-		{ skillId: 476, switchIds: [1990] }, // order_charge
-		{ skillId: 480, switchIds: [1185, 1952] }, // lockpicking
-		{ skillId: 482, switchIds: [1950] }, // persuade
-		{ skillId: 483, switchIds: [2210] }, // diplomacy
-		{ skillId: 486, switchIds: [1934] }, // precision_stance
-		{ skillId: 487, switchIds: [1932] }, // diagnosis 				
-		{ skillId: 494, switchIds: [1962] }, // devour
-		{ skillId: 495, switchIds: [1960] }, // bloodlust
-		{ skillId: 496, switchIds: [1958] }, // war_cry
-		{ skillId: 498, switchIds: [2208] }, // sisu
-		{ skillId: 500, switchIds: [2022] }, // black_smog  				
-		{ skillId: 504, switchIds: [2030] }, // scorched_earth 			
-		{ skillId: 505, switchIds: [2032] }, // roots_that_reap 			
-		{ skillId: 506, switchIds: [2034] }, // spontaneous				
-		{ skillId: 507, switchIds: [2036] }, // photosynthesis
-		{ skillId: 508, switchIds: [2038] }, // greater_photosynthesis
-		{ skillId: 511, switchIds: [1992, 2043] }, // brainflower 				
-		{ skillId: 512, switchIds: [1994, 2045] }, // heartflower 				
-		{ skillId: 515, switchIds: [2093] }, // golden_gates 			
-		{ skillId: 516, switchIds: [2089] }, // reveal_aura  			
-		{ skillId: 519, switchIds: [2095] }, // blood_sword 				
-		{ skillId: 521, switchIds: [2099] }, // longinus 				
-		{ skillId: 522, switchIds: [2204] }, // inverse_Crown			
-		{ skillId: 525, switchIds: [2206] }, // mischief_of_rats 		
-		{ skillId: 637, switchIds: [2079] }, // perfect_guard
-		{ skillId: 642, switchIds: [1451] }, // lunar_meteorite
-		{ skillId: 799, switchIds: [2026] }, // chains_of_torment
-		{ skillId: 805, switchIds: [1449] }, // lunar_storm
+		12,  1239] }, // hurting					
+		21,  1225] }, // necromancy				
+		51,  1241] }, // blood_golem				
+		55,  1231] }, // pheromones				
+		146, 1186, 1964] }, // en_garde					
+		150, 2024] }, // black_orb				
+		190, 1237] }, // combustion 				
+		199, 1235] }, // pyromancy 				
+		218, 2085] }, // healing_whispers 		
+		238, 1233] }, // loving_whispers  		
+		291, 1954, 2766] }, // escape_plan 				
+		294, 1221] }, // rot 						
+		313, 1207, 1223] }, // mastery_over_vermin	
+		314, 1227] }, // flesh_puppetry 			
+		315, 1229] }, // mind_read 				
+		323, 1924] }, // gun_proficiency	
+		324, 733] }, // gunslinger	
+		325, 732] }, // executioner	
+		326, 731] }, // marksmanship	
+		335, 1246] }, // engrave 					
+		337, 1248] }, // advanced_occultism	
+		338, 2006] }, // meditation	
+		366, ]}, // organ_harvest 			
+		367, 1541] }, // medicinal 				
+		368, 1936] }, // magna_medicinal 			
+		371, 1549] }, // trapcraft 				
+		372, 1551] }, // weaponcraft 				
+		373, 1547] }, // shortcircuit	
+		440, 1930] }, // greater_occulstism	
+		441, 1926] }, // warding_sigil	
+		444, 2002] }, // la_danse_macabre	
+		446, 2008] }, // greater_meditation	
+		447, 2212] }, // spice_forge 				
+		450, 1996] }, // blood_sacrifice 			
+		451, 1998] }, // masturbation 			
+		454, 1938] }, // slow_metabolism	
+		455, 1942] }, // masterchef  				
+		456, 1940] }, // melee_proficiency
+		459, 1948] }, // toxicology  				
+		460, 1946] }, // undergrowth_awareness 
+		461, 1944] }, // advanced_botanism 		
+		462, 2214] }, // poison_tip 				
+		464, 1974] }, // fast_stance
+		465, 1968] }, // bob_and_weave
+		466, 1970] }, // counter_stance
+		467, 1972] }, // adrenaline_rush
+		468, 1966] }, // bare_fisted
+		470, 2010] }, // intimidate 				
+		471, 2014] }, // killing_intent 			
+		472, 2018] }, // explosives 				
+		473, 2012] }, // steal
+		475, 1986] }, // burry_the_trauma
+		476, 1990] }, // order_charge
+		480, 1185, 1952] }, // lockpicking
+		482, 1950] }, // persuade
+		483, 2210] }, // diplomacy
+		486, 1934] }, // precision_stance
+		487, 1932] }, // diagnosis 				
+		494, 1962] }, // devour
+		495, 1960] }, // bloodlust
+		496, 1958] }, // war_cry
+		498, 2208] }, // sisu
+		500, 2022] }, // black_smog  				
+		504, 2030] }, // scorched_earth 			
+		505, 2032] }, // roots_that_reap 			
+		506, 2034] }, // spontaneous				
+		507, 2036] }, // photosynthesis
+		508, 2038] }, // greater_photosynthesis
+		511, 1992, 2043] }, // brainflower 				
+		512, 1994, 2045] }, // heartflower 				
+		515, 2093] }, // golden_gates 			
+		516, 2089] }, // reveal_aura  			
+		519, 2095] }, // blood_sword 				
+		521, 2099] }, // longinus 				
+		522, 2204] }, // inverse_Crown			
+		525, 2206] }, // mischief_of_rats 		
+		637, 2079] }, // perfect_guard
+		642, 1451] }, // lunar_meteorite
+		799, 2026] }, // chains_of_torment
+		805, 1449] }, // lunar_storm
 	];
 	
 	//==========================================================
