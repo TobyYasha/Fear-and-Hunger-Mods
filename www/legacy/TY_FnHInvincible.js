@@ -1,22 +1,29 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.3.2 -- by Toby Yasha
+		// VERSION 1.4 -- by Toby Yasha
 	//==========================================================
+	
+	// This is meant to be edited by users
+	// Accepted value include: true or false
+	const allowCoinFlipAttacks = false;
 	
 	//==========================================================
 		// Mod Parameters -- 
 	//==========================================================
 	
+	// A list of $gameSwitches for coin flips related to battle
+	const fnh1CoinSwitches = [ 
+		16,  // GUARD BREAK NECK -- used by a lot of enemies
+		66,  // PRIEST CHANTING
+		149, // CAVE MOTHER
+		340, // NIGHT LURCH
+		648, // SALMON SNAKE
+		794, // HARVEST MAN
+	];
+	
 	// SWITCH IDs
 	const fnh1Switches = [
-		// COIN FLIPS [BATTLE]
-		16,   // GUARD BREAK NECK -- used by a lot of enemies
-		66,   // PRIEST CHANTING
-		149,  // CAVE MOTHER
-		340,  // NIGHT LURCH
-		648,  // SALMON SNAKE
-		794,  // HARVEST MAN
 		// TRAPS
 		337,  // NIGHT LURCH
 		338,  // NIGHT LURCH
@@ -67,11 +74,14 @@
 		393, // RIGHT LEG
 	];
 	
-	// SWITCH IDs
-	const fnh2Switches = [
-		// COIN FLIPS [BATTLE]
+	// A list of $gameSwitches for coin flips related to battle
+	const fnh2CoinSwitches = [
 		16,   // GUARD BREAK NECK -- used by a lot of enemies
 		2876, // BEARTRAP SET
+	];
+	
+	// SWITCH IDs
+	const fnh2Switches = [
 		// TRAPS
 		3772, // YELLOW MAGE DANCE
 		3775, // YELLOW MAGE HURTING
@@ -138,6 +148,10 @@
 		return isGameTermina() ? fnh2Switches : fnh1Switches;
 	}
 	
+	function getCoinSwitches() {
+		return isGameTermina() ? fnh2CoinSwitches : fnh1CoinSwitches;
+	}
+	
 	function getGameVariables() {
 		return isGameTermina() ? fnh2Variables : fnh1Variables;
 	}
@@ -151,6 +165,17 @@
 		for (const switchId of switches) {
 			if ($gameSwitches.value(switchId)) {
 				$gameSwitches.setValue(switchId, false);
+			}
+		}
+	}
+	
+	function refreshCoinSwitches() {
+		if (!allowCoinFlipAttacks) {
+			const switches = getCoinSwitches();
+			for (const switchId of switches) {
+				if ($gameSwitches.value(switchId)) {
+					$gameSwitches.setValue(switchId, false);
+				}
 			}
 		}
 	}
@@ -247,6 +272,7 @@
 	const Game_Switches_OnChange = Game_Switches.prototype.onChange; // TRAPS AND COINS
 	Game_Switches.prototype.onChange = function() { 
 		refreshGameSwitches();
+		refreshCoinSwitches();
 		Game_Switches_OnChange.call(this);
 	}
 	
