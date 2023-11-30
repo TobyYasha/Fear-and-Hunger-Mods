@@ -22,27 +22,27 @@
 
 	const FNH2_SKILLS = [
 		{ skillId: 802, switchIds: [1453] }, // Moth swarm
-		{ skillId: 451, switchIds: [1998] }, // Masturbation
-		{ skillId: 450, switchIds: [1996] }, // Blood sacrifice
-		{ skillId: 146, switchIds: [1186, 1964] }, // En garde
+		{ skillId: 451, switchIds: [1998] }, // Masturbation -- protagonist only
+		{ skillId: 450, switchIds: [1996] }, // Blood sacrifice -- protagonist only
+		{ skillId: 146, switchIds: [1186, 1964] }, // En garde -- protagonist only
 		{ skillId: 475, switchIds: [1986] }, // Burry the trauma
 		{ skillId: 476, switchIds: [1990] }, // Order, charge!
 		{ skillId: 446, switchIds: [2008] }, // Greater meditation
 		{ skillId: 338, switchIds: [2006] }, // meditation
-		{ skillId: 447, switchIds: [2212] }, // spice forge
+		{ skillId: 447, switchIds: [2212] }, // spice forge -- protagonist only
 		{ skillId: 444, switchIds: [2002] }, // La danse macabre
-		{ skillId: 472, switchIds: [2018] }, // Explosives -- gain item 250 for recipe
-		{ skillId: 471, switchIds: [2014] }, // Killing intent
-		{ skillId: 470, switchIds: [2010] }, // intimidate
+		{ skillId: 472, switchIds: [2018] }, // Explosives -- gain item 250 for recipe -- protagonist only
+		{ skillId: 471, switchIds: [2014] }, // Killing intent -- protagonist only
+		{ skillId: 470, switchIds: [2010] }, // intimidate -- protagonist only
 		{ skillId: 473, switchIds: [2012] }, // steal
 		{ skillId: 798, switchIds: [1455] }, // red arc
-		{ skillId: 335, switchIds: [1246] }, // engrave
+		{ skillId: 335, switchIds: [1246] }, // engrave -- protagonist only
 		{ skillId: 323, switchIds: [1924] }, // gunproficiency
 		{ skillId: 441, switchIds: [1926] }, // warding_sigil
-		{ skillId: 487, switchIds: [1932] }, // diagnosis
+		{ skillId: 487, switchIds: [1932] }, // diagnosis -- protagonist only
 		{ skillId: 337, switchIds: [1248] }, // advanced_occultism
-		{ skillId: 367, switchIds: [1541] }, // medicinal
-		{ skillId: 366, switchIds: [] }, // organ harvest(with medicinal)
+		{ skillId: 367, switchIds: [1541] }, // medicinal -- protagonist only
+		{ skillId: 366, switchIds: [] }, // organ harvest(with medicinal) -- protagonist only
 		{ skillId: 454, switchIds: [1938] }, // slow_metabolism
 		{ skillId: 461, switchIds: [1944] }, // advanced_botanism -- gain item 331 for recipe
 		{ skillId: 324, switchIds: [733] }, // gunslinger
@@ -105,6 +105,7 @@
 		{ skillId: 486, switchIds: [1934] }, // precision_stance
 		{ skillId: 440, switchIds: [1930] }, // greater_occulstism
 		{ skillId: 461, switchIds: [1944] }, // advanced_botanism -- gain item 331 for recipe -- protagonist only 
+		{ skillId: 454, switchIds: [1938] }, // slow_metabolism
 		// TO DO: Make the below skills work
 		/*
 		{ skillId: 0,   switchIds: [2027] }, // change attack param by +1
