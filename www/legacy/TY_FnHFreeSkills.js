@@ -403,6 +403,16 @@
 		}
 	};
 	
+	// Ensure all items related to acquired skills are gained
+	Game_Party.prototype.ensureItems = function() {
+		if (isGameTermina()) {
+			const items = FNH2_ITEMS;
+			for (const itemId of items) {
+				this.gainItem(itemId, 1);
+			}
+		}
+	};
+	
 	// Ensure a party member has learned all the skills
 	Game_Party.prototype.ensureSkills = function(member) {
 		const skills = getGameSkills();
@@ -428,6 +438,7 @@
 		Game_Party_SetupStartingMembers.call(this);
 		this.refreshMembers();
 		this.ensureSwitches();
+		this.ensureItems();
 	};
 		
 	// Call refresh on a newly joined $gameParty member
