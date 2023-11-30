@@ -4,14 +4,14 @@
 		// VERSION 1.0.0 -- by Toby Yasha
 	//==========================================================
 	
-	//==========================================================
-		// Mod Parameters -- 
-	//==========================================================
-
-	// [Note]can ghouls, skeletons, blood golems, learn skills aswell?
+	// [Note] can ghouls, skeletons, blood golems, learn skills aswell?
 	//
 	// [Note] Some skills should only be given to the
 	// protagonist since they aren't needed for all characters.
+	
+	//==========================================================
+		// Mod Parameters -- 
+	//==========================================================
 	
 	// $gameSwitches to denote whether or not a skill was acquired,
 	// or for events which may require them(ex. blood_portal).
@@ -363,6 +363,26 @@
 		// Game Configurations -- Game_Party
 	//==========================================================
 	
+	// Ensure all variables related to acquired
+	// skills are set to the leader's actor id.
+	Game_Party.prototype.ensureVariables = function() {
+		if (isGameTermina()) {
+			const leaderId = this.leader().actorId();
+			const variables = FNH2_VARIABLES;
+			for (const variableId of variables) {
+				$gameVariables.setValue(variableId, leaderId);
+			}
+		}
+	};
+	
+	// Ensure all switches related to acquired skills are ON
+	Game_Party.prototype.ensureSwitches = function() {
+		const switches = getGameSwitches();
+		for (const switchId of switches) {
+			$gameSwitches.setValue(switchId, true);
+		}
+	};
+	
 	// Ensure a party member is affected by all required states
 	Game_Party.prototype.ensureStates = function(member) {
 		if (isGameTermina()) {
@@ -407,6 +427,7 @@
 	Game_Party.prototype.setupStartingMembers = function() {
 		Game_Party_SetupStartingMembers.call(this);
 		this.refreshMembers();
+		this.ensureSwitches();
 	};
 		
 	// Call refresh on a newly joined $gameParty member
@@ -414,6 +435,7 @@
 	Game_Party.prototype.addActor = function(actorId) {
 		Game_Party_AddActor.call(this, actorId);
 		this.refreshMembers();
+		this.ensureVariables();
 	};
 	
 })();
