@@ -16,6 +16,9 @@
 		
 		
 	];
+	
+	// [Note] Some skills should only be given to the
+	// protagonist since they aren't needed for all characters.
 
 	const FNH2_SKILLS = [
 		{ skillId: 802, switchIds: [1453] }, // Moth swarm
@@ -65,9 +68,23 @@
 		{ skillId: 498, switchIds: [2208] }, // sisu
 		{ skillId: 494, switchIds: [1962] }, // devour
 		{ skillId: 294, switchIds: [1221] }, // rot -- variable 1874 stores the actor id of the person who learned it(we will set this to the player actor id then)
-		{ skillId: 525, switchIds: [2206] }, // mischief_of_rats -- variable 1874 stores...etc.
+		{ skillId: 525, switchIds: [2206] }, // mischief_of_rats -- variable 1876 stores...etc.
+		{ skillId: 313, switchIds: [1207, 1223] }, // mastery_over_vermin
+		{ skillId: 522, switchIds: [2204] }, // inverse_Crown
+		{ skillId: 519, switchIds: [2095] }, // blood_sword -- variable 1872 stores...etc.
+		{ skillId: 521, switchIds: [2099] }, // longinus -- variable 1873 stores...etc.
+		{ skillId: 515, switchIds: [2093] }, // golden_gates -- protagonist only
+		{ skillId: 315, switchIds: [1229] }, // mindread -- protagonist only
+		{ skillId: 516, switchIds: [2089] }, // reveal_aura  -- protagonist only
+		{ skillId: 642, switchIds: [1451] }, // lunar_meteorite
+		{ skillId: 805, switchIds: [1449] }, // lunar_storm
+		{ skillId: 55,  switchIds: [1231] }, // pheromones -- variable 1869 stores...etc.
+		{ skillId: 511, switchIds: [1992, 2043] }, // brainflower -- protagonist only
+		{ skillId: 512, switchIds: [1994, 2045] }, // heartflower -- protagonist only
 		// TO DO: Make the below skills work
 		/*
+		{ skillId: 0,   switchIds: [2091] }, // change mana param by +25
+		{ skillId: 0,   switchIds: [2202] }, // state defense +3 -- 205 also change defense param by +1
 		{ skillId: 0,   switchIds: [1253] }, // change agility param by +1
 		{ skillId: 0,   switchIds: [1982] }, // state m.defense +1 -- 206 | state m.defense +2 -- 207(we probably just give the stronger variant here)
 		{ skillId: 0,   switchIds: [1984] }, // change m.attack param by +1
@@ -85,6 +102,8 @@
 	function getGameSkills() {
 		return isGameTermina() ? FNH2_SKILLS : FNH1_SKILLS;
 	}
+	
+	// processSkill/s
 
 	//==========================================================
 		// Game Configurations -- Game_Party
