@@ -51,7 +51,7 @@
 		{ skillId: 373, switchIds: [1547] }, // shortcircuit
 		{ skillId: 482, switchIds: [1950] }, // persuade
 		{ skillId: 326, switchIds: [731] }, // marksmanship
-		{ skillId: 371, switchIds: [1549] }, // trapcraft -- gain item 249 for recipe
+		{ skillId: 371, switchIds: [1549] }, // trapcraft -- gain item 249 for recipe -- protagonist only
 		{ skillId: 480, switchIds: [1185, 1952] }, // lockpicking
 		{ skillId: 464, switchIds: [1974] }, // fast_stance
 		{ skillId: 467, switchIds: [1972] }, // adrenaline_rush
@@ -59,8 +59,8 @@
 		{ skillId: 637, switchIds: [2079] }, // perfect_guard
 		{ skillId: 465, switchIds: [1968] }, // bobandweave
 		{ skillId: 468, switchIds: [1966] }, // bare-fisted
-		{ skillId: 372, switchIds: [1551] }, // weaponcraft -- gain item 248 for recipe
-		{ skillId: 291, switchIds: [1954, 2766] }, // escape_plan
+		{ skillId: 372, switchIds: [1551] }, // weaponcraft -- gain item 248 for recipe -- protagonist only
+		{ skillId: 291, switchIds: [1954, 2766] }, // escape_plan -- protagonist only
 		{ skillId: 496, switchIds: [1958] }, // war_cry
 		{ skillId: 483, switchIds: [2210] }, // diplomacy
 		{ skillId: 495, switchIds: [1960] }, // bloodlust
@@ -83,8 +83,32 @@
 		{ skillId: 512, switchIds: [1994, 2045] }, // heartflower -- protagonist only
 		{ skillId: 238, switchIds: [1233] }, // loving_whispers  -- variable 1870 stores...etc.
 		{ skillId: 218, switchIds: [2085] }, // healing_whispers -- variable 1871 stores...etc.
+		{ skillId: 508, switchIds: [2038] }, // greater_photosynthesis
+		{ skillId: 507, switchIds: [2036] }, // photosynthesis
+		{ skillId: 505, switchIds: [2032] }, // roots_that_reap -- variable 1868 stores...etc.
+		{ skillId: 199, switchIds: [1235] }, // pyromancy -- variable 1866 stores...etc.
+		{ skillId: 190, switchIds: [1237] }, // combustion -- variable 1867 stores...etc.
+		{ skillId: 506, switchIds: [2034] }, // spontaneous -- protagonist only
+		{ skillId: 504, switchIds: [2030] }, // scorched_earth -- variable 1865 stores...etc.
+		{ skillId: 21,  switchIds: [1225] }, // necromancy
+		{ skillId: 51,  switchIds: [1241] }, // blood_golem -- variable 1863 stores...etc.
+		{ skillId: 150, switchIds: [2024] }, // black_orb   -- variable 1864 stores...etc.
+		{ skillId: 12,  switchIds: [1239] }, // hurting     -- variable 1861 stores...etc.
+		{ skillId: 500, switchIds: [2022] }, // black_smog  -- variable 1862 stores...etc.
+		{ skillId: 459, switchIds: [1948] }, // toxicology  -- gain item 332 for recipe -- protagonist only
+		{ skillId: 455, switchIds: [1942] }, // masterchef  -- gain item 357, 358 for recipe
+		{ skillId: 368, switchIds: [1936] }, // magna_medicinal -- protagonist only
+		{ skillId: 799, switchIds: [2026] }, // chains_of_torment
+		{ skillId: 462, switchIds: [2214] }, // poison_tip -- variable 1891 stores...etc.
+		{ skillId: 460, switchIds: [1946] }, // undergrowth_awareness -- protagonist only
+		{ skillId: 456, switchIds: [1940] }, // melee_proficiency
+		{ skillId: 486, switchIds: [1934] }, // precision_stance
+		{ skillId: 440, switchIds: [1930] }, // greater_occulstism
+		{ skillId: 461, switchIds: [1944] }, // advanced_botanism -- gain item 331 for recipe -- protagonist only 
 		// TO DO: Make the below skills work
 		/*
+		{ skillId: 0,   switchIds: [2027] }, // change attack param by +1
+		{ skillId: 0,   switchIds: [2028] }, // change attack param by +1
 		{ skillId: 0,   switchIds: [2039] }, // change m.attack param by +1
 		{ skillId: 0,   switchIds: [2041] }, // change m.attack param by +1
 		{ skillId: 0,   switchIds: [1984] }, // change m.attack param by +1
