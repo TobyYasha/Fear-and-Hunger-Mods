@@ -25,7 +25,7 @@
 		{ skillId: 451, switchIds: [1998] }, // Masturbation
 		{ skillId: 450, switchIds: [1996] }, // Blood sacrifice
 		{ skillId: 146, switchIds: [1186, 1964] }, // En garde
-		{ skillId: 146, switchIds: [1986] }, // Burry the trauma
+		{ skillId: 475, switchIds: [1986] }, // Burry the trauma
 		{ skillId: 476, switchIds: [1990] }, // Order, charge!
 		{ skillId: 446, switchIds: [2008] }, // Greater meditation
 		{ skillId: 338, switchIds: [2006] }, // meditation
@@ -81,13 +81,19 @@
 		{ skillId: 55,  switchIds: [1231] }, // pheromones -- variable 1869 stores...etc.
 		{ skillId: 511, switchIds: [1992, 2043] }, // brainflower -- protagonist only
 		{ skillId: 512, switchIds: [1994, 2045] }, // heartflower -- protagonist only
+		{ skillId: 238, switchIds: [1233] }, // loving_whispers  -- variable 1870 stores...etc.
+		{ skillId: 218, switchIds: [2085] }, // healing_whispers -- variable 1871 stores...etc.
 		// TO DO: Make the below skills work
 		/*
+		{ skillId: 0,   switchIds: [2039] }, // change m.attack param by +1
+		{ skillId: 0,   switchIds: [2041] }, // change m.attack param by +1
+		{ skillId: 0,   switchIds: [1984] }, // change m.attack param by +1
 		{ skillId: 0,   switchIds: [2091] }, // change mana param by +25
 		{ skillId: 0,   switchIds: [2202] }, // state defense +3 -- 205 also change defense param by +1
-		{ skillId: 0,   switchIds: [1253] }, // change agility param by +1
 		{ skillId: 0,   switchIds: [1982] }, // state m.defense +1 -- 206 | state m.defense +2 -- 207(we probably just give the stronger variant here)
-		{ skillId: 0,   switchIds: [1984] }, // change m.attack param by +1
+		{ skillId: 0,   switchIds: [2087] }, // change m.defense param by +1 | state m.defense +2 -- 207 -- yeah we have multiple instances
+		{ skillId: 0,   switchIds: [1253] }, // change agility param by +1
+		{ skillId: 0,   switchIds: [1976] }, // change agility param by +1
  		 */
 	];
 	
