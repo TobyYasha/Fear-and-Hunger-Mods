@@ -428,6 +428,7 @@
 				this.ensureStates(member);
 				this.ensureParams(member);
 				this.ensureSkills(member);
+				member.endRefresh();
 			}
 		}
 	};
