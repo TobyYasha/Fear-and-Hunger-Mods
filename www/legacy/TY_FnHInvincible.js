@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.4 -- by Toby Yasha
+		// VERSION 1.4.0 -- by Toby Yasha
 	//==========================================================
 	
 	// This is meant to be edited by users
