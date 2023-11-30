@@ -3,8 +3,6 @@
 	//==========================================================
 		// VERSION 1.0.0 -- by Toby Yasha
 	//==========================================================
-
-	// INSTRUCTIONS
 	
 	//==========================================================
 		// Mod Parameters -- 
@@ -18,10 +16,10 @@
 	const FNH1_SKILLS = [
 		{ skillId: 12,  switchIds: [1197] }, // hurting
 		{ skillId: 21,  switchIds: [1199] }, // necromancy
-		{ skillId: 34,  switchIds: [] }, 	 // suicide
+		{ skillId: 34,  switchIds: [] }, // suicide
 		{ skillId: 48,  switchIds: [1208] }, // locust_swarm
 		{ skillId: 51,  switchIds: [1198] }, // necromancy
-		{ skillId: 54,  switchIds: [] }, 	 // demon_seed
+		{ skillId: 54,  switchIds: [] }, // demon_seed
 		{ skillId: 55,  switchIds: [1202] }, // pheromones
 		{ skillId: 56,  switchIds: [1207] }, // mastery_over_insects
 		{ skillId: 66,  switchIds: [1211] }, // fast_stance
@@ -33,7 +31,7 @@
 		{ skillId: 74,  switchIds: [1196] }, // greater_blood_magic
 		{ skillId: 78,  switchIds: [1192] }, // devour
 		{ skillId: 79,  switchIds: [1194] }, // marksmanship
-		{ skillId: 80,  switchIds: [] }, 	 // bloodlust
+		{ skillId: 80,  switchIds: [] }, // bloodlust
 		{ skillId: 115, switchIds: [1195] }, // counter_magic
 		{ skillId: 122, switchIds: [1206] }, // needle_worm
 		{ skillId: 136, switchIds: [1191] }, // leg_sweep
@@ -42,15 +40,16 @@
 		{ skillId: 149, switchIds: [1209] }, // flock_of_crows
 		{ skillId: 150, switchIds: [1201] }, // black_orb
 		{ skillId: 151, switchIds: [1204] }, // healing_whispers
-		{ skillId: 188, switchIds: [] }, 	 // walk_on_water
-		{ skillId: 189, switchIds: [] }, 	 // simple_transmutation
+		{ skillId: 188, switchIds: [] }, // walk_on_water
+		{ skillId: 189, switchIds: [] }, // simple_transmutation
 		{ skillId: 199, switchIds: [1200] }, // pyromancy
-		{ skillId: 200, switchIds: [] }, 	 // combustion
-		{ skillId: 240, switchIds: [] }, 	 // chains_of_torment
+		{ skillId: 200, switchIds: [] }, // combustion
+		{ skillId: 240, switchIds: [] }, // chains_of_torment
 		{ skillId: 283, switchIds: [1193] }, // war_cry
-		{ skillId: 290, switchIds: [] }, 	 // rebirth_of_the_beloved
-		{ skillId: 291, switchIds: [] }, 	 // escape_plan
-		{ skillId: 294, switchIds: [] } 	 // phase_step
+		{ skillId: 290, switchIds: [] }, // rebirth_of_the_beloved -- if you don't want D'arce S ending skill then comment this line like the example below
+		//{ skillId: 290, switchIds: [] },
+		{ skillId: 291, switchIds: [] }, // escape_plan
+		{ skillId: 294, switchIds: [] } // phase_step
 	];
 	
 	// $gameVariables which will be set to the protagonist's actorId
@@ -87,22 +86,22 @@
 		358, // masterchef -- book 2
 	]
 	
-	// actor parameters which are rewarded from acquiring skills,
-	const FNH2_PARAMS = [
-		{ paramId: 1, value: 25, switchIds: [2091] },			  // change mind param by +25
-		{ paramId: 2, value: 3,  switchIds: [1978, 2027, 2028] }, // change attack param by +1
-		{ paramId: 3, value: 2,  switchIds: [1980, 2202] },		  // change defense param by +1
-		{ paramId: 4, value: 3,  switchIds: [1984, 2039, 2041] }, // change m.attack param by +1
-		{ paramId: 5, value: 2,  switchIds: [1982, 2087] },		  // change m.defense param by +1
-		{ paramId: 6, value: 2,  switchIds: [1253, 1976] },		  // change agility param by +1
-	]
-	
 	// actor states which are rewarded from acquiring skills,
 	// [Note] These are technically given together with the parameter
 	// changes above, but i sawed the logic in half for convenience.
 	const FNH2_STATES = [
 		205, // defense +3
 		207, // m.defense +2
+	]
+	
+	// actor parameters which are rewarded from acquiring skills,
+	const FNH2_PARAMS = [
+		{ paramId: 1, value: 25, switchIds: [2091] }, // change mind param by +25
+		{ paramId: 2, value: 3,  switchIds: [1978, 2027, 2028] }, // change attack param by +1
+		{ paramId: 3, value: 2,  switchIds: [1980, 2202] }, // change defense param by +1
+		{ paramId: 4, value: 3,  switchIds: [1984, 2039, 2041] }, // change m.attack param by +1
+		{ paramId: 5, value: 2,  switchIds: [1982, 2087] }, // change m.defense param by +1
+		{ paramId: 6, value: 2,  switchIds: [1253, 1976] }, // change agility param by +1
 	]
 	
 	// A list of skills which can be acquired,
