@@ -13,6 +13,64 @@
 	// [Note] Some skills should only be given to the
 	// protagonist since they aren't needed for all characters.
 	
+	const FNH1_SWITCHES = [
+		1185, // lockpicking
+		1186, // en_garde
+		1187, // steal
+		1188, // dash
+		1189, // defense_stance
+		1190, // counter
+		1191, // leg_sweep
+		1192, // devour
+		1193, // war_cry
+		1194, // marksmanship
+		1195, // counter_magic
+		1196, // greater_blood_magic
+		1197, // hurting
+		1198, // necromancy
+		1199, // necromancy
+		1200, // pyromancy
+		1201, // black_orb
+		1202, // pheromones
+		1204, // healing_whispers
+		1205, // blood_portal
+		1206, // needle_worm
+		1207, // mastery_over_insects
+		1208, // locust_swarm
+		1209, // flock_of_crows
+		1211, // fast_stance
+		1167, // blood_portal
+	]
+	/*
+	const FNH1_SWITCHES = [
+		1197, // hurting
+		1199, // necromancy
+		1208, // locust_swarm
+		1198, // necromancy
+		1202, // pheromones
+		1207, // mastery_over_insects
+		1211, // fast_stance
+		1190, // counter
+		1189, // defense_stance
+		1187, // steal
+		1188, // dash
+		1185, // lockpicking
+		1196, // greater_blood_magic
+		1192, // devour
+		1194, // marksmanship
+		1195, // counter_magic
+		1206, // needle_worm
+		1191, // leg_sweep
+		1186, // en_garde
+		1167, // blood_portal
+		1205, // blood_portal
+		1209, // flock_of_crows
+		1201, // black_orb
+		1204, // healing_whispers
+		1200, // pyromancy
+		1193, // war_cry
+	]
+	*/
 	const FNH1_SKILLS = [
 		{ skillId: 12,  switchIds: [1197] }, // hurting
 		{ skillId: 21,  switchIds: [1199] }, // necromancy
@@ -104,6 +162,10 @@
 		{ paramId: 6, value: 2,  switchIds: [1253, 1976] }, // change agility param by +1
 	]
 	
+	const FNH2_SWITCHES = [
+		
+	]
+	
 	// A list of skills which can be acquired,
 	// The switches are used to denote the skill was acquired.
 	const FNH2_SKILLS = [
@@ -129,7 +191,7 @@
 		{ skillId: 335, switchIds: [1246] }, // engrave 					
 		{ skillId: 337, switchIds: [1248] }, // advanced_occultism	
 		{ skillId: 338, switchIds: [2006] }, // meditation	
-		{ skillId: 366, switchIds: []},		 // organ_harvest 			
+		{ skillId: 366, switchIds: []}, // organ_harvest 			
 		{ skillId: 367, switchIds: [1541] }, // medicinal 				
 		{ skillId: 368, switchIds: [1936] }, // magna_medicinal 			
 		{ skillId: 371, switchIds: [1549] }, // trapcraft 				
@@ -196,22 +258,66 @@
 	function isGameTermina() {
 		return $dataSystem.gameTitle.includes("TERMINA");
 	}
-
+	
 	function getGameSkills() {
-		return isGameTermina() ? FNH2_SKILLS : FNH1_SKILLS;
+		return isGameTermina() ? FNH2_SKILLS ? FNH1_SKILLS;
 	}
 	
-	// processSkill/s
+	//==========================================================
+		// Game Configurations -- Game_Actor
+	//==========================================================
+	
+	const Game_Actor_InitMembers = Game_Actor.prototype.initMembers;
+	Game_Actor.prototype.initMembers = function() {
+		Game_Actor_InitMembers.call(this);
+		this._refreshed = false;
+	};
+	
+	// Check if the actor received its skills, states and parameter update
+	Game_Actor.prototype.isRefreshed = function() {
+		return this._refreshed;
+	};
+	
+	// Flag which is set to confirm the refreshment of this actor
+	// [Note] It's important to apply this flag as we don't want
+	// actors receiving additional parameter updates.
+	Game_Actor.prototype.endRefresh = function() {
+		this._refreshed = true;
+	};
 
 	//==========================================================
 		// Game Configurations -- Game_Party
 	//==========================================================
+	
+	Game_Party.prototype.ensureSkills = function(actor) {
 		
+	};
+	
+	Game_Party.prototype.ensureSkills = function(actor) {
+		
+	};
+	
+	// Ensure all members have acquired their skills, states and parameter update
+	Game_Party.prototype.refreshMembers = function() {
+		for (const member of this.members()) {
+			if (!member.isRefreshed()) {
+				
+			}
+		}
+	};
+	
+	// Call refresh on the initial $gameParty members
+	const Game_Party_SetupStartingMembers = Game_Party.prototype.setupStartingMembers;
+	Game_Party.prototype.setupStartingMembers = function() {
+		Game_Party_SetupStartingMembers.call(this);
+		this.refreshMembers();
+	};
+		
+	// Call refresh on a newly joined $gameParty member
 	const Game_Party_AddActor = Game_Party.prototype.addActor;
 	Game_Party.prototype.addActor = function(actorId) {
 		Game_Party_AddActor.call(this, actorId);
-		for (const skillId of getGameSkills()) {
-			$gameActors.actor(actorId).learnSkill(skillId);
-		}
+		this.refreshMembers();
 	};
+	
 })();
