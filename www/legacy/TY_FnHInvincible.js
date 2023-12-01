@@ -6,7 +6,7 @@
 	
 	// This is meant to be edited by users
 	// Accepted value include: true or false
-	const allowCoinFlipAttacks = false;
+	const allowCoinFlipDeaths = true;
 	
 	//==========================================================
 		// Mod Parameters -- 
@@ -20,14 +20,14 @@
 		340, // NIGHT LURCH
 		648, // SALMON SNAKE
 		794, // HARVEST MAN
+		// TRAPS | SPECIAL ATTACK
+		337,  // NIGHT LURCH
+		338,  // NIGHT LURCH
+		339,  // NIGHT LURCH
 	];
 	
 	// SWITCH IDs
 	const fnh1Switches = [
-		// TRAPS
-		337,  // NIGHT LURCH
-		338,  // NIGHT LURCH
-		339,  // NIGHT LURCH
 		1035, // PENDULUM BLADES
 		1036, // PENDULUM BLADES
 		1037, // PENDULUM BLADES
@@ -160,6 +160,26 @@
 		return isGameTermina() ? fnh2Events : fnh1Events;
 	}
 	
+	// Check if an enemy is currently doing a special attack
+	function isEnemySpecialAttack() {
+		const switches = getCoinSwitches();
+		return switches.some(switchId => {
+			return $gameSwitches.value(switchId)
+		});
+	}
+	
+	// Check if the enemy's special attack killed the protagonist
+	function processEnemySpecialAttack(actor) {
+		if (actor === $gameParty.leader() && actor.hp === 0) {
+			BattleManager.endBattle(2);
+		}
+	}
+	
+	// Check if we can die from coin flips and an enemy doing a special attack
+	function isDeathEnabled() {
+		return allowCoinFlipDeaths && isEnemySpecialAttack();
+	}
+	
 	function refreshGameSwitches() {
 		const switches = getGameSwitches();
 		for (const switchId of switches) {
@@ -170,7 +190,7 @@
 	}
 	
 	function refreshCoinSwitches() {
-		if (!allowCoinFlipAttacks) {
+		if (!allowCoinFlipDeaths) {
 			const switches = getCoinSwitches();
 			for (const switchId of switches) {
 				if ($gameSwitches.value(switchId)) {
@@ -201,8 +221,13 @@
 	
 	const Game_Battler_GainHp = Game_Battler.prototype.gainHp; // BODY
 	Game_Battler.prototype.gainHp = function(value) {
-		if (this.isActor()) { value = value < 0 ? 0 : value };
+		if (this.isActor() && !isDeathEnabled()) {
+			value = value < 0 ? 0 : value;
+		}
 		Game_Battler_GainHp.call(this, value);
+		if (this.isActor() && isDeathEnabled()) {
+			processEnemySpecialAttack(this);
+		}
 	};
 
 	const Game_Battler_GainMp = Game_Battler.prototype.gainMp; // MIND
