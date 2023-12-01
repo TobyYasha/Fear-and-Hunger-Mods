@@ -168,13 +168,6 @@
 		});
 	}
 	
-	// Check if the enemy's special attack killed the protagonist
-	function processEnemySpecialAttack(actor) {
-		if (actor === $gameParty.leader() && actor.hp === 0) {
-			BattleManager.endBattle(2);
-		}
-	}
-	
 	// Check if we can die from coin flips and an enemy doing a special attack
 	function isDeathEnabled() {
 		return allowCoinFlipDeaths && isEnemySpecialAttack();
@@ -213,21 +206,23 @@
 		// Game Configurations -- Game_Battler
 	//==========================================================
 	
+	// If the enemy is doing a special attack and if we allow coin flip deaths then die
 	const Game_Battler_AddState = Game_Battler.prototype.addState; // DEBUFFS
 	Game_Battler.prototype.addState = function(stateId) {
-		if (this.isActor() && isStateImmune(stateId)) return;
+		if (this.isActor() && isStateImmune(stateId)) {
+			if (!isDeathEnabled()) return;
+			if (stateId != 1 && isDeathEnabled()) return;
+		}
 		Game_Battler_AddState.call(this, stateId);
 	};
 	
+	// If the enemy is doing a special attack and if we allow coin flip deaths then take damage
 	const Game_Battler_GainHp = Game_Battler.prototype.gainHp; // BODY
 	Game_Battler.prototype.gainHp = function(value) {
 		if (this.isActor() && !isDeathEnabled()) {
 			value = value < 0 ? 0 : value;
 		}
 		Game_Battler_GainHp.call(this, value);
-		if (this.isActor() && isDeathEnabled()) {
-			processEnemySpecialAttack(this);
-		}
 	};
 
 	const Game_Battler_GainMp = Game_Battler.prototype.gainMp; // MIND
