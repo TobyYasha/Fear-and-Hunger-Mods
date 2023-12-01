@@ -6,7 +6,7 @@
 	
 	// This is meant to be edited by users
 	// Accepted value include: true or false
-	const allowCoinFlipDeaths = true;
+	const allowCoinFlipDeaths = false;
 	
 	//==========================================================
 		// Mod Parameters -- 
