@@ -119,7 +119,7 @@
 	
 	// actor states which are rewarded from acquiring skills,
 	// [Note] These are technically given together with the parameter
-	// changes above, but i sawed the logic in half for convenience.
+	// changes below, but i sawed the logic in half for convenience.
 	const FNH2_STATES = [
 		205, // defense +3
 		207, // m.defense +2
@@ -128,8 +128,8 @@
 	// actor parameters which are rewarded from acquiring skills,
 	const FNH2_PARAMS = [
 		{ paramId: 1, value: 25 }, // change mind param by +25
-		{ paramId: 2, value: 3  }, // change attack param by +1
-		{ paramId: 3, value: 2  }, // change defense param by +1
+		{ paramId: 2, value: 3, }, // change attack param by +1
+		{ paramId: 3, value: 2, }, // change defense param by +1
 		{ paramId: 4, value: 3, }, // change m.attack param by +1
 		{ paramId: 5, value: 2, }, // change m.defense param by +1
 		{ paramId: 6, value: 2, }, // change agility param by +1
@@ -330,11 +330,11 @@
 	}
 	
 	function getGameSwitches() {
-		return isGameTermina() ? FNH2_SWITCHES ? FNH1_SWITCHES;
+		return isGameTermina() ? FNH2_SWITCHES : FNH1_SWITCHES;
 	}
 	
 	function getGameSkills() {
-		return isGameTermina() ? FNH2_SKILLS ? FNH1_SKILLS;
+		return isGameTermina() ? FNH2_SKILLS : FNH1_SKILLS;
 	}
 	
 	//==========================================================
@@ -408,7 +408,7 @@
 		if (isGameTermina()) {
 			const items = FNH2_ITEMS;
 			for (const itemId of items) {
-				this.gainItem(itemId, 1);
+				this.gainItem($dataItems[itemId], 1);
 			}
 		}
 	};
