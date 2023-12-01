@@ -1,8 +1,11 @@
 (function() {
 
 	//==========================================================
-		// VERSION 1.0.0 -- by Toby Yasha
+		// VERSION 1.0.2 -- by Toby Yasha
 	//==========================================================
+
+	// VERSION 1.0.1 -- Fixed "getGameSwitches" and "getGameSkills" methods.
+	// VERSION 1.0.2 -- Forgot to add Loving Whispers to F&H 1.
 	
 	// [Note] can ghouls, skeletons, blood golems, learn skills aswell?
 	//
@@ -34,6 +37,7 @@
 		1200, // pyromancy
 		1201, // black_orb
 		1202, // pheromones
+		1203, // loving_whispers
 		1204, // healing_whispers
 		1167, // blood_portal(1)
 		1205, // blood_portal(2)
@@ -76,6 +80,7 @@
 		189, // simple_transmutation
 		199, // pyromancy
 		200, // combustion
+		238, // loving_whispers
 		240, // chains_of_torment
 		283, // war_cry
 		290, // rebirth_of_the_beloved
