@@ -27,6 +27,15 @@ TY.Scope = TY.Scope || {};
 	// Mod Parameters
 //==========================================================
 
+// TY.ModLoader = TY.ModLoader || {};
+// TY.ModLoader.ModList = [];
+// TY.ModLoader.ModPath = "mods/";
+// TY.ModLoader.ModTerm = "Mods";
+// TY.ModLoader.ModInfo = {}; // Nothing, this will be removed and converted to JSON format, see bottom of this file for more details.
+// TY.ModLoader.MOD_LIST = [];
+
+// Note: Consider adding the Screen Freeze Fix in a QoL mod Graphics.render if (this._skipCount <= 0) {
+
 TY.Scope.modLoader = TY.Scope.modLoader || {};
 TY.Scope.modLoader.MOD_LIST = [];
 TY.Scope.modLoader.MOD_PATH = "mods/";
@@ -230,6 +239,16 @@ Scene_Title.prototype.commandMods = function() {
 	// Mod Interface
 //==========================================================
 
+// window hierarchy
+// lobby -- [commands] configure mods, load mods, settings, close
+	// configure mods -> configure mods interface
+	// load mods      -> initializes the mod loading process(accept / decline)
+	// settings		  -> configure stuff such as auto-mod loading?(
+	//	actually since you can just configure which mods to load...
+	//  i'll need to do some tests regarding what happens if you get an error
+	//  from a mod with "auto-loading" on.
+	//)
+
 // Creates a mod manager interface similar to MattieFM's.
 // [Note] Due to compatibility reasons and the fact that
 // MattieFM's mod manager interface is way better we only
@@ -297,6 +316,7 @@ TY.Scope.modLoader.interface.prototype.drawAllItems = function() {
 	const startIndex = this.topIndex() + 1;
 	for (let i = 0; i < 10; i++) {
 		const yOffset = this.itemHeight() * (i + 1);
+		// this.textWidth(text);
 		this.drawText(`${startIndex + i}. Fear & Hunger - Mod Loader`, 10, yOffset, 700, "left");
 		this.drawText("Status:", 540, yOffset, 700, "left");
 		if (Math.random() < 0.5) { // simulate a list of mods
@@ -335,3 +355,21 @@ TY.Scope.modLoader.scene.prototype.initialize = function() {
 TY.Scope.modLoader.scene.prototype.create = function() {
     Scene_Base.prototype.create.call(this);
 }
+
+// have the mod loader run in 2 different loading modes
+// direct mode - compatibility mode
+// 
+// Direct Mode ->
+// Checks out each file for 
+
+// Actually maybe it's just better to use a JSON approach similar to MATTIE + this way we ensure better compatibility.
+// P.S for compatibility reasons you should add the mod loader as a dependency to the mods(although we ignore this if we load it in our way).
+/*{
+	"name": "modLoader",
+    "status": false,
+	"danger": false,
+	"parameters": {},
+	"dependencies": [ // path inside "mods" folder
+        "_multiplayer/peerjs.min",
+	]
+}*/
