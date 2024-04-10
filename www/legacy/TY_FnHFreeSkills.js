@@ -1,11 +1,8 @@
 (function() {
 
 	//==========================================================
-		// VERSION 1.0.2 -- by Toby Yasha
+		// VERSION 1.0.3 -- by Toby Yasha
 	//==========================================================
-
-	// VERSION 1.0.1 -- Fixed "getGameSwitches" and "getGameSkills" methods.
-	// VERSION 1.0.2 -- Forgot to add Loving Whispers to F&H 1.
 	
 	// [Note] can ghouls, skeletons, blood golems, learn skills aswell?
 	//
@@ -451,6 +448,14 @@
 	const Game_Party_AddActor = Game_Party.prototype.addActor;
 	Game_Party.prototype.addActor = function(actorId) {
 		Game_Party_AddActor.call(this, actorId);
+		this.refreshMembers();
+	};
+	
+	// Reinhard Tristan Eugen Heydrich's Fix.
+	// Ensure the correct leader id is used by the party
+	const Game_Party_removeActor = Game_Party.prototype.removeActor;
+	Game_Party.prototype.removeActor = function(actorId) {
+		Game_Party_removeActor.call(this, actorId);
 		this.refreshMembers();
 		this.ensureVariables();
 	};
