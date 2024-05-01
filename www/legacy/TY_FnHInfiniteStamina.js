@@ -1,40 +1,44 @@
 (function() {
 	
 	//==========================================================
-			// VERSION 1.0.1 -- by Toby Yasha
+			// VERSION 1.1.0 -- by Toby Yasha
 	//==========================================================
 		
 	// The following settings are meant to be edited by users:
 		
 	const allowInfiniteStamina = true;  // true | false -- DEFAULT: true
 	const allowDrawStaminaBar  = false; // true | false -- DEFAULT: false
+	const allowLegLossPenalty  = true;  // true | false -- DEFAULT: true
+
+	// TODO: Add feature to prevent speed loss from leg loss
+	// Check common event no. 88, disable common event like with
+	// the stamina bar graphic and set player dashing to 3 once.
+
+	// NOTE: Actually make sure speed is reset every time player
+	// enters the map just to be safe.
 	
 	//==========================================================
 		// Mod Configurations -- 
 	//==========================================================
-		
-	let autoDashToggle = false;
 
-	// Check if it's a common event for the stamina bar graphic
-	function isStaminaCommonEvent(commonEvent) {
-		const commonEventIds = [573, 574, 575];
-		if (commonEvent) {
-			return commonEventIds.includes(commonEvent.id);
-		} else {
-			return false;
-		}
-	}
+	// If ON then you don't need to hold "Shift" to dash.
+	let autoDashToggle = false;
 
 	/*
 	SWITCH DEFINITION:
 		202 -  Suicide in Process
 		203 -  Climbing
-		403 -  Love Dark Priest x Mercenary (Where's this used?)
+		410 -  Cannot Use Bow
 		434 -  Pig Death Scene
+		2243 - Run Meter Cooldown
+		2245 - Double Tap
+		2252 - Rifle Equipped
+		2253 - Shotgun Equipped
+		2254 - Pistol Equipped
 		2420 - Hexen GFX
 	*/
 	function meetsDashSwitchCondition() {
-		const switchIds = [202, 203, 403, 434, 2420];
+		const switchIds = [202, 203, 410, 434, 2243, 2245, 2252, 2253, 2254, 2420];
 		return switchIds.every(switchId => !$gameSwitches.value(switchId));
 	}
 
@@ -45,9 +49,11 @@
 	*/
 	function meetsDashVariableCondition() {
 		const variableIds = [868, 2802];
-		return variableIds.every(variableId => !$gameVariables.value(variableId));
+		return variableIds.every(variableId => $gameVariables.value(variableId) === 0);
 	}
 
+	// Check if the player meets the condition to dash
+	// NOTE: Dash conditions are based on Common Event No. 576
 	function meetsDashConditions() {
 		return (
 			$gamePlayer.isMoving() &&
@@ -56,6 +62,7 @@
 		);
 	}
 
+	// Toggle the auto dashing feature ON/OFF
 	function updateDashToggle() {
 		if (Input.isTriggered("shift")) {
 			autoDashToggle = !autoDashToggle;
@@ -63,15 +70,35 @@
 		}
 	}
 
+	// Ensures auto dashing state is not
+	// lost after equipping/unequipping guns
+	function refreshDashState() {
+		const value = autoDashToggle;
+		$gameSwitches.setValue(1956, value);
+	}
+
+	// If auto dashing is ON and 
+	// player meets dashing condition
+	// then ensure player is always dashing
 	function updateDashState() {
 		if (autoDashToggle && meetsDashConditions()) {
 			$gameSwitches.setValue(1956, true);
 		}
 	}
 
-	// Ensures that stamina doesn't go down
+	// Check if common event affects the stamina bar graphic
+	function isStaminaCommonEvent(commonEvent) {
+		const commonEventIds = [573, 574, 575];
+		if (commonEvent) {
+			return commonEventIds.includes(commonEvent.id);
+		} else {
+			return false;
+		}
+	}
+
+	// if "true" then don't run out of stamina
 	function updateStaminaMeter() {
-		if (allowInfiniteStamina) { // if "true" then don't run out of stamina
+		if (allowInfiniteStamina) {
 			$gameVariables.setValue(2714, 0);
 		}
 	}
@@ -80,11 +107,19 @@
 		// Game Configurations -- Game_Map
 	//==========================================================
 
+	// Clear dash state to ensure compatibility with guns
+	const TY_Game_Map_Setup = Game_Map.prototype.setup;
+	Game_Map.prototype.setup = function(mapId) {
+		TY_Game_Map_Setup.call(this, ...arguments);
+		refreshDashState();
+	}
+
 	// Update dash and stamina features
 	const TY_Game_Map_Update = Game_Map.prototype.update;
 	Game_Map.prototype.update = function(sceneActive) {
 		TY_Game_Map_Update.call(this, ...arguments);
 		updateDashToggle();
+		updateDashState();
 		updateStaminaMeter();
 	};
 	
