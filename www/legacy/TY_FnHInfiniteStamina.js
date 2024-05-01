@@ -10,12 +10,25 @@
 	const allowDrawStaminaBar  = false; // true | false -- DEFAULT: false
 	const allowLegLossPenalty  = true;  // true | false -- DEFAULT: true
 
-	// TODO: Add feature to prevent speed loss from leg loss
-	// Check common event no. 88, disable common event like with
-	// the stamina bar graphic and set player dashing to 3 once.
+	/*
+		EXPLANATION:
 
-	// NOTE: Actually make sure speed is reset every time player
-	// enters the map just to be safe.
+		allowInfiniteStamina - 
+			This setting allows you to run without
+			having to worry about your stamina running out.
+
+		allowDrawStaminaBar - 
+			This is a Quality of Life setting.
+
+			If you have infinite stamina there's no point to
+			show the stamina bar graphic in the upper left corner.
+
+			But the choice is left here regardless.
+		
+		allowLegLossPenalty -
+			When you lose your legs you gain a speed penalty,
+			this setting is meant to prevent that from happening.
+	*/
 	
 	//==========================================================
 		// Mod Configurations -- 
@@ -70,13 +83,6 @@
 		}
 	}
 
-	// Ensures auto dashing state is not
-	// lost after equipping/unequipping guns
-	function refreshDashState() {
-		const value = autoDashToggle;
-		$gameSwitches.setValue(1956, value);
-	}
-
 	// If auto dashing is ON and 
 	// player meets dashing condition
 	// then ensure player is always dashing
@@ -86,14 +92,73 @@
 		}
 	}
 
-	// Check if common event affects the stamina bar graphic
-	function isStaminaCommonEvent(commonEvent) {
-		const commonEventIds = [573, 574, 575];
+	// Ensures auto dashing state is not
+	// lost after equipping/unequipping guns
+	function refreshDashState() {
+		const value = autoDashToggle;
+		$gameSwitches.setValue(1956, value);
+	}
+
+	// Common event No. 88 is normally responsible for this.
+	// But is dash even learnable in termina? directly or not.
+	function getDashSpeed() {
+		const dashId = 71;
+		const leader = $gameParty.leader();
+		return leader.hasSkill(dashId) ? 3.5 : 3;
+	}
+
+	// Refresh dash speed for the leg loss penalty setting
+	function refreshDashSpeed() {
+		const dashSpeed = getDashSpeed();
+		if (!allowLegLossPenalty) {
+			$gamePlayer.setMoveSpeed(dashSpeed);
+		}
+	}
+
+	/*
+		88  - Dash Speed 
+		573 - Stamina Bar Graphic
+		574 - Stamina Bar Graphic
+		575 - Stamina Bar Graphic
+	*/
+	// This is a list of common events that
+	// we want to remove based on a condition
+	function makeCommonEventFilterList() {
+		const commonEventIds = [];
+		if (!allowLegLossPenalty) {
+			commonEventIds.push(88);
+		}
+		if (!allowDrawStaminaBar) {
+			commonEventIds.push(573, 574, 575);
+		}
+		return commonEventIds;
+	}
+
+	// Check if common event needs to be filtered out
+	function isCommonEventInFilterList(commonEvent) {
+		const commonEventIds = makeCommonEventFilterList();
 		if (commonEvent) {
 			return commonEventIds.includes(commonEvent.id);
 		} else {
 			return false;
 		}
+	}
+
+	// Filter out parallel events that
+	// we don't want to modify the game anymore
+	function filterCommonEvents() {
+		const commonEvents = $gameMap.parallelCommonEvents();
+			
+		for (const commonEvent of [...commonEvents]) {
+			if (isCommonEventInFilterList(commonEvent)) {
+				const index = commonEvents.indexOf(commonEvent);
+				if (index >= 0) {
+					commonEvents.splice(index, 1);
+				}
+			}
+		}
+			
+		return commonEvents;
 	}
 
 	// if "true" then don't run out of stamina
@@ -111,6 +176,7 @@
 	const TY_Game_Map_Setup = Game_Map.prototype.setup;
 	Game_Map.prototype.setup = function(mapId) {
 		TY_Game_Map_Setup.call(this, ...arguments);
+		refreshDashSpeed();
 		refreshDashState();
 	}
 
@@ -122,36 +188,15 @@
 		updateDashState();
 		updateStaminaMeter();
 	};
-	
-	if (!allowDrawStaminaBar) { // if "false" then don't draw the stamina bar graphic 
 
-		// Call the newly created "filterStaminaCommonEvents" method
-		const TY_Game_Map_SetupEvents = Game_Map.prototype.setupEvents;
-		Game_Map.prototype.setupEvents = function() {
-			TY_Game_Map_SetupEvents.call(this, ...arguments);
-			
-			const commonEvents = this.filterStaminaCommonEvents();
-			this._commonEvents = commonEvents.map(commonEvent => {
-				return new Game_CommonEvent(commonEvent.id);
-			});
-		};
-
-		// Remove common events related to the stamina bar graphic
-		Game_Map.prototype.filterStaminaCommonEvents = function() {
-			const commonEvents = this.parallelCommonEvents();
-			
-			for (const commonEvent of [...commonEvents]) {
-				if (isStaminaCommonEvent(commonEvent)) {
-					const index = commonEvents.indexOf(commonEvent);
-					if (index >= 0) {
-						commonEvents.splice(index, 1);
-					}
-				}
-			}
-			
-			return commonEvents;
-		};
-	
-	}
+	// Call the newly created "filterStaminaCommonEvents" method
+	const TY_Game_Map_SetupEvents = Game_Map.prototype.setupEvents;
+	Game_Map.prototype.setupEvents = function() {
+		TY_Game_Map_SetupEvents.call(this, ...arguments);
+		const commonEvents = filterCommonEvents();
+		this._commonEvents = commonEvents.map(commonEvent => {
+			return new Game_CommonEvent(commonEvent.id);
+		});
+	};
 
 })();
