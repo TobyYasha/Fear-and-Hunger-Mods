@@ -705,13 +705,13 @@
 
 		function findMapEvent(eventId) {
 			const currentMapId = $gameMap.mapId();
-			const mapEventList = this.getMiscMapEvents();
+			const mapEventList = getMiscMapEvents();
 
 			return mapEventList.find(event => event.mapId === currentMapId && event.eventId === eventId);
 		}
 
 		function isMapEventPaused(eventId) {
-			const mapEvent = this.findMapEvent(eventId);
+			const mapEvent = findMapEvent(eventId);
 			return $gameMessage.isBusy() && !!mapEvent;
 		}
 
@@ -732,13 +732,13 @@
 		}
 
 		function makeCommonEventList() {
-			const list1 = this.getMiscCommonEvents();
-			const list2 = this.getHungerCommonEvents();
+			const list1 = getMiscCommonEvents();
+			const list2 = getHungerCommonEvents();
 			return [...list1, ...list2];
 		}
 
 		function isCommonEventPaused(commonEventId) {
-			const commonEventList = this.makeCommonEventList();
+			const commonEventList = makeCommonEventList();
 			return $gameMessage.isBusy() && commonEventList.includes(commonEventId);
 		}
 
