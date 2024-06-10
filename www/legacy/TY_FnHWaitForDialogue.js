@@ -5,6 +5,13 @@
 	//==========================================================
 	
 		// This mod has been commissioned by s0mthinG.
+
+		// Pause in-game effects like hunger, sanity and bleeding
+		// while a dialogue window is displaying text.
+
+		// NOTE: This does not apply to the temporary dialogue window
+		// which can appear when crow mauler spawned in the
+		// map for example. (Gab Window)
 	
 	//==========================================================
 		// Mod Parameters -- 
@@ -667,7 +674,7 @@
 				{ mapId: 177, eventId: 27  }, // Blood
 				{ mapId: 177, eventId: 29  }, // Bleeding
 
-				{ mapId: 181, eventId: 9  }, // Blood
+				{ mapId: 181, eventId: 9   }, // Blood
 				{ mapId: 181, eventId: 13  }, // Bleeding
 				{ mapId: 181, eventId: 138 }, // Sanity Loss
 				{ mapId: 181, eventId: 148 }, // Sanity Gain
@@ -696,9 +703,16 @@
 			return mapEvents;
 		}
 
+		function findMapEvent(eventId) {
+			const currentMapId = $gameMap.mapId();
+			const mapEventList = this.getMiscMapEvents();
+
+			return mapEventList.find(event => event.mapId === currentMapId && event.eventId === eventId);
+		}
+
 		function isMapEventPaused(eventId) {
-			/*const mapEventList = this.makeCommonEventList();
-			return $gameMessage.isBusy() && mapEventList.includes(eventId);*/
+			const mapEvent = this.findMapEvent(eventId);
+			return $gameMessage.isBusy() && !!mapEvent;
 		}
 
 		function getMiscCommonEvents() { // ONLY FNH1 FOR NOW
@@ -729,14 +743,25 @@
 		}
 
 	//==========================================================
+		// Game Configurations -- Game_Event
+	//==========================================================
+
+		const Game_Event_updateParallel = Game_Event.prototype.updateParallel;
+		Game_Event.prototype.updateParallel = function() {
+			if (!isMapEventPaused(this._eventId)) {
+				Game_Event_updateParallel.call(this);
+			}
+		};
+
+	//==========================================================
 		// Game Configurations -- Game_CommonEvent
 	//==========================================================
-		
-		const Game_CommonEvent_isActive = Game_CommonEvent.prototype.isActive;
-		Game_CommonEvent.prototype.isActive = function() {
-			const event = this.event();
-			const condition = Game_CommonEvent_isActive.call(this);
-		    return condition && isCommonEventPaused(this.event.id);
+
+		const Game_CommonEvent_update = Game_CommonEvent.prototype.update;
+		Game_CommonEvent.prototype.update = function() {
+		    if (!isCommonEventPaused(this._commonEventId)) {
+		    	Game_CommonEvent_update.call(this);
+		    }
 		};
 
 })();
