@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.0.0 -- by Toby Yasha
+		// VERSION 1.1.0 -- by Toby Yasha
 	//==========================================================
 	
 		// This mod has been commissioned by s0mthinG.
@@ -174,7 +174,7 @@
 
 		// The following settings are meant to be edited by users:
 
-		const eventFrameDelay = 10;
+		const eventFrameDelay = 90;
 
 		/*
 			EXPLANATION:
@@ -186,7 +186,9 @@
 				NOTE: This can be useful if trying to avoid threats like
 				the Yellow Mage's special attack on the map.
 
-				DEFAULT: 10
+				NOTE: Every 60 frames are equal to 1 second.
+
+				DEFAULT: 90
 		*/
 
 	//==========================================================
@@ -769,16 +771,10 @@
 
 		Game_Event.prototype._interpreterPaused = false;
 
+		// Flag used to determine if interpreter is running or not
 		Game_Event.prototype.pauseIntrepreter = function(isPaused) {
 			this._intrepreterPaused = isPaused;
 		};
-
-		/*Game_Event.prototype.refreshIntrepreter = function() {
-			if (this._interpreter && this._intrepreterPaused) {
-				this._interpreter._waitCount += eventFrameDelay;
-				this.pauseIntrepreter(false);
-			}
-		};*/
 
 		// Check if the interpreter meets the conditions to be refreshed
 		Game_Event.prototype.canRefreshIntrepreter = function() {
@@ -789,7 +785,7 @@
 			)
 		};
 
-		// If interpreter was paused add a delay before resuming operations
+		// If the interpreter was paused add a delay before resuming operations
 		Game_Event.prototype.refreshIntrepreter = function() {
 			if (this.canRefreshIntrepreter()) {
 				this._interpreter.wait(eventFrameDelay);
@@ -813,7 +809,7 @@
 
 		Game_CommonEvent.prototype._interpreterPaused = false;
 
-		// Flag used to decide if interpreter is running or not
+		// Flag used to determine if interpreter is running or not
 		Game_CommonEvent.prototype.pauseIntrepreter = function(isPaused) {
 			this._intrepreterPaused = isPaused;
 		};
@@ -827,7 +823,7 @@
 			)
 		};
 
-		// If interpreter was paused add a delay before resuming operations
+		// If the interpreter was paused add a delay before resuming operations
 		Game_CommonEvent.prototype.refreshIntrepreter = function() {
 			if (this.canRefreshIntrepreter()) {
 				this._interpreter.wait(eventFrameDelay);
