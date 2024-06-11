@@ -193,13 +193,6 @@
 		// Mod Configurations -- 
 	//==========================================================
 
-		let lastMapEventId = null;
-		let lastCommonEventId = null;
-
-	//==========================================================
-		// Mod Configurations -- 
-	//==========================================================
-
 		function getMiscMapEvents() { // ONLY FNH1 FOR NOW
 			const mapEvents = [
 				{ mapId: 1, eventId: 27  }, // Blood
@@ -770,63 +763,46 @@
 			return $gameMessage.isBusy() && commonEventList.includes(commonEventId);
 		}
 
-		/*function onMapEventIdChanged(mapEventId) {
-			if (lastMapEventId !== mapEventId) {
-				lastMapEventId = mapEventId;
-				this.setMapEventWait();
-			}
-		}
-
-		function setMapEventWait() {
-			const mapEvent = findMapEvent(lastMapEventId);
-			if (mapEvent) {
-				$gameMap.event(lastMapEventId);
-			}
-		}*/
-
-		/*function onMapEventIdChanged(mapEventId) {
-			if (lastMapEventId !== mapEventId) {
-				lastMapEventId = mapEventId;
-				this.setMapEventWait();
-			}
-		}
-
-		function setMapEventWait() {
-			const mapEvent = findMapEvent(lastMapEventId);
-			if (mapEvent) {
-
-			}
-		}*/
-
-		/*function isInterpreterWaiting() {
-
-		}
-
-		function updateInterpreterWait() {
-
-		}*/
-
 	//==========================================================
 		// Game Configurations -- Game_Event
 	//==========================================================
 
-		//Game_Event.prototype._interpreterPaused = false;
+		Game_Event.prototype._interpreterPaused = false;
 
-		/*Game_Event.prototype.updateInterpreterDelay = function() {
-			if (isMapEventPaused(this._eventId)) {
-				this.delayInterpreter();
-			}
+		Game_Event.prototype.pauseIntrepreter = function(isPaused) {
+			this._intrepreterPaused = isPaused;
 		};
 
-		Game_Event.prototype.delayInterpreter = function() {
-			if (this._interpreter && this._interpreter._waitCount === 0) {
-				this._interpreter.wait(eventFrameDelay);
+		/*Game_Event.prototype.refreshIntrepreter = function() {
+			if (this._interpreter && this._intrepreterPaused) {
+				this._interpreter._waitCount += eventFrameDelay;
+				this.pauseIntrepreter(false);
 			}
 		};*/
 
+		// Check if the interpreter meets the conditions to be refreshed
+		Game_Event.prototype.canRefreshIntrepreter = function() {
+			return (
+				this._interpreter &&
+				this._interpreter._waitCount === 0 &&
+				this._intrepreterPaused
+			)
+		};
+
+		// If interpreter was paused add a delay before resuming operations
+		Game_Event.prototype.refreshIntrepreter = function() {
+			if (this.canRefreshIntrepreter()) {
+				this._interpreter.wait(eventFrameDelay);
+				this.pauseIntrepreter(false);
+			}
+		};
+
 		const Game_Event_updateParallel = Game_Event.prototype.updateParallel;
 		Game_Event.prototype.updateParallel = function() {
-			if (!isMapEventPaused(this._eventId)) {
+			if (isMapEventPaused(this._eventId)) {
+				this.pauseIntrepreter(true);
+			} else {
+				this.refreshIntrepreter();
 				Game_Event_updateParallel.call(this);
 			}
 		};
@@ -835,11 +811,38 @@
 		// Game Configurations -- Game_CommonEvent
 	//==========================================================
 
+		Game_CommonEvent.prototype._interpreterPaused = false;
+
+		// Flag used to decide if interpreter is running or not
+		Game_CommonEvent.prototype.pauseIntrepreter = function(isPaused) {
+			this._intrepreterPaused = isPaused;
+		};
+
+		// Check if the interpreter meets the conditions to be refreshed
+		Game_CommonEvent.prototype.canRefreshIntrepreter = function() {
+			return (
+				this._interpreter &&
+				this._interpreter._waitCount === 0 &&
+				this._intrepreterPaused
+			)
+		};
+
+		// If interpreter was paused add a delay before resuming operations
+		Game_CommonEvent.prototype.refreshIntrepreter = function() {
+			if (this.canRefreshIntrepreter()) {
+				this._interpreter.wait(eventFrameDelay);
+				this.pauseIntrepreter(false);
+			}
+		};
+
 		const Game_CommonEvent_update = Game_CommonEvent.prototype.update;
 		Game_CommonEvent.prototype.update = function() {
-		    if (!isCommonEventPaused(this._commonEventId)) {
-		    	Game_CommonEvent_update.call(this);
-		    }
+			if (isCommonEventPaused(this._commonEventId)) {
+				this.pauseIntrepreter(true);
+			} else {
+				this.refreshIntrepreter();
+				Game_CommonEvent_update.call(this);
+			}
 		};
 
 })();
