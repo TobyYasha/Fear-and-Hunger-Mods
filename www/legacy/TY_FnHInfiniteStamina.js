@@ -8,7 +8,6 @@
 		
 	const allowInfiniteStamina = true;  // true | false -- DEFAULT: true
 	const allowDrawStaminaBar  = false; // true | false -- DEFAULT: false
-	const allowLegLossPenalty  = true;  // true | false -- DEFAULT: true
 
 	/*
 		EXPLANATION:
@@ -24,10 +23,6 @@
 			show the stamina bar graphic in the upper left corner.
 
 			But the choice is left here regardless.
-		
-		allowLegLossPenalty -
-			When you lose your legs you gain a speed penalty,
-			this setting is meant to prevent that from happening.
 	*/
 	
 	//==========================================================
@@ -35,6 +30,7 @@
 	//==========================================================
 
 	// If ON then you don't need to hold "Shift" to dash.
+	// NOTE: This property shouldn't be edited by users!
 	let autoDashToggle = false;
 
 	/*
@@ -99,24 +95,14 @@
 		$gameSwitches.setValue(1956, value);
 	}
 
-	// Common event No. 88 is normally responsible for this.
-	// But is dash even learnable in termina? directly or not.
-	function getDashSpeed() {
-		const dashId = 71;
-		const leader = $gameParty.leader();
-		return leader.hasSkill(dashId) ? 3.5 : 3;
-	}
-
-	// Refresh dash speed for the leg loss penalty setting
-	function refreshDashSpeed() {
-		const dashSpeed = getDashSpeed();
-		if (!allowLegLossPenalty) {
-			$gamePlayer.setMoveSpeed(dashSpeed);
+	// if "true" then don't run out of stamina
+	function updateStaminaMeter() {
+		if (allowInfiniteStamina) {
+			$gameVariables.setValue(2714, 0);
 		}
 	}
 
 	/*
-		88  - Dash Speed 
 		573 - Stamina Bar Graphic
 		574 - Stamina Bar Graphic
 		575 - Stamina Bar Graphic
@@ -124,13 +110,8 @@
 	// This is a list of common events that
 	// we want to remove based on a condition
 	function makeCommonEventFilterList() {
-		const commonEventIds = [];
-		if (!allowLegLossPenalty) {
-			commonEventIds.push(88);
-		}
-		if (!allowDrawStaminaBar) {
-			commonEventIds.push(573, 574, 575);
-		}
+		const commonEventIds = [573, 574, 575];
+
 		return commonEventIds;
 	}
 
@@ -160,13 +141,6 @@
 			
 		return commonEvents;
 	}
-
-	// if "true" then don't run out of stamina
-	function updateStaminaMeter() {
-		if (allowInfiniteStamina) {
-			$gameVariables.setValue(2714, 0);
-		}
-	}
 	
 	//==========================================================
 		// Game Configurations -- Game_Map
@@ -176,7 +150,6 @@
 	const TY_Game_Map_Setup = Game_Map.prototype.setup;
 	Game_Map.prototype.setup = function(mapId) {
 		TY_Game_Map_Setup.call(this, ...arguments);
-		refreshDashSpeed();
 		refreshDashState();
 	}
 
@@ -194,9 +167,11 @@
 	Game_Map.prototype.setupEvents = function() {
 		TY_Game_Map_SetupEvents.call(this, ...arguments);
 		const commonEvents = filterCommonEvents();
+
 		this._commonEvents = commonEvents.map(commonEvent => {
 			return new Game_CommonEvent(commonEvent.id);
 		});
+
 	};
 
 })();
