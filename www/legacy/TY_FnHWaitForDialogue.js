@@ -14,7 +14,7 @@
 		// map for example. (Gab Window)
 	
 	//==========================================================
-		// Mod Parameters -- 
+		// Mod Notes -- 
 	//==========================================================
 
 		// keep an eye on common event number 89-91 (crow mauler)
@@ -45,10 +45,6 @@
 		// SANITY COMMON EVENTS IN FnH1
 		// 291 - Mahabre
 		// 292 - Dark
-
-	//==========================================================
-		// Mod Configurations -- 
-	//==========================================================
 
 		// MapId 1 - level1_A
 		// MapId 3 - level1_3_A
@@ -171,6 +167,38 @@
 		// MapId 183 - level1_D
 		// MapId 184 - level5_C
 		// MapId 185 - The_Void2
+
+	//==========================================================
+		// Mod Parameters -- 
+	//==========================================================
+
+		// The following settings are meant to be edited by users:
+
+		const eventFrameDelay = 10;
+
+		/*
+			EXPLANATION:
+
+			eventFrameDelay -
+				After dialogue has ended delay map events / common events
+				for this many frames.
+
+				NOTE: This can be useful if trying to avoid threats like
+				the Yellow Mage's special attack on the map.
+
+				DEFAULT: 10
+		*/
+
+	//==========================================================
+		// Mod Configurations -- 
+	//==========================================================
+
+		let lastMapEventId = null;
+		let lastCommonEventId = null;
+
+	//==========================================================
+		// Mod Configurations -- 
+	//==========================================================
 
 		function getMiscMapEvents() { // ONLY FNH1 FOR NOW
 			const mapEvents = [
@@ -742,9 +770,59 @@
 			return $gameMessage.isBusy() && commonEventList.includes(commonEventId);
 		}
 
+		/*function onMapEventIdChanged(mapEventId) {
+			if (lastMapEventId !== mapEventId) {
+				lastMapEventId = mapEventId;
+				this.setMapEventWait();
+			}
+		}
+
+		function setMapEventWait() {
+			const mapEvent = findMapEvent(lastMapEventId);
+			if (mapEvent) {
+				$gameMap.event(lastMapEventId);
+			}
+		}*/
+
+		/*function onMapEventIdChanged(mapEventId) {
+			if (lastMapEventId !== mapEventId) {
+				lastMapEventId = mapEventId;
+				this.setMapEventWait();
+			}
+		}
+
+		function setMapEventWait() {
+			const mapEvent = findMapEvent(lastMapEventId);
+			if (mapEvent) {
+
+			}
+		}*/
+
+		/*function isInterpreterWaiting() {
+
+		}
+
+		function updateInterpreterWait() {
+
+		}*/
+
 	//==========================================================
 		// Game Configurations -- Game_Event
 	//==========================================================
+
+		//Game_Event.prototype._interpreterPaused = false;
+
+		/*Game_Event.prototype.updateInterpreterDelay = function() {
+			if (isMapEventPaused(this._eventId)) {
+				this.delayInterpreter();
+			}
+		};
+
+		Game_Event.prototype.delayInterpreter = function() {
+			if (this._interpreter && this._interpreter._waitCount === 0) {
+				this._interpreter.wait(eventFrameDelay);
+			}
+		};*/
 
 		const Game_Event_updateParallel = Game_Event.prototype.updateParallel;
 		Game_Event.prototype.updateParallel = function() {
