@@ -1,7 +1,7 @@
 (function() {
 	
 	//==========================================================
-			// VERSION 1.1.0 -- by Toby Yasha
+		// VERSION 1.1.0 -- by Toby Yasha
 	//==========================================================
 		
 	// The following settings are meant to be edited by users:
@@ -24,6 +24,10 @@
 
 			But the choice is left here regardless.
 	*/
+
+	// NOTE: Since Version 1.1.0 you can automatically dash by
+	// pressing the "Shift" once, no need to hold the "Shift" key anymore!
+	// NOTE: To stop dashing press the "Shift" key again.
 	
 	//==========================================================
 		// Mod Configurations -- 
