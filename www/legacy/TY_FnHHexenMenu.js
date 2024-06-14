@@ -15,6 +15,7 @@
 		
 		let hexenMenuReady = false;
 		let hexenMenuMode = false;
+		let hexenExitMode = false;
 		let hexenMenuTimer = 0;
 
 		const hexenCursorImage = "$cursor1";
@@ -137,6 +138,18 @@
 			return $gameMap.mapId() === hexenMapData.mapId;
 		}
 
+		function isHexenExitCalled() {
+			return Input.isTriggered('escape') || Input.isPressed('escape');
+		}
+
+		function setHexenExitMode(value) {
+			hexenExitMode = value;
+		}
+
+		function isHexenExitMode() {
+			return !!hexenExitMode;
+		}
+
 		// Used to check if hexen can be started
 		function isHexenMenuValid() {
 			return isHexenMap() && isHexenMenuMode();
@@ -144,27 +157,48 @@
 
 		function updateHexenMenu() {
 			updateHexenStart();
+			updateHexenExit();
+			updateHexenEnd();
 		}
 		
+		// Wait for the timer to finish before starting the hexen
+		// NOTE: If we don't do this we risk crashing the game
+		// because we are still inside the scene_menu
 		function updateHexenStart() {
 			if (!isHexenMenuReady()) {
 				updateHexenTimer();
 				if (isHexenTimerDone()) {
-			    	onHexenStart();
+			    	startHexen();
 			    	setHexenMenuReady(true);
 			    }
 			}
 		}
 
-		function onHexenStart() {
-			setupHexenMisc();
+		function updateHexenExit() {
+			if (isHexenExitCalled() && !isHexenExitMode()) {
+				resetHexenTimer();
+				setHexenExitMode(true);
+			}
+		}
+
+		function updateHexenEnd() {
+			if (isHexenExitMode() && isHexenMenuMode()) {
+				//if (isHexenTimerDone()) {
+					endHexen();
+					setHexenExitMode(false);
+					setHexenMenuMode(false);
+				//}
+			}
+		}
+
+		function startHexen() {
+			onHexenStart();
 			setupHexenPictures();
 			setupHexenCursor();
 			setupHexenLayers();
-			setupHexenFadeIn();
 		}
 
-		function setupHexenMisc() {
+		function onHexenStart() {
 			$gameSystem.disableMenu();
 			$gameSwitches.setValue(2420, true); // Hexen GFX
 		}
@@ -198,14 +232,6 @@
 			$gamePlayer.refresh();
 		}
 
-		function setupHexenFadeIn() {
-			//SceneManager._scene.startFadeIn(30, false);
-			/*const frames = 10;
-			const blendMode = [0,0,0,0];
-			$gameScreen.startTint(blendMode, frames);
-			$gameMap._interpreter.wait(frames);*/
-		}
-
 		function setupHexenLayers() {
 			const godNames = Object.keys(hexenLayers);
 			for (const godName of godNames) {
@@ -222,6 +248,47 @@
 				const staticLayer = createStaticLayer(...Object.values(layer));
 				Galv.pCmd.LAYER_S(...Object.values(staticLayer));
 			}
+		}
+
+		function endHexen() {
+			onHexenEnd();
+			clearHexenLayers();
+			clearHexenCursor();
+			clearHexenPictures();
+			returnToOriginMap();
+		}
+
+		function onHexenEnd() {
+			$gameSystem.enableMenu();
+			$gameSwitches.setValue(2420, false); // Hexen GFX
+			
+		}
+
+		function clearHexenCursor() {
+			$gamePlayer.showFollowers();
+			$gamePlayer.refresh();
+		}
+
+		function clearHexenLayers() {
+			const mapId = hexenMapData.mapId;
+			const layerIds = [1, 3, 4, 5, 6, 7, 8, 16];
+			for (const layerId of layerIds) {
+				$gameMap.layerSettings[mapId][layerId] = {};
+			}
+			refreshLayers();
+		}
+
+		// pictureId 1: hexen banner
+		// pictureIds 14-17: soulstone hud
+		function clearHexenPictures() {
+			const pictureIds = [1, 2, 14, 15, 16, 17];
+			for (const pictureId of pictureIds) {
+				$gameScreen.erasePicture(pictureId);
+			}
+		}
+
+		function returnToOriginMap() {
+			$gamePlayer.reserveTransfer(...Object.values(originMapData));
 		}
 
 		function getLayerOpacity(variableId, value) {
@@ -248,10 +315,6 @@
 				rotate: 0
 			}
 			return {...layerData};
-		}
-
-		function updateHexen() {
-
 		}
 
 (function() { 
@@ -329,7 +392,6 @@
 		Game_Map.prototype.setupEvents = function() {
 		    Game_Map_setupEvents.call(this);
 		    if (isHexenMenuValid()) {
-		    	//SceneManager._scene.startFadeOut(30, false);
 		    	this.eraseEvent(hexenEventId);
 		    }
 		};
