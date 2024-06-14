@@ -10,96 +10,11 @@
 		// Mod Configurations -- 
 	//==========================================================
 
-		// TODO: Create a replacement event for EV001 on hexen map
-
 		let hexenMenuMode = false;
+
 		const hexenCursorImage = "$cursor1";
 		const hexenCommandName = "Hexen";
 		const hexenCommandIcon = 71;
-
-		//const hexenInterpreter = new Game_Interpreter();
-		//hexenInterpreter.wait(10);
-
-		/*
-			{
-				mapId: 31,
-				layerId: 0,
-				graphic: "circle_1",
-				x: 70,
-				y: 406,
-				opacity: 0, // 0 or 255 depending on variable value
-				z: 0,
-				blend: 0,
-				xAnchor: 0.5,
-				yAnchor: 0.5,
-				character: 0,
-				rotate: 0
-			},
-		*/
-
-		/**/
-
-		/*
-		const hexenStaticLayers = {
-			
-			fearAndHunger: {
-				layers: [
-					{ layerId: 18, graphic: "circle_1", x: 70, y: 406, opacity: getLayerOpacity(261, 1) },
-					{ layerId: 19, graphic: "circle_2", x: 72, y: 406, opacity: getLayerOpacity(261, 2) },
-					{ layerId: 20, graphic: "circle_3", x: 72, y: 406, opacity: getLayerOpacity(261, 3) },
-				]
-			}
-		}
-		*/
-
-		const hexenStaticLayers = {
-			fearAndHunger: {
-				variableId: 261,
-				layers: [
-					{ layerId: 18, graphic: "circle_1", x: 70, y: 406 },
-					{ layerId: 19, graphic: "circle_2", x: 72, y: 406 },
-					{ layerId: 20, graphic: "circle_3", x: 72, y: 406 },
-				]
-			},
-			alllMer: {
-				variableId: 262,
-				layers: [
-					{ layerId: 21, graphic: "circle_1", x: 168, y: 218 },
-					{ layerId: 22, graphic: "circle_2", x: 168, y: 220 },
-				]
-			},
-			rher: {
-				variableId: 263,
-				layers: [
-					{ layerId: 23, graphic: "circle_1", x: 407, y: 118 },
-					{ layerId: 24, graphic: "circle_2", x: 407, y: 121 },
-					{ layerId: 25, graphic: "circle_3", x: 407, y: 121 },
-				]
-			},
-			sylvian: {
-				variableId: 264,
-				layers: [
-					{ layerId: 9,  graphic: "circle_1", x: 600, y: 167 },
-					{ layerId: 10, graphic: "circle_2", x: 600, y: 168 },
-				]
-			},
-			vinushka: {
-				variableId: 265,
-				layers: [
-					{ layerId: 11  graphic: "circle_1", x: 746, y: 313 },
-					{ layerId: 12, graphic: "circle_2", x: 744, y: 313 },
-					{ layerId: 13, graphic: "circle_3", x: 739, y: 311 },
-				]
-			},
-			grogoroth: {
-				variableId: 266,
-				layers: [
-					{ layerId: 14  graphic: "circle_1", x: 746, y: 502 },
-					{ layerId: 15, graphic: "circle_2", x: 744, y: 505 },
-					{ layerId: 17, graphic: "circle_3", x: 739, y: 501 },
-				]
-			}
-		}
 
 		const hexenMapTransfer = {
 			mapId: 31,
@@ -117,6 +32,59 @@
 			fadeType: 0
 		}
 
+		const hexenLayers = {
+			fearAndHunger: {
+				variableId: 261,
+				layers: [
+					{ layerId: 18, graphic: "circle_1", x: 70, y: 406, opacity: 0 },
+					{ layerId: 19, graphic: "circle_2", x: 72, y: 406, opacity: 0 },
+					{ layerId: 20, graphic: "circle_3", x: 72, y: 406, opacity: 0 },
+				]
+			},
+			alllMer: {
+				variableId: 262,
+				layers: [
+					{ layerId: 21, graphic: "circle_1", x: 168, y: 218, opacity: 0 },
+					{ layerId: 22, graphic: "circle_2", x: 168, y: 220, opacity: 0 },
+				]
+			},
+			rher: {
+				variableId: 263,
+				layers: [
+					{ layerId: 23, graphic: "circle_1", x: 407, y: 118, opacity: 0 },
+					{ layerId: 24, graphic: "circle_2", x: 407, y: 121, opacity: 0 },
+					{ layerId: 25, graphic: "circle_3", x: 407, y: 121, opacity: 0 },
+				]
+			},
+			sylvian: {
+				variableId: 264,
+				layers: [
+					{ layerId: 9,  graphic: "circle_1", x: 600, y: 167, opacity: 0 },
+					{ layerId: 10, graphic: "circle_2", x: 600, y: 168, opacity: 0 },
+				]
+			},
+			vinushka: {
+				variableId: 265,
+				layers: [
+					{ layerId: 11  graphic: "circle_1", x: 746, y: 313, opacity: 0 },
+					{ layerId: 12, graphic: "circle_2", x: 744, y: 313, opacity: 0 },
+					{ layerId: 13, graphic: "circle_3", x: 739, y: 311, opacity: 0 },
+				]
+			},
+			grogoroth: {
+				variableId: 266,
+				layers: [
+					{ layerId: 14  graphic: "circle_1", x: 746, y: 502, opacity: 0 },
+					{ layerId: 15, graphic: "circle_2", x: 744, y: 505, opacity: 0 },
+					{ layerId: 17, graphic: "circle_3", x: 739, y: 501, opacity: 0 },
+				]
+			}
+		}
+
+	//==========================================================
+		// Mod Configurations -- 
+	//==========================================================
+
 		function saveOriginMap() {
 			originMapTransfer.mapId = $gameMap.mapId();
 			originMapTransfer.x = $gamePlayer.x;
@@ -129,22 +97,24 @@
 		}
 
 		function onHexenStart() {
-			const leader = $gameParty.leader();
-			leader.setCharacterImage(hexenCursorImage, 0);
-			$gamePlayer.setTransparent(false);
-			$gamePlayer.setMoveSpeed(5);
-			$gamePlayer.hideFollowers();
-			$gamePlayer.refresh();
-			$gameScreen.startTint([0,0,0,0], 10);
-			$gameMap._interpreter.wait(10);
+			setupHexenMisc();
+			setupHexenPictures();
+			setupHexenCursor();
+			setupHexenLayers();
+			setupHexenFadeIn();
 		}
 
-		/*function loadHexenPictures() {
+		function setupHexenMisc() {
+			$gameSystem.disableMenu();
 			$gameSwitches.setValue(2420, true); // Hexen GFX
-			$gameTemp.reserveCommonEvent(290);  // Soulstone HUD
-		}*/
+		}
 
-		/*function loadHexenBanner() {
+		function setupHexenPictures() {
+			$gameTemp.reserveCommonEvent(290); // Soulstone HUD
+			createHexenBanner();
+		}
+
+		function createHexenBanner() {
 			const pictureArgs = {
 				pictureId: 1,
 				name: "the_hexen_banner",
@@ -152,32 +122,61 @@
 				scaleX: 100,
 				scaleY: 100,
 				opacity: 255,
-				blendMode: [0,0,0,0],
+				blendMode: 0,
 			} 
 			$gameScreen.showPicture(...Object.values(pictureArgs));
-		}*/
+		}
 
-		/*function loadFearAndHungerLayers() {
-			const layerData = [
-				createStaticLayer(18, "circle_1", 70, 406),
-				createStaticLayer(19, "circle_2", 72, 406),
-				createStaticLayer(20, "circle_3", 72, 406),
-			];
-			Galv.pCmd.LAYER_S(...Object.values(layerArgs));
-		}*/
+		function setupHexenCursor() {
+			const leader = $gameParty.leader();
+			leader.setCharacterImage(hexenCursorImage, 0);
+			$gamePlayer.setTransparent(false);
+			$gamePlayer.setMoveSpeed(5);
+			$gamePlayer.hideFollowers();
+			$gamePlayer.refresh();
+		}
+
+		function setupHexenFadeIn() {
+			const frames = 10;
+			const blendMode = [0,0,0,0];
+			$gameScreen.startTint(blendMode, frames);
+			$gameMap._interpreter.wait(frames);
+		}
+
+		function setupHexenLayers() {
+			const godNames = Object.values(hexenLayers);
+			for (const godName of godNames) {
+				createHexenLayers(godName);
+			}
+			refreshLayers();
+		}
+
+		function createHexenLayers(godName) {
+			const data = hexenLayers[godName];
+			for (const layer of data.layers) {
+				const value = data.layers.indexOf(layer) + 1;
+				layer.opacity = getLayerOpacity(data.variableId, value);
+				const staticLayer = createStaticLayer(...Object.values(layer));
+				Galv.pCmd.LAYER_S(...Object.values(staticLayer));
+			}
+		}
 
 		function getLayerOpacity(variableId, value) {
 			return $gameVariables.value(variableId) >= value ? 255 : 0;
 		}
 
+		function refreshLayers() {
+			SceneManager._scene._spriteset.createLayerGraphics();
+		}
+
 		function createStaticLayer(layerId, graphic, x, y, opacity) {
 			const layerData = {
 				mapId: 31,
-				layerId: 0,
-				graphic: "",
-				x: 0,
-				y: 0,
-				opacity: 0,
+				layerId: layerId,
+				graphic: graphic,
+				x: x,
+				y: y,
+				opacity: opacity,
 				z: 0,
 				blend: 0,
 				xAnchor: 0.5,
@@ -188,7 +187,9 @@
 			return {...layerData};
 		}
 
-		// P.S -- add a function that waits for the map interpreter to stop running
+		function updateHexen() {
+
+		}
 
 	//==========================================================
 		// Game Configurations -- Window_MenuCommand
