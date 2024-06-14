@@ -1,7 +1,7 @@
 (function() {
 
 	//==========================================================
-		// VERSION 1.0.3 -- by Toby Yasha
+		// VERSION 1.0.4 -- by Toby Yasha
 	//==========================================================
 	
 	// [Note] can ghouls, skeletons, blood golems, learn skills aswell?
@@ -328,7 +328,7 @@
 	//==========================================================
 
 	function isGameTermina() {
-		return $dataSystem.gameTitle.includes("TERMINA");
+		return $dataSystem.gameTitle.match(/TERMINA/gi);
 	}
 	
 	function getGameSwitches() {
