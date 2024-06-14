@@ -1,4 +1,4 @@
-(function() { 
+//(function() { 
 
 	//==========================================================
 		// VERSION 1.0.0 -- by Toby Yasha
@@ -6,17 +6,24 @@
 
 		// This mod lets you open the hexen from the menu
 
+		// NOTE: This mod uses GALV_LayerGraphics.js and data
+		// from EV001 from map 31 in order to work.
+
 	//==========================================================
 		// Mod Configurations -- 
 	//==========================================================
-
+		
+		let hexenMenuReady = false;
 		let hexenMenuMode = false;
+		let hexenTimerValue = 90;
+		let hexenMenuTimer = hexenTimerValue;
 
 		const hexenCursorImage = "$cursor1";
 		const hexenCommandName = "Hexen";
 		const hexenCommandIcon = 71;
+		const hexenEventId = 1;
 
-		const hexenMapTransfer = {
+		const hexenMapData = {
 			mapId: 31,
 			x: 8,
 			y: 8,
@@ -24,7 +31,7 @@
 			fadeType: 0
 		}
 
-		const originMapTransfer = {
+		const originMapData = {
 			mapId: 0,
 			x: 0,
 			y: 0,
@@ -66,7 +73,7 @@
 			vinushka: {
 				variableId: 265,
 				layers: [
-					{ layerId: 11  graphic: "circle_1", x: 746, y: 313, opacity: 0 },
+					{ layerId: 11, graphic: "circle_1", x: 746, y: 313, opacity: 0 },
 					{ layerId: 12, graphic: "circle_2", x: 744, y: 313, opacity: 0 },
 					{ layerId: 13, graphic: "circle_3", x: 739, y: 311, opacity: 0 },
 				]
@@ -74,7 +81,7 @@
 			grogoroth: {
 				variableId: 266,
 				layers: [
-					{ layerId: 14  graphic: "circle_1", x: 746, y: 502, opacity: 0 },
+					{ layerId: 14, graphic: "circle_1", x: 746, y: 502, opacity: 0 },
 					{ layerId: 15, graphic: "circle_2", x: 744, y: 505, opacity: 0 },
 					{ layerId: 17, graphic: "circle_3", x: 739, y: 501, opacity: 0 },
 				]
@@ -85,16 +92,58 @@
 		// Mod Configurations -- 
 	//==========================================================
 
+		// Remember the map and player position before entering hexen
 		function saveOriginMap() {
-			originMapTransfer.mapId = $gameMap.mapId();
-			originMapTransfer.x = $gamePlayer.x;
-			originMapTransfer.y = $gamePlayer.y;
-			originMapTransfer.direction = $gamePlayer.direction();
+			originMapData.mapId = $gameMap.mapId();
+			originMapData.x = $gamePlayer.x;
+			originMapData.y = $gamePlayer.y;
+			originMapData.direction = $gamePlayer.direction();
 		}
 
-		function setHexenMode(value) {
+		// Flag to differentiate between the normal hexen in-game
+		function setHexenMenuMode(value) {
 			hexenMenuMode = value;
 		}
+
+		function setHexenMenuReady(value) {
+			hexenMenuReady = value;
+		}
+
+		function resetHexenTimer() {
+			hexenMenuTimer = hexenTimerValue;
+		}
+
+		function updateHexenTimer() {
+			if (hexenMenuTimer > 0) {
+				hexenMenuTimer--;
+			}
+		}
+
+		function isHexenTimerDone() {
+			return hexenMenuTimer === 0;
+		}
+
+		function isHexenMenuMode() {
+			return !!hexenMenuMode;
+		}
+
+		function isHexenMenuReady() {
+			return !!hexenMenuReady;
+		}
+
+		function isHexenMap() {
+			return $gameMap.mapId() === hexenMapData.mapId;
+		}
+
+		// Used to check if hexen can be started
+		function isHexenMenuValid() {
+			return isHexenMap() && isHexenMenuMode();
+		}
+
+		/*// Used to check if hexen can be updated
+		function isHexenMenuRunning() {
+			return ();
+		}*/
 
 		function onHexenStart() {
 			setupHexenMisc();
@@ -119,6 +168,8 @@
 				pictureId: 1,
 				name: "the_hexen_banner",
 				origin: 0,
+				x: 0,
+				y: 0,
 				scaleX: 100,
 				scaleY: 100,
 				opacity: 255,
@@ -144,7 +195,7 @@
 		}
 
 		function setupHexenLayers() {
-			const godNames = Object.values(hexenLayers);
+			const godNames = Object.keys(hexenLayers);
 			for (const godName of godNames) {
 				createHexenLayers(godName);
 			}
@@ -191,6 +242,23 @@
 
 		}
 
+(function() { 
+
+	//==========================================================
+		// Game Configurations -- Compatibility
+	//==========================================================
+
+		// If the input is a number just return it 
+		// instead of converting it from a string
+		const Galv_LG_num = Galv.LG.num;
+		Galv.LG.num = function(txt) {
+			if (typeof txt === "string") {
+				return Galv_LG_num.call(this, txt);
+			} else {
+				return txt;
+			}
+		};
+
 	//==========================================================
 		// Game Configurations -- Window_MenuCommand
 	//==========================================================
@@ -235,8 +303,35 @@
 		Scene_Menu.prototype.commandHexen = function() {
 			SceneManager.pop();
 			saveOriginMap();
-			setHexenMode(true);
-			$gamePlayer.reserveTransfer(...Object.values(hexenMapTransfer));
+			setHexenMenuMode(true);
+			$gamePlayer.reserveTransfer(...Object.values(hexenMapData));
+		};
+
+	//==========================================================
+		// Game Configurations -- Game_Map
+	//==========================================================
+
+		// Prevent conflict with on map event that does similar things
+		const Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+		Game_Map.prototype.setupEvents = function() {
+		    Game_Map_setupEvents.call(this);
+		    if (isHexenMenuValid()) {
+		    	this.eraseEvent(hexenEventId);
+		    	//onHexenStart();
+		    }
+		};
+
+		// Update the hexen in order to check when the player leaves
+		const Game_Map_update = Game_Map.prototype.update;
+		Game_Map.prototype.update = function(sceneActive) {
+		    Game_Map_update.call(this, sceneActive);
+		    if (isHexenMenuValid()) { // or you can just check when the player presses cancel
+		    	updateHexenTimer();
+		    	if (isHexenTimerDone() && !isHexenMenuReady()) {
+		    		onHexenStart();
+		    		setHexenMenuReady(true);
+		    	}
+			}
 		};
 
 })();
