@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.4.0 -- by Toby Yasha
+		// VERSION 1.4.1 -- by Toby Yasha
 	//==========================================================
 	
 	// This is meant to be edited by users
@@ -137,7 +137,7 @@
 	//==========================================================
 	
 	function isGameTermina() {
-		return $dataSystem.gameTitle.includes("TERMINA");
+		return $dataSystem.gameTitle.match(/TERMINA/gi);
 	}
 	
 	function isStateImmune(stateId) {
