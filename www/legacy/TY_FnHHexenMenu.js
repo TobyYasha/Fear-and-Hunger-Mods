@@ -161,7 +161,6 @@
 		function onHexenStart() {
 			$gameSystem.disableMenu();
 			$gameSwitches.setValue(2420, true); // Hexen GFX
-			
 		}
 
 		function clearFogOverlay() {
