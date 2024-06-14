@@ -15,12 +15,12 @@
 		
 		let hexenMenuReady = false;
 		let hexenMenuMode = false;
-		let hexenTimerValue = 90;
-		let hexenMenuTimer = hexenTimerValue;
+		let hexenMenuTimer = 0;
 
 		const hexenCursorImage = "$cursor1";
 		const hexenCommandName = "Hexen";
 		const hexenCommandIcon = 71;
+		const hexenTimerValue = 30;
 		const hexenEventId = 1;
 
 		const hexenMapData = {
@@ -105,10 +105,20 @@
 			hexenMenuMode = value;
 		}
 
+		function isHexenMenuMode() {
+			return !!hexenMenuMode;
+		}
+
+		// Flag to check if the hexen is ready to run
 		function setHexenMenuReady(value) {
 			hexenMenuReady = value;
 		}
 
+		function isHexenMenuReady() {
+			return !!hexenMenuReady;
+		}
+
+		// Flag to control the start/end process of the hexen
 		function resetHexenTimer() {
 			hexenMenuTimer = hexenTimerValue;
 		}
@@ -123,14 +133,6 @@
 			return hexenMenuTimer === 0;
 		}
 
-		function isHexenMenuMode() {
-			return !!hexenMenuMode;
-		}
-
-		function isHexenMenuReady() {
-			return !!hexenMenuReady;
-		}
-
 		function isHexenMap() {
 			return $gameMap.mapId() === hexenMapData.mapId;
 		}
@@ -140,10 +142,19 @@
 			return isHexenMap() && isHexenMenuMode();
 		}
 
-		/*// Used to check if hexen can be updated
-		function isHexenMenuRunning() {
-			return ();
-		}*/
+		function updateHexenMenu() {
+			updateHexenStart();
+		}
+		
+		function updateHexenStart() {
+			if (!isHexenMenuReady()) {
+				updateHexenTimer();
+				if (isHexenTimerDone()) {
+			    	onHexenStart();
+			    	setHexenMenuReady(true);
+			    }
+			}
+		}
 
 		function onHexenStart() {
 			setupHexenMisc();
@@ -188,10 +199,11 @@
 		}
 
 		function setupHexenFadeIn() {
-			const frames = 10;
+			//SceneManager._scene.startFadeIn(30, false);
+			/*const frames = 10;
 			const blendMode = [0,0,0,0];
 			$gameScreen.startTint(blendMode, frames);
-			$gameMap._interpreter.wait(frames);
+			$gameMap._interpreter.wait(frames);*/
 		}
 
 		function setupHexenLayers() {
@@ -303,6 +315,7 @@
 		Scene_Menu.prototype.commandHexen = function() {
 			SceneManager.pop();
 			saveOriginMap();
+			resetHexenTimer();
 			setHexenMenuMode(true);
 			$gamePlayer.reserveTransfer(...Object.values(hexenMapData));
 		};
@@ -316,21 +329,17 @@
 		Game_Map.prototype.setupEvents = function() {
 		    Game_Map_setupEvents.call(this);
 		    if (isHexenMenuValid()) {
+		    	//SceneManager._scene.startFadeOut(30, false);
 		    	this.eraseEvent(hexenEventId);
-		    	//onHexenStart();
 		    }
 		};
 
-		// Update the hexen in order to check when the player leaves
+		// Update the hexen's start and end processes
 		const Game_Map_update = Game_Map.prototype.update;
 		Game_Map.prototype.update = function(sceneActive) {
 		    Game_Map_update.call(this, sceneActive);
-		    if (isHexenMenuValid()) { // or you can just check when the player presses cancel
-		    	updateHexenTimer();
-		    	if (isHexenTimerDone() && !isHexenMenuReady()) {
-		    		onHexenStart();
-		    		setHexenMenuReady(true);
-		    	}
+		    if (isHexenMenuValid()) {
+		    	updateHexenMenu();
 			}
 		};
 
