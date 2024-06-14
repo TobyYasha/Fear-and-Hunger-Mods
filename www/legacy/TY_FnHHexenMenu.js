@@ -1,4 +1,4 @@
-//(function() { 
+(function() { 
 
 	//==========================================================
 		// VERSION 1.0.0 -- by Toby Yasha
@@ -15,12 +15,11 @@
 		
 		let hexenMenuReady = false;
 		let hexenMenuMode = false;
-		let hexenExitMode = false;
 		let hexenMenuTimer = 0;
 
 		const hexenCursorImage = "$cursor1";
 		const hexenCommandName = "Hexen";
-		const hexenCommandIcon = 71;
+		const hexenCommandIcon = 5;
 		const hexenTimerValue = 30;
 		const hexenEventId = 1;
 
@@ -124,30 +123,8 @@
 			hexenMenuTimer = hexenTimerValue;
 		}
 
-		function updateHexenTimer() {
-			if (hexenMenuTimer > 0) {
-				hexenMenuTimer--;
-			}
-		}
-
-		function isHexenTimerDone() {
-			return hexenMenuTimer === 0;
-		}
-
 		function isHexenMap() {
 			return $gameMap.mapId() === hexenMapData.mapId;
-		}
-
-		function isHexenExitCalled() {
-			return Input.isTriggered('escape') || Input.isPressed('escape');
-		}
-
-		function setHexenExitMode(value) {
-			hexenExitMode = value;
-		}
-
-		function isHexenExitMode() {
-			return !!hexenExitMode;
 		}
 
 		// Used to check if hexen can be started
@@ -157,7 +134,6 @@
 
 		function updateHexenMenu() {
 			updateHexenStart();
-			updateHexenExit();
 			updateHexenEnd();
 		}
 		
@@ -166,33 +142,17 @@
 		// because we are still inside the scene_menu
 		function updateHexenStart() {
 			if (!isHexenMenuReady()) {
-				updateHexenTimer();
-				if (isHexenTimerDone()) {
+				hexenMenuTimer--;
+				if (hexenMenuTimer === 0) {
 			    	startHexen();
 			    	setHexenMenuReady(true);
 			    }
 			}
 		}
 
-		function updateHexenExit() {
-			if (isHexenExitCalled() && !isHexenExitMode()) {
-				resetHexenTimer();
-				setHexenExitMode(true);
-			}
-		}
-
-		function updateHexenEnd() {
-			if (isHexenExitMode() && isHexenMenuMode()) {
-				//if (isHexenTimerDone()) {
-					endHexen();
-					setHexenExitMode(false);
-					setHexenMenuMode(false);
-				//}
-			}
-		}
-
 		function startHexen() {
 			onHexenStart();
+			clearFogOverlay();
 			setupHexenPictures();
 			setupHexenCursor();
 			setupHexenLayers();
@@ -201,6 +161,11 @@
 		function onHexenStart() {
 			$gameSystem.disableMenu();
 			$gameSwitches.setValue(2420, true); // Hexen GFX
+			
+		}
+
+		function clearFogOverlay() {
+			SceneManager._scene._spriteset.removeVisibilityRange();
 		}
 
 		function setupHexenPictures() {
@@ -250,10 +215,23 @@
 			}
 		}
 
+		function isHexenExitCalled() {
+			return Input.isTriggered('escape') || Input.isPressed('escape');
+		}
+
+		// Check if the player is trying to exit the hexen
+		function updateHexenEnd() {
+			if (isHexenExitCalled() && isHexenMenuMode()) {
+				endHexen();
+				setHexenMenuMode(false);
+				setHexenMenuReady(false);
+			}
+		}
+
 		function endHexen() {
 			onHexenEnd();
-			clearHexenLayers();
 			clearHexenCursor();
+			clearHexenLayers();
 			clearHexenPictures();
 			returnToOriginMap();
 		}
@@ -261,7 +239,6 @@
 		function onHexenEnd() {
 			$gameSystem.enableMenu();
 			$gameSwitches.setValue(2420, false); // Hexen GFX
-			
 		}
 
 		function clearHexenCursor() {
@@ -316,8 +293,6 @@
 			}
 			return {...layerData};
 		}
-
-(function() { 
 
 	//==========================================================
 		// Game Configurations -- Compatibility
