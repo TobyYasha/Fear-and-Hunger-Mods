@@ -15,6 +15,10 @@
 		let itemsGained = false;
 		const itemQuantity = 99;
 
+		/*
+			oneTimeGain - 
+		*/
+
 	//==========================================================
 		// Mod Configurations -- 
 	//==========================================================
@@ -39,16 +43,6 @@
 		}
 
 	//==========================================================
-		// Game Configurations -- Scene_Load
-	//==========================================================
-
-		const Scene_Load_onLoadSuccess = Scene_Load.prototype.onLoadSuccess;
-		Scene_Load.prototype.onLoadSuccess = function() {
-			Scene_Load_onLoadSuccess.call(this);
-			
-		}
-
-	//==========================================================
 		// Game Configurations -- DataManager
 	//==========================================================
 
@@ -65,6 +59,19 @@
 		};
 
 	//==========================================================
+		// Game Configurations -- Scene_Load
+	//==========================================================
+
+		const Scene_Load_onLoadSuccess = Scene_Load.prototype.onLoadSuccess;
+		Scene_Load.prototype.onLoadSuccess = function() {
+			Scene_Load_onLoadSuccess.call(this);
+			if (canGainItems()) {
+				gainAllItems();
+				itemsGained = true;
+			}
+		}
+
+	//==========================================================
 		// Game Configurations -- Scene_Map
 	//==========================================================
 
@@ -79,12 +86,3 @@
 		};
 
 })();
-
-/*
-	for (let i = 0; i < itemList.length; i++) {
-		const item = itemList[i];
-		if (item && item.name) {
-			$gameParty.gainItem(item, 99);
-		}
-	}
-*/
