@@ -1,3 +1,7 @@
+// NOTE: Currently postponed because i don't know how to make giving items only once work
+
+// Because if you start a new run and then load a save file you won't gain the items
+
 (function() {
 
 	//==========================================================
