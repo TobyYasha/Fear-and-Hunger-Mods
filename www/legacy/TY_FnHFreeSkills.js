@@ -1,7 +1,7 @@
 (function() {
 
 	//==========================================================
-		// VERSION 1.0.4 -- by Toby Yasha
+		// VERSION 1.0.6 -- by Toby Yasha
 	//==========================================================
 	
 	// [Note] can ghouls, skeletons, blood golems, learn skills aswell?
@@ -43,6 +43,7 @@
 		1208, // locust_swarm
 		1209, // flock_of_crows
 		1211, // fast_stance
+		2845, // phase_step
 	]
 	
 	// A list of skills which can be acquired by the characters
@@ -106,6 +107,23 @@
 		1876, // mischief_of_rats
 		1891, // poison_tip
 	]
+
+	// Added only for visual purposes in the hexen
+	// NOTE: Rher's affliction is bugged in-game so it
+	// won't show because of "ending day 4 hard" variable.
+	const FNH2_MISC_VARIABLES = [
+		{ variableId: 261,  value: 1 }, // fear affliction
+		{ variableId: 262,  value: 1 }, // alll-mer affliction
+		{ variableId: 263,  value: 1 }, // rher affliction
+		{ variableId: 264,  value: 1 }, // sylvian affliction
+		{ variableId: 265,  value: 1 }, // vinushka affliction
+		{ variableId: 266,  value: 1 }, // grogoroth affliction
+		{ variableId: 2521, value: 1 }, // ending machine -- red arc
+		{ variableId: 2522, value: 1 }, // ending day 4 -- lunar meteorite
+		{ variableId: 2523, value: 1 }, // ending sulfur -- longinus
+		{ variableId: 2524, value: 1 }, // ending machine hard -- moth swarm
+		{ variableId: 2525, value: 1 }, // ending day 4 hard -- lunar storm
+	]
 	
 	// $gameItems which are rewarded from acquiring skills,
 	// generally used for unlocking crafting recipes.
@@ -143,6 +161,8 @@
 		731,  // marksmanship
 		732,  // executioner
 		733,  // gunslinger
+		766,  // devour (skill on corpses)
+		1151, // tormented one (chains of torment)
 		1185, // lockpicking
 		1186, // en_garde
 		1207, // mastery_over_vermin
@@ -163,10 +183,16 @@
 		1253, // agility param +1
 		1449, // lunar_storm
 		1451, // lunar_meteorite
+		1453, // moth swarm
+		1455, // red arc
 		1541, // medicinal
+		1543, // analyze
+		1545, // wrench toss
 		1547, // shortcircuit
 		1549, // trapcraft
 		1551, // weaponcraft
+		1924, // gun profficency
+		1926, // warding sigil
 		1930, // greater_occulstism
 		1932, // diagnosis
 		1934, // precision_stance
@@ -256,7 +282,7 @@
 		313, // mastery_over_vermin	
 		314, // flesh_puppetry 			
 		315, // mind_read 				
-		323, // gun_proficiency	
+		323, // gun_proficiency
 		324, // gunslinger	
 		325, // executioner	
 		326, // marksmanship
@@ -265,12 +291,14 @@
 		338, // meditation	
 		366, // organ_harvest 			
 		367, // medicinal 				
-		368, // magna_medicinal 			
+		368, // magna_medicinal
+		369, // analyze
 		371, // trapcraft 				
 		372, // weaponcraft 				
-		373, // shortcircuit	
+		373, // shortcircuit
+		390, // wrench toss
 		440, // greater_occulstism	
-		441, // warding_sigil	
+		441, // warding_sigil
 		444, // la_danse_macabre	
 		446, // greater_meditation	
 		447, // spice_forge 				
@@ -319,7 +347,9 @@
 		525, // mischief_of_rats 		
 		637, // perfect_guard
 		642, // lunar_meteorite
+		798, // red arc
 		799, // chains_of_torment
+		802, // moth swarm
 		805, // lunar_storm
 	];
 	
@@ -367,12 +397,22 @@
 	
 	// Ensure all variables related to acquired
 	// skills are set to the leader's actor id.
-	Game_Party.prototype.ensureVariables = function() {
+	Game_Party.prototype.ensureActorVariables = function() {
 		if (isGameTermina()) {
 			const leaderId = this.leader().actorId();
 			const variables = FNH2_VARIABLES;
 			for (const variableId of variables) {
 				$gameVariables.setValue(variableId, leaderId);
+			}
+		}
+	};
+
+	// Ensure all misc variables are set to their respective value
+	Game_Party.prototype.ensureMiscVariables = function() {
+		if (isGameTermina()) {
+			const variables = FNH2_MISC_VARIABLES;
+			for (const {variableId, value} of variables) {
+				$gameVariables.setValue(variableId, value);
 			}
 		}
 	};
@@ -441,6 +481,7 @@
 		Game_Party_SetupStartingMembers.call(this);
 		this.refreshMembers();
 		this.ensureSwitches();
+		this.ensureMiscVariables();
 		this.ensureItems();
 	};
 		
@@ -457,7 +498,7 @@
 	Game_Party.prototype.removeActor = function(actorId) {
 		Game_Party_removeActor.call(this, actorId);
 		this.refreshMembers();
-		this.ensureVariables();
+		this.ensureActorVariables();
 	};
 	
 })();
