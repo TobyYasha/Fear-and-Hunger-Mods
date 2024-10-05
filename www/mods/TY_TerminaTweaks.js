@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.3 - Includes a list of QoL and General changes to the game.
+ * @plugindesc v1.3.1 - Includes a list of QoL and General changes to the game.
  * @author Fear & Hunger Group - Toby Yasha, Fokuto, Nemesis, Atlasle
  *
  * @param optAnimWait
@@ -67,8 +67,9 @@
  *
  * Version 1.3.1 - 10/5/2024
  * - Removed GALV_LayerGraphics fix from this plugin, instead
- * fix is applied directly on the GALV_LayerGraphics.js plugin.
- *
+ *   fix is applied directly on the GALV_LayerGraphics.js plugin.
+ *   NOTE: This is done in order to prevent "Sprite_LayerGraphicS
+ *   is not defined" from happening.
  */
 
 var TY = TY || {};
@@ -109,38 +110,6 @@ if (Imported.PrettySleekGauges) {
 Window_BattleStatus.prototype.drawActorIcons = function() {
 	// 
 };
-
-//===============================================================
-    // Spriteset_Map
-//===============================================================
-
-// GALV_LayerGraphics
-// Fix crash in hexen when trying to remove a layer at index position -1
-if (Imported.Galv_LayerGraphics) {
-    Spriteset_Map.prototype.createLayerGraphics = function() {
-        const mapGraphics = $gameMap.layerConfig();
-        for (const id in mapGraphics) {
-            if (!this.layerGraphics[id] || !this.layerGraphics[id].id) {
-                if (mapGraphics[id]) {
-                    if (mapGraphics[id].static) {
-                        this.layerGraphics[id] = new Sprite_LayerGraphicS(id);
-                    } else {
-                        this.layerGraphics[id] = new Sprite_LayerGraphic(id);
-                        this.layerGraphics[id].move(0, 0, Graphics.width, Graphics.height);
-                    };
-                };
-            };
-            if (Galv.LG.isEmpty(mapGraphics[id]) || mapGraphics[id]["graphic"] == "") {
-                const index = this._tilemap.children.indexOf(this.layerGraphics[id]);
-                if (index >= 0) {
-                    this._tilemap.removeChildAt(index);
-                }
-            } else {
-                this._tilemap.addChild(this.layerGraphics[id]);
-            };
-        };
-    };
-}
 
 //===============================================================
 	// Spriteset_Battle
