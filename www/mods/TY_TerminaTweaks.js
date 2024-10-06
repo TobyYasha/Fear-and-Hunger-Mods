@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.3.1 - Includes a list of QoL and General changes to the game.
+ * @plugindesc v1.4 - Includes a list of QoL and General changes to the game.
  * @author Fear & Hunger Group - Toby Yasha, Fokuto, Nemesis, Atlasle
  *
  * @param optAnimWait
@@ -41,11 +41,14 @@
  * - Fixed crash on hexen scene by preventing the plugin from 
  *   removing non-existing layers.
  *
+ * HIME_EnemyReinforcements Changes:
+ * - Fixed enemy sprites being on top of actor sprites in battle.
+ *
  * Place below these plugins or as low as possible:
  * - PrettySleekGauges
  * - YEP_BattleEngineCore
  * - YEP_X_AnimatedSVEnemies
- * - GALV_LayerGraphics
+ * - HIME_EnemyReinforcements
  *
  * ------------------------ UPDATES ------------------------------
  *
@@ -70,6 +73,11 @@
  *   fix is applied directly on the GALV_LayerGraphics.js plugin.
  *   NOTE: This is done in order to prevent "Sprite_LayerGraphicS
  *   is not defined" from happening.
+ *
+ * Version 1.4 - 10/6/2024
+ * - Added a fix for wrong sprite layering caused by 
+ *   HIME_EnemyReinforcements in battle.
+ *  
  */
 
 var TY = TY || {};
@@ -129,24 +137,24 @@ if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
         _.Spriteset_Battle_refreshEnemyReinforcements.call(this);
         this.reorderBattlerSprites();
     }
-}
 
-// Get the index of the last enemy, then use it to move
-// the first actor above the enemies in the battlefield container.
-// Then move the rest of the actors based on the index of the first actor.
-Spriteset_Battle.prototype.reorderBattlerSprites = function() {
-    const lastEnemyIndex = this._enemySprites.length - 1;
-    if (lastEnemyIndex >= 0) {
-        const enemy = this._enemySprites[lastEnemyIndex];
-        const enemyIndex = this._battleField.getChildIndex(enemy);
-        for (let i = 0; i < this._actorSprites.length; i++) {
-            const actor = this._actorSprites[i];
-            if (i === 0) {
-                this._battleField.setChildIndex(actor, enemyIndex);
-            } else {
-                const prevActor = this._actorSprites[i - 1];
-                const prevIndex = this._battleField.getChildIndex(prevActor);
-                this._battleField.setChildIndex(actor, prevIndex);
+    // Get the index of the last enemy, then use it to move
+    // the first actor above the enemies in the battlefield container.
+    // Then move the rest of the actors based on the index of the first actor.
+    Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+        const lastEnemyIndex = this._enemySprites.length - 1;
+        if (lastEnemyIndex >= 0) {
+            const enemy = this._enemySprites[lastEnemyIndex];
+            const enemyIndex = this._battleField.getChildIndex(enemy);
+            for (let i = 0; i < this._actorSprites.length; i++) {
+                const actor = this._actorSprites[i];
+                if (i === 0) {
+                    this._battleField.setChildIndex(actor, enemyIndex);
+                } else {
+                    const prevActor = this._actorSprites[i - 1];
+                    const prevIndex = this._battleField.getChildIndex(prevActor);
+                    this._battleField.setChildIndex(actor, prevIndex);
+                }
             }
         }
     }
@@ -224,7 +232,7 @@ Spriteset_Battle.prototype.reorderBattlerSprites = function() {
 if (Imported.YEP_BattleEngineCore && params.optReflectWait === "false") {
     Window_BattleLog.prototype.displayReflection = function(target) {
         if (Yanfly.Param.BECShowRflText) {
-          this.addText(TextManager.magicReflection.format(target.name()));
+            this.addText(TextManager.magicReflection.format(target.name()));
         }
         target.performReflection();
         var animationId = BattleManager._action.item().animationId;
