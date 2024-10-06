@@ -122,6 +122,100 @@ if (params.optAnimWait === "false") {
     };
 }
 
+// Fixes enemy sprites in battle overlaping actor sprites.
+if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
+    _.Spriteset_Battle_refreshEnemyReinforcements = Spriteset_Battle.prototype.refreshEnemyReinforcements;
+    Spriteset_Battle.prototype.refreshEnemyReinforcements = function() {
+        _.Spriteset_Battle_refreshEnemyReinforcements.call(this);
+        this.reorderBattlerSprites();
+    }
+}
+
+// Get the index of the last enemy, then use it to move
+// the first actor above the enemies in the battlefield container.
+// Then move the rest of the actors based on the index of the first actor.
+Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+    const lastEnemyIndex = this._enemySprites.length - 1;
+    if (lastEnemyIndex >= 0) {
+        const enemy = this._enemySprites[lastEnemyIndex];
+        const enemyIndex = this._battleField.getChildIndex(enemy);
+        for (let i = 0; i < this._actorSprites.length; i++) {
+            const actor = this._actorSprites[i];
+            if (i === 0) {
+                this._battleField.setChildIndex(actor, enemyIndex);
+            } else {
+                const prevActor = this._actorSprites[i - 1];
+                const prevIndex = this._battleField.getChildIndex(prevActor);
+                this._battleField.setChildIndex(actor, prevIndex);
+            }
+        }
+    }
+}
+
+/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+    const lastEnemyIndex = this._enemySprites.length - 1;
+    if (lastEnemyIndex >= 0) {
+        const enemy = this._enemySprites[lastEnemyIndex];
+        const lastIndex = this._battleField.getChildIndex(enemy);
+        for (let i = 0; i < this._actorSprites.length; i++) {
+            const actor = this._actorSprites[i];
+            if (i === 0) {
+                this._battleField.setChildIndex(actor, lastIndex);
+            } else {
+                const prevActor = this._actorSprites[i - 1];
+                const prevIndex = this._battleField.getChildIndex(prevActor);
+                this._battleField.setChildIndex(actor, prevIndex);
+            }
+        }
+    }
+}*/
+
+/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+    const lastEnemyIndex = this._enemySprites.length - 1;
+    if (lastEnemyIndex >= 0) {
+        const enemy = this._enemySprites[lastEnemyIndex];
+        const lastIndex = this._battleField.getChildIndex(enemy);
+        for (let i = 0; i < this._actorSprites.length; i++) {
+            const actor = this._actorSprites[i];
+            if (i === 0) {
+                this._battleField.setChildIndex(actor, lastIndex);
+            } else {
+                const firstActor = this._actorSprites[0];
+                const firstIndex = this._battleField.getChildIndex(firstActor);
+                this._battleField.setChildIndex(actor, firstIndex);
+            }
+        }
+    }
+}*/
+
+/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+    const lastEnemyIndex = this._enemySprites.length - 1;
+    if (lastEnemyIndex >= 0) {
+        const enemy = this._enemySprites[lastEnemyIndex];
+        const lastIndex = this._battleField.getChildIndex(enemy);
+        for (let i = 0; i < this._enemySprites.length; i++) {
+            const actor = this._actorSprites[i];
+            this._battleField.setChildIndex(actor, lastIndex + i);
+        }
+    }
+}*/
+
+/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
+    const lastEnemyIndex = this._enemySprites.length - 1;
+    if (lastEnemyIndex >= 0) {
+        const enemy = this._enemySprites[lastEnemyIndex];
+        const lastIndex = this._battleField.getChildIndex(enemy);
+        for (let i = 0; i < this._enemySprites.length; i++) {
+            if (i === 0) {
+                const actor = this._actorSprites[i];
+                this._battleField.setChildIndex(actor, lastIndex);
+            } else {
+
+            }
+        }
+    }
+}*/
+
 //===============================================================
 	// Window_BattleLog
 //===============================================================
@@ -240,5 +334,29 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
         this._actions.push(action);
     }
 };
+
+// NOTE: Fix HIME_EnemyReinforcements.js messing up sprite order
+
+/*SceneManager.onKeyDown = function(event) {
+    if (!event.ctrlKey && !event.altKey) {
+        switch (event.keyCode) {
+        case 116: // F5
+            if (Utils.isNwjs()) {
+                location.reload();
+            }
+            break;
+        case 119: // F8
+            if (Utils.isNwjs()) {
+                require('nw.gui').Window.get().showDevTools();
+            }
+            break;
+    case 123: // F12
+            if (Utils.isNwjs()) {
+                event.preventDefault();
+            }
+            break;
+        }
+    }
+};*/
 
 })(TY.terminaTweaks);
