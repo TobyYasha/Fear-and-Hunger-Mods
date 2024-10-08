@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.4 - Includes a list of QoL and General changes to the game.
+ * @plugindesc v1.5 - Includes a list of QoL and General changes to the game.
  * @author Fear & Hunger Group - Toby Yasha, Fokuto, Nemesis, Atlasle
  *
  * @param optAnimWait
@@ -42,13 +42,20 @@
  *   removing non-existing layers.
  *
  * HIME_EnemyReinforcements Changes:
- * - Fixed enemy sprites being on top of actor sprites in battle.
+ * - Fixed enemy sprites being on top of actor sprites in battle
+ *   when adding reinforcements.
+ *
+ * VE_BasicModule/VE_FogAndOverlay Changes:
+ * - Fixed sprite order in battle being messed up because it was
+ *   updated every frame.
  *
  * Place below these plugins or as low as possible:
  * - PrettySleekGauges
  * - YEP_BattleEngineCore
  * - YEP_X_AnimatedSVEnemies
  * - HIME_EnemyReinforcements
+ * - VE_BasicModule
+ * - VE_FogAndOverlay
  *
  * ------------------------ UPDATES ------------------------------
  *
@@ -78,6 +85,9 @@
  * - Added a fix for wrong sprite layering caused by 
  *   HIME_EnemyReinforcements in battle.
  *  
+ * Version 1.5 - 10/8/2024
+ * - Added a fix to a method from VE_BasicModule/VE_FogAndOverlay
+ *   which was messing with the order of battle sprites.
  */
 
 var TY = TY || {};
@@ -130,18 +140,20 @@ if (params.optAnimWait === "false") {
     };
 }
 
+// Added member to keep track of battle sprites
+// sorts done by VE_BasicModule -- VE_FogAndOverlay
+_.Spriteset_Battle_initialize = Spriteset_Battle.prototype.initialize;
+Spriteset_Battle.prototype.initialize = function() {
+    _.Spriteset_Battle_initialize.call(this);
+    this._battleSpritesSorted = false;
+}
+
 // Fixes enemy sprites in battle overlaping actor sprites.
 if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
-    /*_.Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
-    Spriteset_Battle.prototype.createLowerLayer = function() {
-        _.Spriteset_Battle_createLowerLayer.call(this);
-        this.reorderBattlerSprites();
-    };*/
-
     _.Spriteset_Battle_refreshEnemyReinforcements = Spriteset_Battle.prototype.refreshEnemyReinforcements;
     Spriteset_Battle.prototype.refreshEnemyReinforcements = function() {
         _.Spriteset_Battle_refreshEnemyReinforcements.call(this);
-        //this.reorderBattlerSprites();
+        this.reorderBattlerSprites();
     }
 
     // Get the index of the last enemy, then use it to move
@@ -166,29 +178,16 @@ if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
     }
 }
 
-// Sort battle sprites only once instead of every frame
-// VE_BasicModule -- VE_FogAndOverlay
-_.Spriteset_Battle_sortBattleSprites = Spriteset_Battle.prototype.sortBattleSprites;
-Spriteset_Battle.prototype.sortBattleSprites = function() {
-    if (!this._battleSpritesSorted) {
-        _.Spriteset_Battle_sortBattleSprites.call(this);
-        this._battleSpritesSorted = true;
-    }
-};
-
-// 1. Check these out, they are messing with the sprite order in battle
-
-// Spriteset_Battle.prototype.sortBattleSprites -- VE_BasicModule
-// Spriteset_Battle.prototype.update -- VE_FogAndOverlay
-
-
-// 2. Afterwards look into adding an interpreter inside the menu to
-// call common events, but add the option to still call the map
-// interpreter.
-
-// Items will have a notetag to decide which to call.
-// The intent is to not have the menu close when consuming food.
-// But still be able to access the map if wanting to view the game map for example.
+if (Imported['VE - Basic Module']) { // VE_BasicModule -- VE_FogAndOverlay
+    // Sort battle sprites only once instead of every frame
+    _.Spriteset_Battle_sortBattleSprites = Spriteset_Battle.prototype.sortBattleSprites;
+    Spriteset_Battle.prototype.sortBattleSprites = function() {
+        if (!this._battleSpritesSorted) {
+            _.Spriteset_Battle_sortBattleSprites.call(this);
+            this._battleSpritesSorted = true;
+        }
+    };
+}
 
 //===============================================================
 	// Window_BattleLog
@@ -331,5 +330,9 @@ SceneManager.onKeyDown = function(event) {
         }
     }
 };
+
+//==========================================================
+    // End of File
+//==========================================================
 
 })(TY.terminaTweaks);
