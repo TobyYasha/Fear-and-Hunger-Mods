@@ -132,15 +132,21 @@ if (params.optAnimWait === "false") {
 
 // Fixes enemy sprites in battle overlaping actor sprites.
 if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
+    /*_.Spriteset_Battle_createLowerLayer = Spriteset_Battle.prototype.createLowerLayer;
+    Spriteset_Battle.prototype.createLowerLayer = function() {
+        _.Spriteset_Battle_createLowerLayer.call(this);
+        this.reorderBattlerSprites();
+    };*/
+
     _.Spriteset_Battle_refreshEnemyReinforcements = Spriteset_Battle.prototype.refreshEnemyReinforcements;
     Spriteset_Battle.prototype.refreshEnemyReinforcements = function() {
         _.Spriteset_Battle_refreshEnemyReinforcements.call(this);
-        this.reorderBattlerSprites();
+        //this.reorderBattlerSprites();
     }
 
     // Get the index of the last enemy, then use it to move
     // the first actor above the enemies in the battlefield container.
-    // Then move the rest of the actors based on the index of the first actor.
+    // Then move the rest of the actors based on the index of the previous actor.
     Spriteset_Battle.prototype.reorderBattlerSprites = function() {
         const lastEnemyIndex = this._enemySprites.length - 1;
         if (lastEnemyIndex >= 0) {
@@ -160,69 +166,29 @@ if (Imported.EnemyReinforcements) { // HIME_EnemyReinforcements
     }
 }
 
-/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
-    const lastEnemyIndex = this._enemySprites.length - 1;
-    if (lastEnemyIndex >= 0) {
-        const enemy = this._enemySprites[lastEnemyIndex];
-        const lastIndex = this._battleField.getChildIndex(enemy);
-        for (let i = 0; i < this._actorSprites.length; i++) {
-            const actor = this._actorSprites[i];
-            if (i === 0) {
-                this._battleField.setChildIndex(actor, lastIndex);
-            } else {
-                const prevActor = this._actorSprites[i - 1];
-                const prevIndex = this._battleField.getChildIndex(prevActor);
-                this._battleField.setChildIndex(actor, prevIndex);
-            }
-        }
+// Sort battle sprites only once instead of every frame
+// VE_BasicModule -- VE_FogAndOverlay
+_.Spriteset_Battle_sortBattleSprites = Spriteset_Battle.prototype.sortBattleSprites;
+Spriteset_Battle.prototype.sortBattleSprites = function() {
+    if (!this._battleSpritesSorted) {
+        _.Spriteset_Battle_sortBattleSprites.call(this);
+        this._battleSpritesSorted = true;
     }
-}*/
+};
 
-/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
-    const lastEnemyIndex = this._enemySprites.length - 1;
-    if (lastEnemyIndex >= 0) {
-        const enemy = this._enemySprites[lastEnemyIndex];
-        const lastIndex = this._battleField.getChildIndex(enemy);
-        for (let i = 0; i < this._actorSprites.length; i++) {
-            const actor = this._actorSprites[i];
-            if (i === 0) {
-                this._battleField.setChildIndex(actor, lastIndex);
-            } else {
-                const firstActor = this._actorSprites[0];
-                const firstIndex = this._battleField.getChildIndex(firstActor);
-                this._battleField.setChildIndex(actor, firstIndex);
-            }
-        }
-    }
-}*/
+// 1. Check these out, they are messing with the sprite order in battle
 
-/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
-    const lastEnemyIndex = this._enemySprites.length - 1;
-    if (lastEnemyIndex >= 0) {
-        const enemy = this._enemySprites[lastEnemyIndex];
-        const lastIndex = this._battleField.getChildIndex(enemy);
-        for (let i = 0; i < this._enemySprites.length; i++) {
-            const actor = this._actorSprites[i];
-            this._battleField.setChildIndex(actor, lastIndex + i);
-        }
-    }
-}*/
+// Spriteset_Battle.prototype.sortBattleSprites -- VE_BasicModule
+// Spriteset_Battle.prototype.update -- VE_FogAndOverlay
 
-/*Spriteset_Battle.prototype.reorderBattlerSprites = function() {
-    const lastEnemyIndex = this._enemySprites.length - 1;
-    if (lastEnemyIndex >= 0) {
-        const enemy = this._enemySprites[lastEnemyIndex];
-        const lastIndex = this._battleField.getChildIndex(enemy);
-        for (let i = 0; i < this._enemySprites.length; i++) {
-            if (i === 0) {
-                const actor = this._actorSprites[i];
-                this._battleField.setChildIndex(actor, lastIndex);
-            } else {
 
-            }
-        }
-    }
-}*/
+// 2. Afterwards look into adding an interpreter inside the menu to
+// call common events, but add the option to still call the map
+// interpreter.
+
+// Items will have a notetag to decide which to call.
+// The intent is to not have the menu close when consuming food.
+// But still be able to access the map if wanting to view the game map for example.
 
 //===============================================================
 	// Window_BattleLog
@@ -343,9 +309,8 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
     }
 };
 
-// NOTE: Fix HIME_EnemyReinforcements.js messing up sprite order
-
-/*SceneManager.onKeyDown = function(event) {
+// This code is to allow dev tools in deployed version
+SceneManager.onKeyDown = function(event) {
     if (!event.ctrlKey && !event.altKey) {
         switch (event.keyCode) {
         case 116: // F5
@@ -365,6 +330,6 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
             break;
         }
     }
-};*/
+};
 
 })(TY.terminaTweaks);
