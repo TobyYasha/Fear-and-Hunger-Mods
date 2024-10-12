@@ -1,6 +1,6 @@
 //=============================================================================
 /*:
- * @plugindesc v1.0 A system which handles temporary saves.
+ * @plugindesc v1.1 A system which handles temporary saves.
  * @author Toby Yasha
  *
  * @param General Configurations
@@ -59,9 +59,13 @@
  *
  * @help
  *
+ * ----------------------- COMPATIBILITY --------------------------
+ *
  * VERY IMPORTANT!
  * This plugin requires the Olivia_MetaControls plugin in order to function!
  * Must be placed anywhere below Olivia_MetaControls.
+ * 
+ * ----------------------- HOW TO USE -----------------------------
  * 
  * The variable which will store the Quick Save data
  * must contain <Global Meta> in its name.
@@ -69,7 +73,16 @@
  * 
  * As a bonus you can now close game from the last command inside the game's menu.
  * 
+ * ------------------------ UPDATES ------------------------------
  * 
+ * Version 1.1 - 10/12/2024
+ * - Reduced size of quick saved data by compressing it.
+ * - Fixed quick save window appearing briefly in the bottom
+ *   right corner when opening the menu.
+ * - Restore BGM and BGS upon loading a quick save.
+ * - Fixed quick saving messing with the play time of regular
+ *   save files.
+ *
 */
 
 var TY = TY || {};
@@ -138,23 +151,17 @@ DataManager.hasQuickSaveData = function() {
 
 DataManager.getQuickSaveData = function() {
 	var variableId = TY.Param.SaveVariableId;
-	var saveData = $gameVariables.value(variableId);
-	return saveData;
-};
-	
-/*DataManager.makeQuickSave = function() {
-	var variableId = TY.Param.SaveVariableId;
 	if (variableId > 0) {
-		$gameVariables.setValue(variableId, 0);
-		var saveData = DataManager.makeSaveContents();
-		var compressedData = JsonEx.stringify(saveData);
-		$gameVariables.setValue(variableId, compressedData);
+		return $gameVariables.value(variableId);
+	} else {
+		return null;
 	}
-};*/
+};
 
 DataManager.makeQuickSave = function() {
 	var variableId = TY.Param.SaveVariableId;
 	if (variableId > 0) {
+		$gameSystem.onBeforeQuickSave();
 		$gameVariables.setValue(variableId, 0);
 		var saveData = DataManager.makeSaveContents();
 		var jsonData = JsonEx.stringify(saveData);
@@ -175,6 +182,23 @@ DataManager.onQuickLoad = function() {
 	var variableId = TY.Param.SaveVariableId;
 	$gameVariables.setValue(variableId, 0);
 	TY.Utils.HasSaveLoaded = true;
+};
+
+//==========================================================
+	// Game_System -- 
+//==========================================================
+// These methods have been added so that we don't mess with 
+// the Graphics.frameCount for regular save files
+
+Game_System.prototype.onBeforeQuickSave = function() {
+    this._versionId = $dataSystem.versionId;
+    this._bgmOnSave = AudioManager.saveBgm();
+    this._bgsOnSave = AudioManager.saveBgs();
+};
+
+Game_System.prototype.onAfterQuickLoad = function() {
+    AudioManager.playBgm(this._bgmOnSave);
+    AudioManager.playBgs(this._bgsOnSave);
 };
 
 //==========================================================
@@ -304,6 +328,7 @@ Scene_Title.prototype.loadQuickSave = function() {
     this.fadeOutAll();
     this.reloadMapIfUpdated();
     SceneManager.goto(Scene_Map);
+    $gameSystem.onAfterQuickLoad();
 };
 
 Scene_Title.prototype.reloadMapIfUpdated = function() {
@@ -337,12 +362,14 @@ Scene_Menu.prototype.createSaveWindow = function() {
 	this._saveWindow = new Window_QuickSave(0, 0);
 	this._saveWindow.x = Graphics.boxWidth - this._saveWindow.width;
 	this._saveWindow.y = Graphics.boxHeight - this._saveWindow.height;
+	this._saveWindow.hide();
 	this.addWindow(this._saveWindow);
 };
 
 Scene_Menu.prototype.createQuickSave = function() {
 	if (!this._quickSaving) {
 		this._quickSaving = true;
+		this._saveWindow.show();
 		this._saveWindow.open();
 	}
 	this._commandWindow.activate();
@@ -376,7 +403,6 @@ Scene_GameEnd.prototype.createCommandWindow = function() {
     this._commandWindow.setHandler('toDesktop',  this.commandToDesktop.bind(this));
 };
 
-// TODO: Try fixing bugs from previous reports
-// TODO: Add data compression/decompression algorithm to quick saves
-// TODO: Compare size of variable without compression and with compression method.
-// TODO: Check if compression reduces lag when quick saving
+//==========================================================
+    // End of File
+//==========================================================
