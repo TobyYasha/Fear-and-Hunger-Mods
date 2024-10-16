@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.5 - Includes a list of QoL and General changes to the game.
+ * @plugindesc v1.8.1 - Includes a list of QoL and General changes to the game.
  * @author Fear & Hunger Group - Toby Yasha, Fokuto, Nemesis, Atlasle
  *
  * @param optAnimWait
@@ -27,12 +27,23 @@
  *   animations to complete before applying damage/healing.
  * - Fixed 'scope' of null and hopefully 'action' of null crashes
  *   by porting changes from the RPG Maker MZ 1.7.0 update.
+ * - Fixed Hardened heart and Last Defense reducing damage
+ *   by too much.
+ * - Fixed select highlight not playing correctly on
+ *   enemies when they have a state animation.
+ * - Fixed jittering when moving in the overworld.
+ * - Fixed 0% state rate to not clear status when
+ *   equipping equipment.
+ * - Added failsafe measurements to actions if subject doesn't 
+ *   exist anymore.
+ *   This should hopefully limit or remove crashes caused by actions.
  *
  * YEP_BattleEngineCore Changes:
  * - Added option for enabling/disabling waiting
  *   for reflect animation before applying effect.
  * - Prevents access to the party window(Fight, Run) by any means.
  * - Prevents actor window from changing selected command when pressing cancel.
+ * - Fixed crash when unable to retrieve action speed.
  *
  * YEP_X_AnimatedSVEnemies Changes:
  * - Fixed crash when trying to update enemy position.
@@ -49,9 +60,16 @@
  * - Fixed sprite order in battle being messed up because it was
  *   updated every frame.
  *
+ * malcommandequip_edits Changes:
+ * - Extra turn label will now be hidden when in the equipment menu.
+ * 
+ * Galv_ExAgiTurn Changes:
+ * - Extra turn label will now be hidden when in the equipment menu.
+ *
  * Place below these plugins or as low as possible:
  * - PrettySleekGauges
  * - YEP_BattleEngineCore
+ * - YEP_BuffsStatesCore
  * - YEP_X_AnimatedSVEnemies
  * - HIME_EnemyReinforcements
  * - VE_BasicModule
@@ -88,6 +106,29 @@
  * Version 1.5 - 10/8/2024
  * - Added a fix to a method from VE_BasicModule/VE_FogAndOverlay
  *   which was messing with the order of battle sprites.
+ *
+ * Version 1.6 - 10/9/2024
+ * - Added a fix for crashing due to not being able to retrieve 
+ *   action speed from YEP_BattleEngineCore's Game_Action method.
+ *
+ * Version 1.7 - 10/11/2024
+ * - Added a fix for select highlight not playing correctly on
+ *   enemies when they have a state animation.
+ * - Added a fix Hardened heart and Last Defense reducing damage
+ *   by too much.
+ * - Added a fix for jittering when moving in the overworld.
+ * - Added a fix for 0% state rate to not prevent statuses when
+ *   inflicted with certain hits/add state.
+ *
+ * Version 1.8 - 10/12/2024
+ * - Added failsafe measurements to actions if subject doesn't exist
+ *   anymore.
+ *
+ * Version 1.8.1 - 10/15/2024
+ * - Removed the fix for jittering in the overworld.
+ * - Added checks for the extra turn label so that it gets hidden
+ *   when in the Equip menu.
+ *
  */
 
 var TY = TY || {};
@@ -190,6 +231,29 @@ if (Imported['VE - Basic Module']) { // VE_BasicModule -- VE_FogAndOverlay
 }
 
 //===============================================================
+    // Sprite_Battler
+//===============================================================
+
+// Fix select highlight not playing if the enemy has a state animation which makes their sprite flash
+Sprite_Battler.prototype.updateSelectionEffect = function() {
+    var target = this._effectTarget;
+    if (this._battler.isSelected()) {
+        this._selectionEffectCount++;
+        if (this._selectionEffectCount % 30 < 15) {
+            target._colorTone = [40, 40, 40, 40];
+            target.setBlendColor([255, 255, 255, 1]);
+        } else {
+            target._colorTone = [0, 0, 0, 0];
+            target.setBlendColor([0, 0, 0, 0]);
+        }
+    } else if (this._selectionEffectCount > 0) {
+        this._selectionEffectCount = 0;
+        target._colorTone = [0, 0, 0, 0];
+        target.setBlendColor([0, 0, 0, 0]);
+    }
+};
+
+//===============================================================
 	// Window_BattleLog
 //===============================================================
 
@@ -235,6 +299,58 @@ Scene_Battle.prototype.changeInputWindow = function() {
     } else {
         this.endCommandSelection();
     }
+};
+
+// make the extra turn label hide itself in the equip menu
+Scene_Battle.prototype.commandEquipment = function() {
+	fEXTURNvisible = false;
+	fWINDOWopen = true;
+    MalcommandEquipment.call(this);
+	BattleManager.actor()._origEquips = [];
+	for (i = 0; i < BattleManager.actor()._equips.length; i++ ) {
+	   if (BattleManager.actor()._equips[i]) {
+	       BattleManager.actor()._origEquips[i] = BattleManager.actor()._equips[i]._itemId;
+	   } else {
+	       BattleManager.actor()._origEquips[i] = 0;
+	   }
+	}
+};
+
+// above but unhiding after exiting
+Scene_Battle.prototype.commandEquipmentCancel = function() {
+	fEXTURNvisible = true;
+	fWINDOWopen = false;
+    MalEquipCancel.call(this);
+	if(Mal.Param.coolD != 0) {
+	   if(!this.equipCheck()) {
+	       BattleManager.actor().addState(Number(Mal.Param.coolD) || 0);
+	       BattleManager.queueForceAction(BattleManager.actor(), Number(Mal.Param.coolA), -1);
+	       BattleManager.selectNextCommand();
+	       this.changeInputWindow();
+	       BattleManager._statusWindow.refresh();
+	       console.log(BattleManager.actor());
+	       if(!BattleManager.actor()) {
+	           BattleManager.startTurn();
+	           this._actorCommandWindow.deactivate();
+	       }
+	   }
+	}
+};
+
+//===============================================================
+	// Sprite_ExTurn
+//===============================================================
+
+// make the extra turn label not overlap on the larger skill and item windows
+Sprite_ExTurn.prototype.update = function() {
+	Sprite.prototype.update.call(this);
+	z = SceneManager._scene;
+	if ((z._skillWindow && (z._skillWindow.active)) || (z._itemWindow && (z._itemWindow.active))) {
+		fEXTURNvisible = false;
+	} else if (z._actorCommandWindow && (z._actorCommandWindow.active)) {
+		fEXTURNvisible = true;
+	}
+	this.opacity += (Galv.EXTURN.active && fEXTURNvisible) ? Galv.EXTURN.fade : -Galv.EXTURN.fade;
 };
 
 //===============================================================
@@ -308,8 +424,70 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
     }
 };
 
+// 0% state rate acts similar to state resist now, but does not clear status on equip
+Game_Battler.prototype.addState = function(stateId) {
+    if (!this.isStatePrevented(stateId) && !(this.stateRate(stateId) == 0)) {
+        var affected = this.isStateAffected(stateId);
+        Olivia.OctoBattle.Effects.___Game_Battler_addState___.call(this, stateId);
+        this.setupBreakDamagePopup(stateId, affected)
+        this.setStateMaximumTurns(stateId);
+    }
+};
+
+//===============================================================
+    // Game_Action
+//===============================================================
+
+// Fix crash caused by YEP_BattleEngineCore when Subject is undefined
+_.Game_Action_speed = Game_Action.prototype.speed;
+Game_Action.prototype.speed = function() {
+    if (this.subject()) {
+        return _.Game_Action_speed.call(this);
+    } else {
+        let speed = 0;
+        if (this.item()) {
+            speed += this.item().speed;
+        }
+        if (this.subject() && this.isAttack()) {
+            speed += this.subject().attackSpeed();
+        }
+        return speed;
+    }
+};
+
+// Hardened heart and last defense fix
+Game_Action.prototype.onReactStateEffects = function(target, value) {
+    var states = target.states();
+    states = states.reverse();
+    var length = states.length;
+    var originalValue = value;
+    for (var i = 0; i < length; ++i) {
+        var state = states[i];
+        if (!state) continue;
+        value = this.processStProtectEffects(target, state, value, originalValue);
+    }
+    value = Yanfly.LunStPro.Game_Action_onReact.call(this, target, value);
+    return value;
+};
+
+// Ensure subject exists before checking for confusion
+Game_Action.prototype.prepare = function() {
+    if (this.subject() && this.subject().isConfused() && !this._forcing) {
+        this.setConfusion();
+    }
+};
+
+// Ensure subject exists before checking if action can be used
+Game_Action.prototype.isValid = function() {
+    return (this._forcing && this.item()) || (this.subject() && this.subject().canUse(this.item()));
+};
+
+//===============================================================
+    // SceneManager
+//===============================================================
+
 // This code is to allow dev tools in deployed version
-SceneManager.onKeyDown = function(event) {
+/*SceneManager.onKeyDown = function(event) {
     if (!event.ctrlKey && !event.altKey) {
         switch (event.keyCode) {
         case 116: // F5
@@ -322,14 +500,14 @@ SceneManager.onKeyDown = function(event) {
                 require('nw.gui').Window.get().showDevTools();
             }
             break;
-    case 123: // F12
+        case 123: // F12
             if (Utils.isNwjs()) {
                 event.preventDefault();
             }
             break;
         }
     }
-};
+};*/
 
 //==========================================================
     // End of File
