@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.8.1 - Includes a list of QoL and General changes to the game.
+ * @plugindesc v1.8.2 - Includes a list of QoL and General changes to the game.
  * @author Fear & Hunger Group - Toby Yasha, Fokuto, Nemesis, Atlasle
  *
  * @param optAnimWait
@@ -129,6 +129,12 @@
  * - Added checks for the extra turn label so that it gets hidden
  *   when in the Equip menu.
  *
+ * Version 1.8.2 - 10/16/2024
+ * - Moved the check for the action's item to be before we decide
+ *   on a target for a forced action.
+ *   This change is done in order to prevent crashing when the
+ *   action's item is undefined/null.
+ *
  */
 
 var TY = TY || {};
@@ -234,7 +240,8 @@ if (Imported['VE - Basic Module']) { // VE_BasicModule -- VE_FogAndOverlay
     // Sprite_Battler
 //===============================================================
 
-// Fix select highlight not playing if the enemy has a state animation which makes their sprite flash
+// Fix select highlight not playing if the enemy has a
+// state animation which makes their sprite flash(by Fokuto).
 Sprite_Battler.prototype.updateSelectionEffect = function() {
     var target = this._effectTarget;
     if (this._battler.isSelected()) {
@@ -301,7 +308,7 @@ Scene_Battle.prototype.changeInputWindow = function() {
     }
 };
 
-// make the extra turn label hide itself in the equip menu
+// make the extra turn label hide itself in the equip menu(by Fokuto).
 Scene_Battle.prototype.commandEquipment = function() {
 	fEXTURNvisible = false;
 	fWINDOWopen = true;
@@ -316,7 +323,7 @@ Scene_Battle.prototype.commandEquipment = function() {
 	}
 };
 
-// above but unhiding after exiting
+// above but unhiding after exiting(by Fokuto).
 Scene_Battle.prototype.commandEquipmentCancel = function() {
 	fEXTURNvisible = true;
 	fWINDOWopen = false;
@@ -328,7 +335,7 @@ Scene_Battle.prototype.commandEquipmentCancel = function() {
 	       BattleManager.selectNextCommand();
 	       this.changeInputWindow();
 	       BattleManager._statusWindow.refresh();
-	       console.log(BattleManager.actor());
+	       //console.log(BattleManager.actor());
 	       if(!BattleManager.actor()) {
 	           BattleManager.startTurn();
 	           this._actorCommandWindow.deactivate();
@@ -341,7 +348,7 @@ Scene_Battle.prototype.commandEquipmentCancel = function() {
 	// Sprite_ExTurn
 //===============================================================
 
-// make the extra turn label not overlap on the larger skill and item windows
+// make the extra turn label not overlap on the larger skill and item windows(by Fokuto).
 Sprite_ExTurn.prototype.update = function() {
 	Sprite.prototype.update.call(this);
 	z = SceneManager._scene;
@@ -412,19 +419,20 @@ Game_Battler.prototype.forceAction = function(skillId, targetIndex) {
     this.clearActions();
     const action = new Game_Action(this, true);
     action.setSkill(skillId);
-    if (targetIndex === -2) {
-        action.setTarget(this._lastTargetIndex);
-    } else if (targetIndex === -1) {
-        action.decideRandomTarget();
-    } else {
-        action.setTarget(targetIndex);
-    }
     if (action.item()) {
+        if (targetIndex === -2) {
+            action.setTarget(this._lastTargetIndex);
+        } else if (targetIndex === -1) {
+            action.decideRandomTarget();
+        } else {
+            action.setTarget(targetIndex);
+        }
         this._actions.push(action);
     }
 };
 
-// 0% state rate acts similar to state resist now, but does not clear status on equip
+// 0% state rate acts similar to state resist now,
+// but does not clear status on equip(by Fokuto).
 Game_Battler.prototype.addState = function(stateId) {
     if (!this.isStatePrevented(stateId) && !(this.stateRate(stateId) == 0)) {
         var affected = this.isStateAffected(stateId);
@@ -455,7 +463,7 @@ Game_Action.prototype.speed = function() {
     }
 };
 
-// Hardened heart and last defense fix
+// Hardened heart and last defense fix(by Fokuto).
 Game_Action.prototype.onReactStateEffects = function(target, value) {
     var states = target.states();
     states = states.reverse();
