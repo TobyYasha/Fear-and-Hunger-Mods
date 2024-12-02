@@ -161,7 +161,7 @@ DataManager.getQuickSaveData = function() {
 DataManager.makeQuickSave = function() {
 	var variableId = TY.Param.SaveVariableId;
 	if (variableId > 0) {
-		$gameSystem.onBeforeQuickSave();
+		$gameSystem.onBeforeSave();
 		$gameVariables.setValue(variableId, 0);
 		var saveData = DataManager.makeSaveContents();
 		var jsonData = JsonEx.stringify(saveData);
@@ -182,23 +182,6 @@ DataManager.onQuickLoad = function() {
 	var variableId = TY.Param.SaveVariableId;
 	$gameVariables.setValue(variableId, 0);
 	TY.Utils.HasSaveLoaded = true;
-};
-
-//==========================================================
-	// Game_System -- 
-//==========================================================
-// These methods have been added so that we don't mess with 
-// the Graphics.frameCount for regular save files
-
-Game_System.prototype.onBeforeQuickSave = function() {
-    this._versionId = $dataSystem.versionId;
-    this._bgmOnSave = AudioManager.saveBgm();
-    this._bgsOnSave = AudioManager.saveBgs();
-};
-
-Game_System.prototype.onAfterQuickLoad = function() {
-    AudioManager.playBgm(this._bgmOnSave);
-    AudioManager.playBgs(this._bgsOnSave);
 };
 
 //==========================================================
@@ -328,7 +311,7 @@ Scene_Title.prototype.loadQuickSave = function() {
     this.fadeOutAll();
     this.reloadMapIfUpdated();
     SceneManager.goto(Scene_Map);
-    $gameSystem.onAfterQuickLoad();
+    $gameSystem.onAfterLoad();
 };
 
 Scene_Title.prototype.reloadMapIfUpdated = function() {
@@ -406,3 +389,9 @@ Scene_GameEnd.prototype.createCommandWindow = function() {
 //==========================================================
     // End of File
 //==========================================================
+
+// TODO:
+// - If starting a new game what happens to the quick save timer?
+// - FPS being too high or low affects timer.
+//	 but if new Date() is used then can't people just wait the
+//   computer time to pass(or edit their time) in order to bypass the timer?
