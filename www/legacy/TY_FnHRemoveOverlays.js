@@ -8,6 +8,9 @@
 		
 	const allowFogOverlay = false;        // true | false -- DEFAULT: false
 	const allowVisibilityOverlay = false; // true | false -- DEFAULT: false
+
+	// TODO: Prevent blindness overlay in both games
+	// Make sure to download itch.io version before working on this one
 	
 	//==========================================================
 		// Game Configurations -- Spriteset_Map
