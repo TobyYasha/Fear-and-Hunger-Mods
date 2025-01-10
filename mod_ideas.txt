@@ -1,0 +1,14 @@
+1. Character Wardrobe
+  - Basically a mod that allows you change the appearance of your character/s in-game.
+  - The idea is to have folders categorized by the name of the character and inside there
+    would be images for stuff like walking and different event situations.
+  - If no image is found for a specific event then the regular image of the character
+    will be used instead.
+  - This could further be extended to support modded characters.
+
+  Challenges:
+  - The challenges of this mod include the fact that a lot of the game may need to
+    be modified in order to account for the changed appearance.
+  - Basically have a list of the events that need to be affected and then change
+    the appearance if the event is within the list of events we want to modify.
+  - It can be a lot of work since there's lots of events to look into.
