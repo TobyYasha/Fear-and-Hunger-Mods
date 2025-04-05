@@ -30,3 +30,11 @@ So if I set items to be given to 1 over 99 I still hit 99 in amount fairly quick
 For example if I got 1 every other map change or perhaps on battle start instead.
 Also perhaps a mod for slower  hunger and mind decay rate would be sweet. 
 Cut preferably by half.
+
+Alucard -- discord
+9/6/2024
+(Free Skills Mod)
+The mod didn't work unless you entered a fight on an old save
+It works perfectly fine in a new game
+
+NOTE: This might be a problem in other mods as well
