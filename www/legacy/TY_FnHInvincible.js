@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.4.1 -- by Toby Yasha
+		// VERSION 1.4.2 -- by Toby Yasha
 	//==========================================================
 	
 	// This is meant to be edited by users
@@ -34,6 +34,7 @@
 		1264, // PENDULUM BLADES
 		1265, // PENDULUM BLADES
 		1266, // PENDULUM BLADES
+		1810, // GOLDEN TEMPLE FLAME TRAP
 		3038, // BOULDER CRASH
 		3142, // CAVE IN
 		3554, // CAVED IN
@@ -128,6 +129,9 @@
 		90,  // TOXIC
 		93,  // BLINDNESS2
 		95,  // PARALYZED
+		96,  // RUIN1
+		97,  // RUIN2
+		98,  // RUINED1
 		99,  // BRAIN FLOWER
 		105, // TENTACLES(STUN)
 	];
