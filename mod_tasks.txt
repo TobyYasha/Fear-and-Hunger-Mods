@@ -33,7 +33,7 @@ Cut preferably by half.
 
 Alucard -- discord
 9/6/2024
-(Free Skills Mod)
+(Free Skills Mod - BUG)
 The mod didn't work unless you entered a fight on an old save
 It works perfectly fine in a new game
 
