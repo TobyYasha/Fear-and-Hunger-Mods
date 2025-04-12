@@ -37,4 +37,12 @@ Alucard -- discord
 The mod didn't work unless you entered a fight on an old save
 It works perfectly fine in a new game
 
-NOTE: This might be a problem in other mods as well
+DEV NOTE: This might be a problem in other mods as well
+
+Atlas20 -- itch.io
+4/12/2025
+Hello, I wanted to ask if it's possible to create a mod that gives you access to all the Charaters Skills in the Hexen in Termina without having to kill anyone.
+
+I know the Gain All Skills mod already exists, but I think it would be more interesting to gradually acquire the skills little by little with the added benefit of not having to kill anyone else.
+
+DEV NOTE: CastroGamer also suggested this
