@@ -1,15 +1,4 @@
-/*Window_Help.prototype.drawBattler = function(battler) {
-    const battlerName = battler.name();
-    const currentAndMax = `${TextManager.hp}: ${battler.hp}/${battler.mhp}`;
-
-    const width = this.contents.width;
-    const height = this.contents.height;
-    const x = 0;
-    const y = (height - this.lineHeight() * 2) / 2;
-
-    this.drawText(battlerName, x, y, width, 'center');
-    this.drawText(currentAndMax, x, y + this.lineHeight(), width, 'center');
-};*/
+TY_FnHShowLimbHP.js
 
 Window_Help.prototype.drawBattler = function(battler) {
     const width = this.contents.width;
@@ -26,46 +15,54 @@ Window_Help.prototype.drawBattlerName = function(battler, x, y, width) {
 };
 
 Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
-    //const y2 = y + this.lineHeight();
-    const currentHp = battler.hp;
-    const valueWidth = this.textWidth('000000');
-    this.drawText(currentHp, x, y, valueWidth, 'right');
-    //this.drawActorHp(battler, width / 3 + 36, y, width / 4);
+    const contentsWidth = width / 4;
+    const gaugeWidth = width / 4;
+    const gaugeX = x + contentsWidth + (gaugeWidth) / 2;
+    const gaugeY = y + this.lineHeight();
+    this.drawActorHp(battler, gaugeX, gaugeY, gaugeWidth);
 };
 
-/*Window_Help.prototype.drawBattlerHp = function(battler) {
-	const hpTerm = TextManager.hp;
-	const nowHp = battler.hp;
-	const maxHp = battler.mhp;
-    const currentAndMax = `${hpTerm}: ${nowHp}/${maxHp}`;
+Window_Help.prototype.drawCurrentAndMax = function(
+	current, max, x, y, width, color1, color2
+) {
+    const valueWidth = this.textWidth(max);
+    const x1 = x + width - valueWidth;
+    this.changeTextColor(color1);
+    this.drawText(current, x1, y, valueWidth, 'right');
+};
 
-    const width = this.contents.width;
-    const height = this.contents.height;
-    const x = 0;
-    const y = (height - this.lineHeight() * 2) / 2  + this.lineHeight();
-
-    this.drawText(currentAndMax, x, y, width, 'center');
+/*Window_Help.prototype.drawCurrentAndMax = function(
+	current, max, x, y, width, color1, color2
+) {
+    const valueWidth = this.textWidth(max);
+    const x1 = x + width - valueWidth;
+    this.changeTextColor(color1);
+    this.drawText(current, x1, y, valueWidth, 'right');
 };*/
 
-/*
-Window_Help.prototype.drawBattler = function(battler) {
-    var battlerName = battler.name();
-    var wx = 0;
-    var wy = (this.contents.height - this.lineHeight() * 2) / 2;
-    this.drawText(battlerName, wx, wy, this.contents.width, 'center');
-    const text2 = `${TextManager.hp
-}: ${battler.hp}/${battler.mhp}`;
-    this.drawText(text2, 0, wy + this.lineHeight(), this.contents.width, 'center');
-};
-*/
+/*Window_Help.prototype.drawCurrentAndMax = function(
+	current, max, x, y, width, color1, color2
+) {
+	Window_BattleStatus.prototype.drawCurrentAndMax.call(this, ...arguments);
+};*/
 
-/*
-Window_Help.prototype.drawBattler = function(battler) {
-    var battlerName = battler.name();
-    var wx = 0;
-    var wy = (this.contents.height - this.lineHeight() * 2) / 2;
-    var width = this.contents.width;
-    this.drawText(battlerName, wx, wy, this.contents.width, 'center');
-    this.drawActorHp(battler, width / 3 + 36, wy + this.lineHeight(), this.contents.width / 4);
-};
-*/
+/*Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
+    y += this.lineHeight();
+
+    const value = battler.hp;
+    const valueWidth = this.textWidth('000000');
+
+    const color1 = this.hpGaugeColor1();
+    const color2 = this.hpGaugeColor2();
+
+    const gaugeWidth = width / 4;
+    const gaugeX = gaugeWidth + 100;
+
+    this.drawGauge(gaugeX, y, gaugeWidth, battler.hpRate(), color1, color2);
+
+    this.changeTextColor(this.systemColor());
+    this.drawText(TextManager.hpA, x + gaugeX, y, 44);
+
+    this.changeTextColor(this.normalColor());
+    this.drawText(value, x + gaugeX + gaugeWidth / 2, y, valueWidth, 'right');
+};*/
