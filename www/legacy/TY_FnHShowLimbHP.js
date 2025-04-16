@@ -1,4 +1,10 @@
 (function() {
+
+/*
+	This mod has been made possible 
+	thanks to the YEP_BattleEngineCore.js
+	- by Yanfly -
+*/
 	
 //==========================================================
 	// VERSION 1.0.0 -- by Toby Yasha
@@ -36,7 +42,7 @@ const valueDrawMode = 1; // 0 | 1 | 2 -- DEFAULT: 1
 //==========================================================
 
 const VALUE_DRAW_NONE = 0;
-const VALUE_DRAW_WHOLE = 1;
+const VALUE_DRAW_WHOLE = 1; // DEFAULT
 const VALUE_DRAW_PERCENT = 2;
 
 //==========================================================
@@ -62,6 +68,7 @@ Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
     const gaugeWidth = width / 4;
     const gaugeX = x + contentsWidth + (gaugeWidth) / 2;
     const gaugeY = y + this.lineHeight();
+    
     this.drawActorHp(battler, gaugeX, gaugeY, gaugeWidth);
 };
 
@@ -96,15 +103,19 @@ Window_Help.prototype.drawHealthWhole = function(
 Window_Help.prototype.drawHealthPercentage = function(
 	current, max, x, y, width, color1, color2
 ) {
-	const value = (current / max) * 100;
+	// [NOTE] "toPrecision" corrects weird looking float values
+	const value = ((current / max) * 100).toPrecision(3);
     const valueWidth = this.textWidth(value);
 
     const percentSymbol = "%";
     const percentWidth = this.textWidth(percentSymbol);
+
+    const text = value + percentSymbol;
     const x1 = x + width - valueWidth - percentWidth;
+    const width1 = valueWidth + percentWidth;
 
     this.changeTextColor(color1);
-    this.drawText(value + percentSymbol, x1, y, valueWidth + percentWidth, 'right');
+    this.drawText(text, x1, y, width1, 'right');
 };
 
 //==========================================================
