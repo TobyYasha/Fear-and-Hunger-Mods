@@ -7,7 +7,7 @@
 */
 	
 //==========================================================
-	// VERSION 1.0.0 -- by Toby Yasha
+	// VERSION 1.0.1 -- by Toby Yasha
 //==========================================================
 	
 // The following settings are meant to be edited by users:
@@ -68,7 +68,7 @@ Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
     const gaugeWidth = width / 4;
     const gaugeX = x + contentsWidth + (gaugeWidth) / 2;
     const gaugeY = y + this.lineHeight();
-    
+
     this.drawActorHp(battler, gaugeX, gaugeY, gaugeWidth);
 };
 
@@ -103,8 +103,8 @@ Window_Help.prototype.drawHealthWhole = function(
 Window_Help.prototype.drawHealthPercentage = function(
 	current, max, x, y, width, color1, color2
 ) {
-	// [NOTE] "toPrecision" corrects weird looking float values
-	const value = ((current / max) * 100).toPrecision(3);
+	// [NOTE] "toFixed" corrects weird looking float values
+	const value = 100 * (current / max).toFixed(2);
     const valueWidth = this.textWidth(value);
 
     const percentSymbol = "%";
