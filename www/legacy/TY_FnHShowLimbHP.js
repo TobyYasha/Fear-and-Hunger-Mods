@@ -1,4 +1,47 @@
-TY_FnHShowLimbHP.js
+(function() {
+	
+//==========================================================
+	// VERSION 1.0.0 -- by Toby Yasha
+//==========================================================
+	
+// The following settings are meant to be edited by users:
+	
+const valueDrawMode = 1; // 0 | 1 | 2 -- DEFAULT: 1
+
+/*
+	EXPLANATION:
+
+	valueDrawMode - 
+		This setting determines the way the health number is shown.
+		Replace the number inside the "valueDrawMode" setting with
+		the option you want:
+		
+		Options:
+			0 - Draw no health number
+	
+			1 - Draw health number
+	
+			2 - Draw health as percentage
+
+		How to change the setting, example:
+		const valueDrawMode = 2;
+
+		NOTE: If the setting doesn't contain one of the options
+		mentioned above, then option no. 1 will be used by default.
+
+*/
+
+//==========================================================
+	// Mod Configurations
+//==========================================================
+
+const VALUE_DRAW_NONE = 0;
+const VALUE_DRAW_WHOLE = 1;
+const VALUE_DRAW_PERCENT = 2;
+
+//==========================================================
+	// Window_Help
+//==========================================================
 
 Window_Help.prototype.drawBattler = function(battler) {
     const width = this.contents.width;
@@ -25,44 +68,47 @@ Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
 Window_Help.prototype.drawCurrentAndMax = function(
 	current, max, x, y, width, color1, color2
 ) {
+	switch (valueDrawMode) {
+		case VALUE_DRAW_NONE:
+			// nothing here
+			break;
+		case VALUE_DRAW_WHOLE:
+			this.drawHealthWhole(...arguments);
+			break;
+		case VALUE_DRAW_PERCENT:
+			this.drawHealthPercentage(...arguments);
+			break;
+		default:
+			this.drawHealthWhole(...arguments);
+			break;
+	}
+};
+
+Window_Help.prototype.drawHealthWhole = function(
+	current, max, x, y, width, color1, color2
+) {
     const valueWidth = this.textWidth(max);
     const x1 = x + width - valueWidth;
     this.changeTextColor(color1);
     this.drawText(current, x1, y, valueWidth, 'right');
 };
 
-/*Window_Help.prototype.drawCurrentAndMax = function(
+Window_Help.prototype.drawHealthPercentage = function(
 	current, max, x, y, width, color1, color2
 ) {
-    const valueWidth = this.textWidth(max);
-    const x1 = x + width - valueWidth;
+	const value = (current / max) * 100;
+    const valueWidth = this.textWidth(value);
+
+    const percentSymbol = "%";
+    const percentWidth = this.textWidth(percentSymbol);
+    const x1 = x + width - valueWidth - percentWidth;
+
     this.changeTextColor(color1);
-    this.drawText(current, x1, y, valueWidth, 'right');
-};*/
+    this.drawText(value + percentSymbol, x1, y, valueWidth + percentWidth, 'right');
+};
 
-/*Window_Help.prototype.drawCurrentAndMax = function(
-	current, max, x, y, width, color1, color2
-) {
-	Window_BattleStatus.prototype.drawCurrentAndMax.call(this, ...arguments);
-};*/
+//==========================================================
+	// End of File
+//==========================================================
 
-/*Window_Help.prototype.drawBattlerHealth = function(battler, x, y, width) {
-    y += this.lineHeight();
-
-    const value = battler.hp;
-    const valueWidth = this.textWidth('000000');
-
-    const color1 = this.hpGaugeColor1();
-    const color2 = this.hpGaugeColor2();
-
-    const gaugeWidth = width / 4;
-    const gaugeX = gaugeWidth + 100;
-
-    this.drawGauge(gaugeX, y, gaugeWidth, battler.hpRate(), color1, color2);
-
-    this.changeTextColor(this.systemColor());
-    this.drawText(TextManager.hpA, x + gaugeX, y, 44);
-
-    this.changeTextColor(this.normalColor());
-    this.drawText(value, x + gaugeX + gaugeWidth / 2, y, valueWidth, 'right');
-};*/
+})();
