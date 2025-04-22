@@ -47,6 +47,10 @@ _.STAT_TYPE_XPARAM = "xparam";
 _.STAT_TYPE_SPARAM = "sparam";
 _.STAT_TYPE_ELEMENT = "element";
 
+_.PAGE_TYPE_BASIC = "basic";
+_.PAGE_TYPE_RESIST = "resist";
+_.PAGE_TYPE_COMPLEX = "complex";
+
 //==========================================================
 	// Parameters
 //==========================================================
@@ -115,6 +119,12 @@ _.statNamesSparam = {
 	7: "M. Resist",
 }
 
+_.pageOrder = [
+	_.PAGE_TYPE_BASIC,
+	_.PAGE_TYPE_RESIST,
+	_.PAGE_TYPE_COMPLEX
+];
+
 //==========================================================
 	// Window_StatCompare
 //==========================================================
@@ -126,60 +136,43 @@ Window_StatCompare.prototype.initialize = function(wx, wy, ww, wh) {
 };
 
 // Check if the window should draw basic stats
-Window_StatCompare.prototype.canDrawParams = function() {
+Window_StatCompare.prototype.isPageTypeBasic = function() {
 	return this._actor && this._currentPage == 1;
 };
 
 // Check if the window should draw element resistances
-Window_StatCompare.prototype.canDrawElements = function() {
+Window_StatCompare.prototype.isPageTypeResist = function() {
 	return this._actor && this._currentPage == 2;
 };
 
 // Check if the window should draw complex stats
-Window_StatCompare.prototype.canDrawXSparams = function() {
+Window_StatCompare.prototype.isPageTypeComplex = function() {
 	return this._actor && this._currentPage == 3;
 };
 
+// 
 Window_StatCompare.prototype.getStatIds = function(statType) {
 	const list = {
-		_.STAT_TYPE_PARAM: _.statIdsParam,
-		_.STAT_TYPE_XPARAM: _.statIdsXparam,
-		_.STAT_TYPE_SPARAM: _.statIdsSparam,
-		_.STAT_TYPE_ELEMENT: _.statIdsElement
+		[_.STAT_TYPE_PARAM]:   _.statIdsParam,
+		[_.STAT_TYPE_XPARAM]:  _.statIdsXparam,
+		[_.STAT_TYPE_SPARAM]:  _.statIdsSparam,
+		[_.STAT_TYPE_ELEMENT]: _.statIdsElement
 	}
-	return list[statType] || [];
-
-	switch (statType) {
-		case _.STAT_TYPE_PARAM:
-			return _.statIdsParam;
-		case _.STAT_TYPE_XPARAM:
-			return statIdsXparam;
-		case _.STAT_TYPE_SPARAM:
-			return _.statIdsSparam;
-		case _.STAT_TYPE_ELEMENT:
-			return _.statIdsElement;
-		default:
-			return [];
-	}
+	return list[statType] ?? [];
 }
 
+// 
 Window_StatCompare.prototype.getStatName = function(statType, statId) {
-	let text = "";
-	switch (statType) {
-		case _.STAT_TYPE_PARAM:
-			text = TextManager.param(statId);
-			break;
-		case _.STAT_TYPE_XPARAM:
-			text = _.xparamNames[statId];
-			break;
-		case _.STAT_TYPE_SPARAM:
-			text = _.sparamNames[statId];
-			break;
-		case _.STAT_TYPE_ELEMENT:
-			text = $dataSystem.elements[statId];
-			break;
+	const list = {
+		[_.STAT_TYPE_PARAM]()   { return TextManager.param(statId) },
+		[_.STAT_TYPE_XPARAM]()  { return _.xparamNames[statId] },
+		[_.STAT_TYPE_SPARAM]()  { return _.sparamNames[statId] },
+		[_.STAT_TYPE_ELEMENT]() { return $dataSystem.elements[statId] }
 	}
-	return text || "";
+	if (list[statType]) {
+		return list[statType](statId) ?? "";
+	}
+	return "";
 }
 
 // Configurations relating the width of names and values
@@ -191,16 +184,21 @@ Window_StatCompare.prototype.createWidths = function() {
 	this._paramValueWidth = this.textWidth(valueWidth);
 	this._arrowWidth = this.textWidth('\u2192' + ' ');
 
-	if (this.canDrawParams()) {
-		this.getParamWidth();
-	} else if (this.canDrawElements()) {
-		this.getElementWidth();
-	} else if (this.canDrawXSparams()) {
-		this.getXSparamWidth();
+	this.updatePageStatWidths();
+}
+
+Window_StatCompare.prototype.updatePageStatWidths = function() {
+    if (this.isPageTypeBasic()) {
+		this.updateParamNameWidth(_.STAT_TYPE_PARAM);
+	} else if (this.isPageTypeResist()) {
+		this.updateParamNameWidth(_.STAT_TYPE_ELEMENT);
+	} else if (this.isPageTypeComplex()) {
+		this.updateParamNameWidth(_.STAT_TYPE_XPARAM);
+		this.updateParamNameWidth(_.STAT_TYPE_SPARAM);
 	}
 }
 
-Window_StatCompare.prototype.getMaxStatWidth = function(statType) {
+Window_StatCompare.prototype.updateParamNameWidth = function(statType) {
     const statIds = this.getStatIds(statType);
     for (const statId of statIds) {
     	const statName = this.getStatName(statType, statId);
@@ -209,52 +207,15 @@ Window_StatCompare.prototype.getMaxStatWidth = function(statType) {
     }
 }
 
-// Get the largest basic stat name width
-Window_StatCompare.prototype.getParamWidth = function() {
-	var params = this.paramIdArray();
-	for (var i = 0; i < params.length; i++) {
-		var param = TextManager.param(params[i]);
-		var nameWidth = this.textWidth(param);
-		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
-    }
-}
-
-// Get the largest element resistance name width
-Window_StatCompare.prototype.getElementWidth = function() {
-	var elements = this.elementIdArray();
-	for (var i = 0; i < elements.length; i++) {
-		var element = $dataSystem.elements[elements[i]];
-		var nameWidth = this.textWidth(element);
-		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
-    }
-}
-
-// Get the largest complex stat name width
-Window_StatCompare.prototype.getXSparamWidth = function() {
-	var xparams = this.xparamIdArray();
-	for (var i = 0; i < xparams.length; i++) {
-		var xparam = _.xparamNames(xparams[i]) || "";
-		var nameWidth = this.textWidth(xparam);
-		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
-    }
-
-    var sparams = this.sparamIdArray();
-	for (var i = 0; i < sparams.length; i++) {
-		var sparam = .sparamNames(sparams[i]) || "";
-		var nameWidth = this.textWidth(sparam);
-		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
-    }
-}
-
 // Refresh the contents of the window
 Window_StatCompare.prototype.refresh = function() {
 	this.contents.clear();
 	this.drawPageLayout();
-	if (this.canDrawParams()) {
+	if (this.isPageTypeBasic()) {
 		this.drawParamList();
-	} else if (this.canDrawElements()) {
+	} else if (this.isPageTypeResist()) {
 		this.drawElementList();
-	} else if (this.canDrawXSparams()) {
+	} else if (this.isPageTypeComplex()) {
 		this.drawXSparamList();
 	}
 };
@@ -413,4 +374,4 @@ Scene_Equip.prototype.updateLowerRightWindowTriggers = function() {
 	// End of File
 //==========================================================
 
-})();
+})(TY.detailedEquip);
