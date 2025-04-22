@@ -1,52 +1,8 @@
 //=============================================================================
 /*:
- * @plugindesc v1.1 Displays Basic Stats and Element Resistances
+ * @plugindesc v1.1.0 Displays Basic Stats and Element Resistances
  * in the Equipment Scene.
  * @author Toby Yasha & Yanfly
- *
- * @param General Configurations
- *
- * @param Basic Stats
- * @parent General Configurations
- * @desc 0 - BODY 1 - MIND 2 - ATTACK 3 - DEFENSE 4 - M.ATTACK, 5 - M.DEFENSE, 6 - AGILITY, 7 - LUCK
- * @default 0, 1, 2, 4, 6
- *
- * @param Value Width
- * @parent General Configurations
- * @type number
- * @desc How long can a number value be before its shrinked. Used for stats.
- * @default 4
- * @min 1
- *
- * @param Value Spacing
- * @parent General Configurations
- * @type number
- * @desc The spacing added between a stat and its value.
- * @default 65
- * @min 1
- *
- * @param Page Text Width
- * @parent General Configurations
- * @type number
- * @desc How long can a string value be before its shrinked.
- * @default 120
- * @min 1
- *
- * @param Add Text Arrows
- * @parent General Configurations
- * @type boolean
- * @desc If set to true this will add arrows to the 'Prev Page Text' and 'Next Page Text'.
- * @default true
- *
- * @param Prev Page Text
- * @parent General Configurations
- * @desc The text used to indicate the previous page.
- * @default Prev Page
- *
- * @param Next Page Text
- * @parent General Configurations
- * @desc The text used to indicate the next page.
- * @default Next Page 
  *
  * @help
  *
@@ -66,34 +22,84 @@
  * Changelog
  * ============================================================================
  *
- * Version 1.1:
+ * Version 1.1.0: [4/22/2025]
+ * - 
+ *
+ * Version 1.0.1:
  * - Mod should now work even without editing the plugins.js file.
  * 
 */
+
+var TY = TY || {};
+TY.detailedEquip = TY.detailedEquip || {};
+
+var Imported = Imported || {};
+Imported.TY_DetailedEquip = true;
+
+(function(_) {
 
 //==========================================================
 	// Plugin Parameters
 //==========================================================
 
-var TY = TY || {};
-TY.Param = TY.Param || {};
-TY.Parameters = PluginManager.parameters("TY_DetailedEquip");
+/* 
+	Name: Value Digits
+	Desc: How many digits can a number have before its squashed.
+*/
+_.valueDigits = 4;
 
-if (Object.keys(TY.Parameters).length > 0) { // Mod loaded as a modder
-	// General Options
-	TY.Param.ValueWidth = Number(TY.Parameters["Value Width"]);
-	TY.Param.ValueSpacing = Number(TY.Parameters["Value Spacing"]);
-	TY.Param.PageArrows = JSON.parse(TY.Parameters["Add Text Arrows"]);
-	TY.Param.PageTextWidth = Number(TY.Parameters["Page Text Width"]);
-	TY.Param.PrevPage = TY.Parameters["Prev Page Text"];
-	TY.Param.NextPage = TY.Parameters["Next Page Text"];
-} else { // Mod loaded as a non-modder
-	TY.Param.ValueWidth = 4;
-	TY.Param.ValueSpacing = 65;
-	TY.Param.PageArrows = true;
-	TY.Param.PageTextWidth = 120
-	TY.Param.PrevPage = "Prev Page";
-	TY.Param.NextPage = "Next Page";
+/*
+	Name: Value Spacing
+	Desc: The spacing added between a stat's old and new value.
+	This is used when equipping/unequipping a new equipment.
+*/
+_.valueSpacing = 65;
+
+/*
+	Name: Page Arrows
+	Desc: Whether or not to draw arrow symbols next to the page text indicators
+	Example: <- Prev Page | Next Page ->
+*/
+_.drawPageArrows = true;
+
+/*
+	Name: Page Text Width
+	Desc: How wide the "Previous Page" and "Next Page" can be before its squashed.
+*/
+_.pageTextWidth = 120;
+
+/*
+	Name: Previous Page Text
+	Desc: The text used for indicating the previous page.
+	This is added at the bottom of the stat display.
+*/
+_.prevPageText = "Prev Page";
+
+/*
+	Name: Next Page Text
+	Desc: The text used for indicating the next page.
+	This is added at the bottom of the stat display.
+*/
+_.nextPageText = "Next Page";
+
+/*
+	Name: Xparam Names
+	Desc: The names of x parameters by id
+*/
+_.xparamNames = {
+	0: "Hit Rate",
+	2: "Crit Rate",
+	1: "P. Evasion",
+	4: "M. Evasion",
+}
+
+/*
+	Name: Sparam Names
+	Desc: The names of s parameters by id
+*/
+_.sparamNames = {
+	6: "P. Resist",
+	7: "M. Resist",
 }
 
 //==========================================================
@@ -116,6 +122,11 @@ Window_StatCompare.prototype.canDrawElements = function() {
 	return this._actor && this._currentPage == 2;
 };
 
+// Check if the window should draw complex stats
+Window_StatCompare.prototype.canDrawXSParams = function() {
+	return this._actor && this._currentPage == 3;
+};
+
 // The allowed basic stats to draw
 // BODY, MIND, ATTACK, M.ATTACK, AGILITY
 Window_StatCompare.prototype.paramIdArray = function() {
@@ -128,17 +139,32 @@ Window_StatCompare.prototype.elementIdArray = function() {
 	return [1, 2, 3, 4, 6];
 };
 
+// The allowed basic stats to draw
+// HIT, CRIT, PHY EVA, MAG EVA
+Window_StatCompare.prototype.xparamIdArray = function() {
+	return [0, 2, 1, 4];
+};
+
+// PHY DAMAGE RATE, MAG DAMAGE RATE
+Window_StatCompare.prototype.sparamIdArray = function() {
+	return [6, 7];
+};
+
 // Configurations relating the width of names and values
 Window_StatCompare.prototype.createWidths = function() {
 	this._paramNameWidth = 0;
-	this._bonusValueWidth = TY.Param.ValueSpacing;
-	var valueWidth = ('').padZero(TY.Param.ValueWidth);
+	this._bonusValueWidth = _.valueSpacing;
+
+	var valueWidth = ('').padZero(_.valueDigits);
 	this._paramValueWidth = this.textWidth(valueWidth);
 	this._arrowWidth = this.textWidth('\u2192' + ' ');
+
 	if (this.canDrawParams()) {
 		this.getParamWidth();
 	} else if (this.canDrawElements()) {
 		this.getElementWidth();
+	} else if (this.canDrawXSParams()) {
+		this.getXSParamWidth();
 	}
 }
 
@@ -162,15 +188,33 @@ Window_StatCompare.prototype.getElementWidth = function() {
     }
 }
 
+// Get the largest basic stat name width
+Window_StatCompare.prototype.getXSParamWidth = function() {
+	var xparams = this.xparamIdArray();
+	for (var i = 0; i < xparams.length; i++) {
+		var xparam = _.xparamNames(xparams[i]) || "";
+		var nameWidth = this.textWidth(xparam);
+		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
+    }
+
+    var sparams = this.sparamIdArray();
+	for (var i = 0; i < sparams.length; i++) {
+		var sparam = .sparamNames(sparams[i]) || "";
+		var nameWidth = this.textWidth(sparam);
+		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
+    }
+}
+
 // Refresh the contents of the window
 Window_StatCompare.prototype.refresh = function() {
 	this.contents.clear();
+	this.drawPageLayout();
 	if (this.canDrawParams()) {
-		this.drawPageLayout();
 		this.drawParamList();
 	} else if (this.canDrawElements()) {
-		this.drawPageLayout();
 		this.drawElementList();
+	} else if (this.canDrawXSParams()) {
+		this.drawXSParamList();
 	}
 };
 
@@ -271,7 +315,7 @@ Window_StatCompare.prototype.drawElementDifference = function(y, elementId) {
 
 // If allowed, will add arrows to the page text
 Window_StatCompare.prototype.formatPageText = function(text, facing) {
-	if (TY.Param.PageArrows) {
+	if (_.drawPageArrows) {
 		return facing == 'left' ? '\u2190 '+ text : text + ' \u2192';
 	} else {
 		return text;
@@ -283,9 +327,9 @@ Window_StatCompare.prototype.drawPageLayout = function() {
 	this.resetTextColor();
 	var x = this.contents.width / 2;
 	var y = this.lineHeight() * 6.3;
-	var layoutWidth = TY.Param.PageTextWidth;
-	var prevPageText = this.formatPageText(TY.Param.PrevPage, 'left');
-	var nextPageText = this.formatPageText(TY.Param.NextPage, 'right');
+	var layoutWidth = _.pageTextWidth;
+	var prevPageText = this.formatPageText(_.prevPageText, 'left');
+	var nextPageText = this.formatPageText(_.nextPageText, 'right');
     this.drawDarkRect(0, y, this.contents.width / 2, this.lineHeight());
     this.drawDarkRect(x, y, this.contents.width / 2, this.lineHeight());
 	this.drawText(prevPageText, 32, y, layoutWidth, 'center');
