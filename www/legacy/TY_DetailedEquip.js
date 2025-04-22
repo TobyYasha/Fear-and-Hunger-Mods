@@ -39,7 +39,16 @@ Imported.TY_DetailedEquip = true;
 (function(_) {
 
 //==========================================================
-	// Plugin Parameters
+	// Constants
+//==========================================================
+
+_.STAT_TYPE_PARAM = "param";
+_.STAT_TYPE_XPARAM = "xparam";
+_.STAT_TYPE_SPARAM = "sparam";
+_.STAT_TYPE_ELEMENT = "element";
+
+//==========================================================
+	// Parameters
 //==========================================================
 
 /* 
@@ -82,34 +91,38 @@ _.prevPageText = "Prev Page";
 */
 _.nextPageText = "Next Page";
 
-/*
-	Name: Xparam Names
-	Desc: The names of x parameters by id
-*/
-_.xparamNames = {
+// BODY, MIND, ATTACK, M.ATTACK, AGILITY
+_.statIdsParam = [0, 1, 2, 4, 6];
+
+// HIT RATE, CRIT RATE, PHY EVASION, MAG EVASION
+_.statIdsXparam = [0, 2, 1, 4];
+
+// PHY DAMAGE RATE, MAG DAMAGE RATE
+_.statIdsSparam = [6, 7];
+
+// BLUNT, SLASH, PIERCE, FIRE, OTHERWORDLY
+_.statIdsElement = [1, 2, 3, 4, 6];
+
+_.statNamesXparam = {
 	0: "Hit Rate",
 	2: "Crit Rate",
 	1: "P. Evasion",
 	4: "M. Evasion",
 }
 
-/*
-	Name: Sparam Names
-	Desc: The names of s parameters by id
-*/
-_.sparamNames = {
+_.statNamesSparam = {
 	6: "P. Resist",
 	7: "M. Resist",
 }
 
 //==========================================================
-	// Window_StatCompare -- 
+	// Window_StatCompare
 //==========================================================
 
-TY.Window_StatCompare_Initialize = Window_StatCompare.prototype.initialize;
+const TY_Window_StatCompare_initialize = Window_StatCompare.prototype.initialize;
 Window_StatCompare.prototype.initialize = function(wx, wy, ww, wh) {
 	this._currentPage = 1;
-	TY.Window_StatCompare_Initialize.call(this, wx, wy, ww, wh);
+	TY_Window_StatCompare_initialize.call(this, wx, wy, ww, wh);
 };
 
 // Check if the window should draw basic stats
@@ -123,32 +136,38 @@ Window_StatCompare.prototype.canDrawElements = function() {
 };
 
 // Check if the window should draw complex stats
-Window_StatCompare.prototype.canDrawXSParams = function() {
+Window_StatCompare.prototype.canDrawXSparams = function() {
 	return this._actor && this._currentPage == 3;
 };
 
-// The allowed basic stats to draw
-// BODY, MIND, ATTACK, M.ATTACK, AGILITY
-Window_StatCompare.prototype.paramIdArray = function() {
-	return [0, 1, 2, 4, 6];
-};
+Window_StatCompare.prototype.getStatIds = function(statType) {
+	const list = {
+		_.STAT_TYPE_PARAM:   _.statIdsParam,
+		_.STAT_TYPE_XPARAM:  _.statIdsXparam,
+		_.STAT_TYPE_SPARAM:  _.statIdsSparam,
+		_.STAT_TYPE_ELEMENT: _.statIdsElement
+	}
+	return list[statType] || [];
+}
 
-// The allowed element resistances to draw
-// BLUNT, SLASH, PIERCE, FIRE, OTHERWORDLY
-Window_StatCompare.prototype.elementIdArray = function() {
-	return [1, 2, 3, 4, 6];
-};
-
-// The allowed basic stats to draw
-// HIT, CRIT, PHY EVA, MAG EVA
-Window_StatCompare.prototype.xparamIdArray = function() {
-	return [0, 2, 1, 4];
-};
-
-// PHY DAMAGE RATE, MAG DAMAGE RATE
-Window_StatCompare.prototype.sparamIdArray = function() {
-	return [6, 7];
-};
+Window_StatCompare.prototype.getStatName = function(statType, statId) {
+	let text = "";
+	switch (statType) {
+		case _.STAT_TYPE_PARAM:
+			text = TextManager.param(statId);
+			break;
+		case _.STAT_TYPE_XPARAM:
+			text = _.xparamNames[statId];
+			break;
+		case _.STAT_TYPE_SPARAM:
+			text = _.sparamNames[statId];
+			break;
+		case _.STAT_TYPE_ELEMENT:
+			text = $dataSystem.elements[statId];
+			break;
+	}
+	return text || "";
+}
 
 // Configurations relating the width of names and values
 Window_StatCompare.prototype.createWidths = function() {
@@ -163,9 +182,18 @@ Window_StatCompare.prototype.createWidths = function() {
 		this.getParamWidth();
 	} else if (this.canDrawElements()) {
 		this.getElementWidth();
-	} else if (this.canDrawXSParams()) {
-		this.getXSParamWidth();
+	} else if (this.canDrawXSparams()) {
+		this.getXSparamWidth();
 	}
+}
+
+Window_StatCompare.prototype.getMaxStatWidth = function(statType) {
+    const statIds = this.getStatIds(statType);
+    for (const statId of statIds) {
+    	const statName = this.getStatName(statType, statId);
+		const nameWidth = this.textWidth(statName);
+		this._paramNameWidth = Math.max(nameWidth, this._paramNameWidth);
+    }
 }
 
 // Get the largest basic stat name width
@@ -188,8 +216,8 @@ Window_StatCompare.prototype.getElementWidth = function() {
     }
 }
 
-// Get the largest basic stat name width
-Window_StatCompare.prototype.getXSParamWidth = function() {
+// Get the largest complex stat name width
+Window_StatCompare.prototype.getXSparamWidth = function() {
 	var xparams = this.xparamIdArray();
 	for (var i = 0; i < xparams.length; i++) {
 		var xparam = _.xparamNames(xparams[i]) || "";
@@ -213,8 +241,8 @@ Window_StatCompare.prototype.refresh = function() {
 		this.drawParamList();
 	} else if (this.canDrawElements()) {
 		this.drawElementList();
-	} else if (this.canDrawXSParams()) {
-		this.drawXSParamList();
+	} else if (this.canDrawXSparams()) {
+		this.drawXSparamList();
 	}
 };
 
@@ -236,6 +264,10 @@ Window_StatCompare.prototype.drawElementList = function() {
 		var posY = this.lineHeight() * i;
 		this.drawElement(0, posY, elementId);
 	}
+};
+
+Window_StatCompare.prototype.drawXSparamList = function() {
+	
 };
 
 // Draw the names and values of basic stats
@@ -342,7 +374,7 @@ Window_StatCompare.prototype.setPage = function(value) {
 };
 
 //==========================================================
-	// Scene_Equip -- 
+	// Scene_Equip
 //==========================================================
 
 // Check if the 'Window_StatCompare' is allowed to change its page
@@ -363,3 +395,9 @@ Scene_Equip.prototype.updateLowerRightWindowTriggers = function() {
 		this._compareWindow.refresh();
 	}
 };
+
+//==========================================================
+	// End of File
+//==========================================================
+
+})();
