@@ -142,12 +142,25 @@ Window_StatCompare.prototype.canDrawXSparams = function() {
 
 Window_StatCompare.prototype.getStatIds = function(statType) {
 	const list = {
-		_.STAT_TYPE_PARAM:   _.statIdsParam,
-		_.STAT_TYPE_XPARAM:  _.statIdsXparam,
-		_.STAT_TYPE_SPARAM:  _.statIdsSparam,
+		_.STAT_TYPE_PARAM: _.statIdsParam,
+		_.STAT_TYPE_XPARAM: _.statIdsXparam,
+		_.STAT_TYPE_SPARAM: _.statIdsSparam,
 		_.STAT_TYPE_ELEMENT: _.statIdsElement
 	}
 	return list[statType] || [];
+
+	switch (statType) {
+		case _.STAT_TYPE_PARAM:
+			return _.statIdsParam;
+		case _.STAT_TYPE_XPARAM:
+			return statIdsXparam;
+		case _.STAT_TYPE_SPARAM:
+			return _.statIdsSparam;
+		case _.STAT_TYPE_ELEMENT:
+			return _.statIdsElement;
+		default:
+			return [];
+	}
 }
 
 Window_StatCompare.prototype.getStatName = function(statType, statId) {
