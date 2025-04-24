@@ -55,16 +55,6 @@ _.PAGE_TYPE_COMPLEX = "complex";
 	// Parameters -- You can edit these values 
 //==========================================================
 
-_.pageTextWidth = 120;
-
-_.leftArrowSymbol = "\u2190";
-
-_.rightArrowSymbol = "\u2192";
-
-_.prevPageText = "Prev Page";
-
-_.nextPageText = "Next Page";
-
 // BODY, MIND, ATTACK, M.ATTACK, AGILITY
 _.statIdsParam = [0, 1, 2, 4, 6];
 
@@ -80,13 +70,13 @@ _.statIdsElement = [1, 2, 3, 4, 6];
 _.statNamesXparam = {
 	0: "Hit Rate",
 	2: "Crit Rate",
-	1: "P. Evasion",
+	1: "Evasion",
 	4: "M. Evasion",
 }
 
 _.statNamesSparam = {
-	6: "P. Resist",
-	7: "M. Resist",
+	6: "Resistance",
+	7: "M. Resistance",
 }
 
 _.pageOrder = [
@@ -94,6 +84,16 @@ _.pageOrder = [
 	_.PAGE_TYPE_RESIST,
 	_.PAGE_TYPE_COMPLEX
 ];
+
+_.pageTextWidth = 120;
+
+_.leftArrowSymbol = "\u2190";
+
+_.rightArrowSymbol = "\u2192";
+
+_.prevPageText = "Prev Page";
+
+_.nextPageText = "Next Page";
 
 //==========================================================
 	// Window_StatCompare
@@ -194,7 +194,7 @@ Window_StatCompare.prototype.getOldStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, false);
 
 	if (this.needsFormattedValue(statType)) {
-		value = this.formatStatValue(value);
+		value = this.formatStatValue(statType, value);
 	}
 
 	return value;
@@ -204,7 +204,7 @@ Window_StatCompare.prototype.getNewStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, true);
 
 	if (this.needsFormattedValue(statType)) {
-		value = this.formatStatValue(value);
+		value = this.formatStatValue(statType, value);
 	}
 	
 	return value;
@@ -214,9 +214,21 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 	return _.STAT_TYPE_PARAM !== statType;
 };
 
+Window_StatCompare.prototype.getFormatBaseValue = function(statType) {
+	switch (statType) {
+		case _.STAT_TYPE_XPARAM:
+			return 0;
+		case _.STAT_TYPE_SPARAM:
+		case _.STAT_TYPE_ELEMENT:
+			return -1;
+		default:
+			return 0;
+	}
+};
+
 Window_StatCompare.prototype.formatStatValue = function(statType, value) {
-	const baseValue = 
-	return Math.round(((1 - value) * 100).toPrecision(3));
+	const baseValue = this.getFormatBaseValue(statType);
+	return Math.round(((baseValue + value) * 100).toPrecision(3));
 };
 
 Window_StatCompare.prototype.createWidths = function() {
