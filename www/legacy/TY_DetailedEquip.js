@@ -216,9 +216,9 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 };
 
 Window_StatCompare.prototype.getFormatBaseValue = function(statType, value) {
-	if (_.STAT_TYPE_ELEMENT === statType) {
+	if (_.STAT_TYPE_ELEMENT === statType || _.STAT_TYPE_SPARAM === statType) {
 		// NOTE: Elemental values have special formatting
-		return 1 - value;
+		return value - 1;
 	} else {
 		return value;
 	}
@@ -226,7 +226,7 @@ Window_StatCompare.prototype.getFormatBaseValue = function(statType, value) {
 
 Window_StatCompare.prototype.formatStatValue = function(statType, value) {
 	const baseValue = this.getFormatBaseValue(statType, value);
-	const percentValue = value * 100;
+	const percentValue = baseValue * 100;
 	return Math.round(percentValue.toFixed(2));
 };
 
