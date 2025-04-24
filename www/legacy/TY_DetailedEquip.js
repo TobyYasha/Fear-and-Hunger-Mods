@@ -104,6 +104,7 @@ Window_StatCompare.PAGE_DIRECTION_RIGHT = "right";
 
 const TY_Window_StatCompare_initialize = Window_StatCompare.prototype.initialize;
 Window_StatCompare.prototype.initialize = function(wx, wy, ww, wh) {
+	this._lineIndex = 0;
 	this._arrowWidth = 0;
 	this._paramNameWidth = 0;
 	this._paramValueWidth = 0;
@@ -214,21 +215,19 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 	return _.STAT_TYPE_PARAM !== statType;
 };
 
-Window_StatCompare.prototype.getFormatBaseValue = function(statType) {
-	switch (statType) {
-		case _.STAT_TYPE_XPARAM:
-			return 0;
-		case _.STAT_TYPE_SPARAM:
-		case _.STAT_TYPE_ELEMENT:
-			return -1;
-		default:
-			return 0;
+Window_StatCompare.prototype.getFormatBaseValue = function(statType, value) {
+	if (_.STAT_TYPE_ELEMENT === statType) {
+		// NOTE: Elemental values have special formatting
+		return 1 - value;
+	} else {
+		return value;
 	}
 };
 
 Window_StatCompare.prototype.formatStatValue = function(statType, value) {
-	const baseValue = this.getFormatBaseValue(statType);
-	return Math.round(((baseValue + value) * 100).toPrecision(3));
+	const baseValue = this.getFormatBaseValue(statType, value);
+	const percentValue = value * 100;
+	return Math.round(percentValue.toFixed(2));
 };
 
 Window_StatCompare.prototype.createWidths = function() {
@@ -270,6 +269,7 @@ Window_StatCompare.prototype.refresh = function() {
 	this.contents.clear();
 	if (this._actor) {
 		this.drawPageContents();
+		this.drawPageIndicators();
 	}
 };
 
@@ -292,6 +292,7 @@ Window_StatCompare.prototype.drawAllStats = function(statType) {
 	}
 };
 
+// Replaces "drawItem"
 Window_StatCompare.prototype.drawStat = function(x, y, statType, statId) {
 	this.drawDarkRect(x, y, this.contents.width, this.lineHeight());
 	this.drawStatName(y, statType, statId);
@@ -363,6 +364,10 @@ Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) 
     diffValue = this.formatValueDifference(diffValue);
     this.changeTextColor(this.paramchangeTextColor(diffValue));
     this.drawText(diffValue, x, y, this._paramValueWidth, 'left');
+};
+
+Window_StatCompare.prototype.drawPageIndicators = function() {
+	//
 };
 
 // Deprecated
