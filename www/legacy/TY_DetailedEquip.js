@@ -195,6 +195,7 @@ Window_StatCompare.prototype.getOldStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, false);
 
 	if (this.needsFormattedValue(statType)) {
+		//value -= this.isValueSpecialCase(statType, statId) ? 1 : 0;
 		value = this.formatStatValue(statType, value);
 	}
 
@@ -205,6 +206,7 @@ Window_StatCompare.prototype.getNewStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, true);
 
 	if (this.needsFormattedValue(statType)) {
+		//value = this.isValueSpecialCase(statType, statId) ? 1 : 0;
 		value = this.formatStatValue(statType, value);
 	}
 	
@@ -215,18 +217,16 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 	return _.STAT_TYPE_PARAM !== statType;
 };
 
-Window_StatCompare.prototype.getFormatBaseValue = function(statType, value) {
-	if (_.STAT_TYPE_ELEMENT === statType || _.STAT_TYPE_SPARAM === statType) {
-		// NOTE: Elemental values have special formatting
-		return 1 - value;
-	} else {
-		return value;
-	}
+Window_StatCompare.prototype.isValueSpecialCase = function(statType, statId) {
+	const isHitRate = _.STAT_TYPE_XPARAM === statType && statId === 0;
+	const isSparam = _.STAT_TYPE_SPARAM === statType;
+	const isElement = _.STAT_TYPE_ELEMENT === statType;
+	return isHitRate || isSparam || isElement;
 };
 
 Window_StatCompare.prototype.formatStatValue = function(statType, value) {
-	const baseValue = this.getFormatBaseValue(statType, value);
-	const percentValue = baseValue * 100;
+	//const baseValue = this.getFormatBaseValue(statType, value);
+	const percentValue = value * 100;
 	return Math.round(percentValue.toFixed(2));
 };
 
