@@ -39,7 +39,7 @@ Imported.TY_DetailedEquip = true;
 (function(_) {
 
 //==========================================================
-	// Constants
+	// Constants -- Do not edit these values
 //==========================================================
 
 _.STAT_TYPE_PARAM = "param";
@@ -52,7 +52,7 @@ _.PAGE_TYPE_RESIST = "resist";
 _.PAGE_TYPE_COMPLEX = "complex";
 
 //==========================================================
-	// Parameters
+	// Parameters -- You can edit these values 
 //==========================================================
 
 _.pageTextWidth = 120;
@@ -99,11 +99,52 @@ _.pageOrder = [
 	// Window_StatCompare
 //==========================================================
 
+Window_StatCompare.PAGE_DIRECTION_LEFT = "left";
+Window_StatCompare.PAGE_DIRECTION_RIGHT = "right";
+
 const TY_Window_StatCompare_initialize = Window_StatCompare.prototype.initialize;
 Window_StatCompare.prototype.initialize = function(wx, wy, ww, wh) {
+	this._arrowWidth = 0;
+	this._paramNameWidth = 0;
+	this._paramValueWidth = 0;
 	this._pageType = _.pageOrder[0];
 	TY_Window_StatCompare_initialize.call(this, wx, wy, ww, wh);
 };
+
+Window_StatCompare.prototype.changePage = function(direction) {
+	if (Window_StatCompare.PAGE_DIRECTION_LEFT === direction) {
+		this.changeLeftPage();
+	} else {
+		this.changeRightPage();
+	}
+
+	this.createWidths();
+	this.refresh();
+}
+
+Window_StatCompare.prototype.changeLeftPage = function() {
+	const lastIndex = _.pageOrder.length - 1;
+	const currentIndex = _.pageOrder.indexOf(this._pageType);
+	const newIndex = currentIndex - 1;
+
+	if (newIndex < 0) {
+		this._pageType = _.pageOrder[lastIndex];
+	} else {
+		this._pageType = _.pageOrder[newIndex];
+	}
+}
+
+Window_StatCompare.prototype.changeRightPage = function() {
+	const lastIndex = _.pageOrder.length - 1;
+	const currentIndex = _.pageOrder.indexOf(this._pageType);
+	const newIndex = currentIndex + 1;
+
+	if (newIndex > lastIndex) {
+		this._pageType = _.pageOrder[0];
+	} else {
+		this._pageType = _.pageOrder[newIndex];
+	}
+}
 
 Window_StatCompare.prototype.getPageStatTypes = function() {
 	switch (this._pageType) {
@@ -136,6 +177,47 @@ Window_StatCompare.prototype.getStatName = function(statType, statId) {
 
 	return text;
 }
+
+Window_StatCompare.prototype.getStatValue = function(statType, statId, tempActor) {
+	const actor = tempActor ? this._tempActor : this._actor;
+
+	switch (statType) {
+		case _.STAT_TYPE_PARAM:   return actor.param(statId);
+		case _.STAT_TYPE_XPARAM:  return actor.xparam(statId);
+		case _.STAT_TYPE_SPARAM:  return actor.sparam(statId);
+		case _.STAT_TYPE_ELEMENT: return actor.elementRate(statId);
+		default: return 0;
+	}
+}
+
+Window_StatCompare.prototype.getOldStatValue = function(statType, statId) {
+	let value = this.getStatValue(statType, statId, false);
+
+	if (this.needsFormattedValue(statType)) {
+		value = this.formatStatValue(value);
+	}
+
+	return value;
+}
+
+Window_StatCompare.prototype.getNewStatValue = function(statType, statId) {
+	let value = this.getStatValue(statType, statId, true);
+
+	if (this.needsFormattedValue(statType)) {
+		value = this.formatStatValue(value);
+	}
+	
+	return value;
+}
+
+Window_StatCompare.prototype.needsFormattedValue = function(statType) {
+	return _.STAT_TYPE_PARAM !== statType;
+};
+
+Window_StatCompare.prototype.formatStatValue = function(statType, value) {
+	const baseValue = 
+	return Math.round(((1 - value) * 100).toPrecision(3));
+};
 
 Window_StatCompare.prototype.createWidths = function() {
 	this.updateArrowSymbolWidth();
@@ -184,17 +266,15 @@ Window_StatCompare.prototype.drawPageContents = function() {
 
 	const statTypes = this.getPageStatTypes();
 	for (const statType of statTypes) {
-		this.drawPageStats(statType);
+		this.drawAllStats(statType);
 	}
 };
 
-Window_StatCompare.prototype.drawPageStats = function(statType) {
-	const stats = this.getStatIds(statType);
-	for (let i = 0; i < stats.length; i++) {
+Window_StatCompare.prototype.drawAllStats = function(statType) {
+	const statIds = this.getStatIds(statType);
 
-		const statId = stats[i];
+	for (const statId of statIds) {
 		const y = this.lineHeight() * this._lineIndex;
-
 		this.drawStat(0, y, statType, statId);
 		this._lineIndex++;
 	}
@@ -203,8 +283,11 @@ Window_StatCompare.prototype.drawPageStats = function(statType) {
 Window_StatCompare.prototype.drawStat = function(x, y, statType, statId) {
 	this.drawDarkRect(x, y, this.contents.width, this.lineHeight());
 	this.drawStatName(y, statType, statId);
-	this.drawStatValue(y, statType, statId);
+	this.drawOldStatValue(y, statType, statId);
 	this.drawRightArrow(y);
+	if (!this._tempActor) return;
+	this.drawNewStatValue(y, statType, statId);
+	this.drawStatDifference(y, statType, statId);
 };
 
 Window_StatCompare.prototype.drawStatName = function(y, statType, statId) {
@@ -215,56 +298,83 @@ Window_StatCompare.prototype.drawStatName = function(y, statType, statId) {
     this.drawText(statName, x, y, this._paramNameWidth);
 };
 
-Window_StatCompare.prototype.statValueX = function() {
-	const padding = this.textPadding();
-	const contentsWidth = this.contents.width;
-	const valueWidth = this._paramValueWidth * 3;
-	const symbolWidth = this._arrowWidth;
-	return (contentsWidth - padding) - valueWidth + symbolWidth;
-};
+// Replaces "drawCurrentParam"
+Window_StatCompare.prototype.drawOldStatValue = function(y, statType, statId) {
+	let x = this.contents.width - this.textPadding();
+    x -= this._paramValueWidth * 3 + this._arrowWidth;
 
-Window_StatCompare.prototype.drawStatValue = function(y, statType, statId) {
-	const x = this.statValueX();
-    const value = 100;
+    const value = this.getOldStatValue(statType, statId);
+
     this.resetTextColor();
     this.drawText(value, x, y, this._paramValueWidth, 'right');
 };
 
-Window_StatCompare.prototype.rightArrowX = function() {
-	const padding = this.textPadding();
-	const contentsWidth = this.contents.width;
-	const valueWidth = this._paramValueWidth * 2;
-	const symbolWidth = this._arrowWidth;
-	return contentsWidth - padding - valueWidth + symbolWidth;
+// Overwrites "drawRightArrow"
+Window_StatCompare.prototype.drawRightArrow = function(y) {
+	let x = this.contents.width - this.textPadding();
+    x -= this._paramValueWidth * 2 + this._arrowWidth;
+
+    this.changeTextColor(this.systemColor());
+    this.drawText(_.rightArrowSymbol, x, y, this._arrowWidth, 'center');
 };
 
-Window_StatCompare.prototype.drawRightArrow = function(y) {
-	const x = this.rightArrowX();
-    const width = this._arrowWidth;
-    this.changeTextColor(this.systemColor());
-    this.drawText(TY.detailedEquip.rightArrowSymbol, x, y, width, 'center');
+// Replaces "drawNewParam"
+Window_StatCompare.prototype.drawNewStatValue = function(y, statType, statId) {
+    let x = this.contents.width - this.textPadding();
+    x -= this._paramValueWidth * 2;
+
+    const newValue = this.getNewStatValue(statType, statId);
+    const diffValue = newValue - this.getOldStatValue(statType, statId);
+
+    this.changeTextColor(this.paramchangeTextColor(diffValue));
+    this.drawText(newValue, x, y, this._paramValueWidth, 'right');
 };
+
+Window_StatCompare.prototype.formatValueDifference = function(value) {
+	if (value > 0) {
+		return ' (+' + value + ')';
+	} else {
+		return ' (' + value + ')';
+	}
+};
+
+// Replaces "drawParamDifference"
+Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) {
+    let x = this.contents.width - this.textPadding();
+    x -= this._paramValueWidth;
+
+    const newValue = this.getNewStatValue(statType, statId);
+    let diffValue = newValue - this.getOldStatValue(statType, statId);
+
+    if (diffValue === 0) return;
+
+    diffValue = this.formatValueDifference(diffValue);
+    this.changeTextColor(this.paramchangeTextColor(diffValue));
+    this.drawText(diffValue, x, y, this._paramValueWidth, 'left');
+};
+
+// Deprecated
+
+Window_StatCompare.prototype.drawItem = function() {};
+Window_StatCompare.prototype.drawParamName = function() {};
+Window_StatCompare.prototype.drawCurrentParam = function() {};
+Window_StatCompare.prototype.drawNewParam = function() {};
+Window_StatCompare.prototype.drawParamDifference = function() {};
 
 //==========================================================
 	// Scene_Equip
 //==========================================================
 
-// Check if the 'Window_StatCompare' is allowed to change its page
 Scene_Equip.prototype.canChangeComparePage = function() {
 	return this._lowerRightVisibility && this._compareWindow;
 };
 
-// Update the current displaying page information
 Scene_Equip.prototype.updateLowerRightWindowTriggers = function() {
 	if (!this.canChangeComparePage()) return;
-	if (Input.isRepeated('left')) {
-		this._compareWindow.setPage(1);
-		this._compareWindow.createWidths();
-		this._compareWindow.refresh();
-	} else if (Input.isRepeated('right')) {
-		this._compareWindow.setPage(2);
-		this._compareWindow.createWidths();
-		this._compareWindow.refresh();
+	if (Input.isRepeated(Window_StatCompare.PAGE_DIRECTION_LEFT)) {
+		this._compareWindow.changePage(Window_StatCompare.PAGE_DIRECTION_LEFT);
+	} else if (Input.isRepeated(Window_StatCompare.PAGE_DIRECTION_RIGHT)) {
+		this._compareWindow.changePage(Window_StatCompare.PAGE_DIRECTION_RIGHT);
 	}
 };
 
