@@ -22,8 +22,17 @@
  * Changelog
  * ============================================================================
  *
- * Version 1.1.0: [4/22/2025]
- * - 
+ * Version 1.1.0: [4/24/2025]
+ * - Added a new page section for the following stats:
+ *   - Hit Rate
+ *   - Crit Rate
+ *   - Evasion
+ *   - M. Evasion
+ *   - Resistance
+ *   - M. Resistance
+ * - Increased the maximum width for values.
+ *   - Previously values such as "-50%" would be squashed.
+ *   - Now the only values that get squashed are "-100%".
  *
  * Version 1.0.1:
  * - Mod should now work even without editing the plugins.js file.
@@ -55,6 +64,8 @@ _.PAGE_TYPE_COMPLEX = "complex";
 	// Parameters -- You can edit these values 
 //==========================================================
 
+// These parameters determine what stats appear
+
 // BODY, MIND, ATTACK, M.ATTACK, AGILITY
 _.statIdsParam = [0, 1, 2, 4, 6];
 
@@ -67,6 +78,7 @@ _.statIdsSparam = [6, 7];
 // BLUNT, SLASH, PIERCE, FIRE, OTHERWORDLY
 _.statIdsElement = [1, 2, 3, 4, 6];
 
+// Contains the names of displayed stats
 _.statNamesXparam = {
 	0: "Hit Rate",
 	2: "Crit Rate",
@@ -74,6 +86,7 @@ _.statNamesXparam = {
 	4: "M. Evasion",
 }
 
+// Contains the names of displayed stats
 _.statNamesSparam = {
 	6: "Resistance",
 	7: "M. Resistance",
@@ -84,8 +97,6 @@ _.pageOrder = [
 	_.PAGE_TYPE_RESIST,
 	_.PAGE_TYPE_COMPLEX
 ];
-
-_.pageTextWidth = 120;
 
 _.leftArrowSymbol = "\u2190";
 
@@ -250,7 +261,6 @@ Window_StatCompare.prototype.updateArrowSymbolWidth = function() {
 Window_StatCompare.prototype.updateStatValueWidth = function() {
 	// This basically fits both a negative sign and percent symbol
 	this._paramValueWidth = this.textWidth("00000");
-	//this._paramValueWidth = this.textWidth("0000");
 }
 
 Window_StatCompare.prototype.refreshStatNameWidth = function() {
@@ -321,7 +331,6 @@ Window_StatCompare.prototype.drawStatName = function(y, statType, statId) {
 // Replaces "drawCurrentParam"
 Window_StatCompare.prototype.drawOldStatValue = function(y, statType, statId) {
 	let x = this.contents.width - this.textPadding();
-    //x -= this._paramValueWidth * 3 + this._arrowWidth + this.textPadding() * 2;
     x -= this._paramValueWidth * 3 + this._arrowWidth - this.textPadding() * 2;
 
     const value = this.getOldStatValue(statType, statId);
@@ -334,7 +343,6 @@ Window_StatCompare.prototype.drawOldStatValue = function(y, statType, statId) {
 // Overwrites "drawRightArrow"
 Window_StatCompare.prototype.drawRightArrow = function(y) {
 	let x = this.contents.width - this.textPadding();
-    //x -= this._paramValueWidth * 2 + this._arrowWidth + this.textPadding() * 2;
     x -= this._paramValueWidth * 2 + this._arrowWidth - this.textPadding() * 2;
 
     this.changeTextColor(this.systemColor());
@@ -344,7 +352,6 @@ Window_StatCompare.prototype.drawRightArrow = function(y) {
 // Replaces "drawNewParam"
 Window_StatCompare.prototype.drawNewStatValue = function(y, statType, statId) {
     let x = this.contents.width - this.textPadding();
-    //x -= this._paramValueWidth * 2 + this.textPadding() * 2;
     x -= this._paramValueWidth * 2 - this.textPadding() * 2;
 
     const newValue = this.getNewStatValue(statType, statId);
@@ -366,8 +373,7 @@ Window_StatCompare.prototype.formatValueDifference = function(value) {
 // Replaces "drawParamDifference"
 Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) {
     let x = this.contents.width - this.textPadding();
-    //x -= this._paramValueWidth + this.textPadding() * 2;
-    x -= this._paramValueWidth - this.textPadding() * 2;
+    x -= this._paramValueWidth - this.textPadding();
 
     const newValue = this.getNewStatValue(statType, statId);
     let diffValue = newValue - this.getOldStatValue(statType, statId);
@@ -376,11 +382,40 @@ Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) 
     this.changeTextColor(this.paramchangeTextColor(diffValue));
 
     diffValue = this.formatValueDifference(diffValue);
-    this.drawText(diffValue, x, y, this.textWidth("0000"), 'left');
+    this.drawText(diffValue, x, y, this._paramValueWidth, 'left');
 };
 
 Window_StatCompare.prototype.drawPageIndicators = function() {
-	//
+	this.resetTextColor();
+
+	const rect = {
+		y: this.lineHeight() * 6.3,
+		width: this.contents.width / 2,
+		height: this.lineHeight()
+	}
+
+	this.drawIndicator(Window_StatCompare.PAGE_DIRECTION_LEFT, rect);
+	this.drawIndicator(Window_StatCompare.PAGE_DIRECTION_RIGHT, rect);
+};
+
+Window_StatCompare.prototype.getPageIndicatorText = function(direction) {
+	if (Window_StatCompare.PAGE_DIRECTION_LEFT === direction) {
+		return _.leftArrowSymbol + " " + _.prevPageText;
+	} else {
+		return _.nextPageText + " " + _.rightArrowSymbol;
+	}
+};
+
+Window_StatCompare.prototype.drawIndicator = function(direction, rect) {
+	const leftDirection = Window_StatCompare.PAGE_DIRECTION_LEFT;
+	const padding = 32;
+
+	const rectX = leftDirection === direction ? 0 : rect.width;
+	const textX = leftDirection === direction ? padding / 2 : rect.width + padding;
+	const text = this.getPageIndicatorText(direction);
+
+	this.drawDarkRect(rectX, rect.y, rect.width, rect.height);
+	this.drawText(text, textX, rect.y, this.textWidth(text), 'center');
 };
 
 // Deprecated
@@ -400,6 +435,30 @@ Scene_Equip.prototype.canChangeComparePage = function() {
 };
 
 Scene_Equip.prototype.updateLowerRightWindowTriggers = function() {
+	if (!this.canChangeComparePage()) return;
+	if (Input.isRepeated(Window_StatCompare.PAGE_DIRECTION_LEFT)) {
+		this._compareWindow.changePage(Window_StatCompare.PAGE_DIRECTION_LEFT);
+	} else if (Input.isRepeated(Window_StatCompare.PAGE_DIRECTION_RIGHT)) {
+		this._compareWindow.changePage(Window_StatCompare.PAGE_DIRECTION_RIGHT);
+	}
+};
+
+//==========================================================
+	// Scene_Battle
+//==========================================================
+
+// Adds compatibility with commandequip.js by Jeneeus Guruman
+const TY_Scene_Battle_update = Scene_Battle.prototype.update;
+Scene_Battle.prototype.update = function() {
+	TY_Scene_Battle_update.call(this);
+	this.updateLowerRightWindowTriggers();
+};
+
+Scene_Battle.prototype.canChangeComparePage = function() {
+	return this._compareWindow && this._compareWindow.visible;
+};
+
+Scene_Battle.prototype.updateLowerRightWindowTriggers = function() {
 	if (!this.canChangeComparePage()) return;
 	if (Input.isRepeated(Window_StatCompare.PAGE_DIRECTION_LEFT)) {
 		this._compareWindow.changePage(Window_StatCompare.PAGE_DIRECTION_LEFT);
