@@ -195,8 +195,7 @@ Window_StatCompare.prototype.getOldStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, false);
 
 	if (this.needsFormattedValue(statType)) {
-		//value -= this.isValueSpecialCase(statType, statId) ? 1 : 0;
-		value = this.formatStatValue(statType, value);
+		value = this.formatStatValue(statType, statId, value);
 	}
 
 	return value;
@@ -206,8 +205,7 @@ Window_StatCompare.prototype.getNewStatValue = function(statType, statId) {
 	let value = this.getStatValue(statType, statId, true);
 
 	if (this.needsFormattedValue(statType)) {
-		//value = this.isValueSpecialCase(statType, statId) ? 1 : 0;
-		value = this.formatStatValue(statType, value);
+		value = this.formatStatValue(statType, statId, value);
 	}
 	
 	return value;
@@ -217,16 +215,19 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 	return _.STAT_TYPE_PARAM !== statType;
 };
 
-Window_StatCompare.prototype.isValueSpecialCase = function(statType, statId) {
-	const isHitRate = _.STAT_TYPE_XPARAM === statType && statId === 0;
-	const isSparam = _.STAT_TYPE_SPARAM === statType;
-	const isElement = _.STAT_TYPE_ELEMENT === statType;
-	return isHitRate || isSparam || isElement;
+Window_StatCompare.prototype.getFormatBaseValue = function(statType, statId, value) {
+	if (_.STAT_TYPE_SPARAM === statType || _.STAT_TYPE_ELEMENT === statType) {
+		return 1 - value;
+	} else if (_.STAT_TYPE_XPARAM === statType && statId === 0) {
+		return value - 1;
+	} else {
+		return value;
+	}
 };
 
-Window_StatCompare.prototype.formatStatValue = function(statType, value) {
-	//const baseValue = this.getFormatBaseValue(statType, value);
-	const percentValue = value * 100;
+Window_StatCompare.prototype.formatStatValue = function(statType, statId, value) {
+	const baseValue = this.getFormatBaseValue(statType, statId, value);
+	const percentValue = baseValue * 100;
 	return Math.round(percentValue.toFixed(2));
 };
 
@@ -247,7 +248,9 @@ Window_StatCompare.prototype.updateArrowSymbolWidth = function() {
 }
 
 Window_StatCompare.prototype.updateStatValueWidth = function() {
-	this._paramValueWidth = this.textWidth("0000");
+	// This basically fits both a negative sign and percent symbol
+	this._paramValueWidth = this.textWidth("00000");
+	//this._paramValueWidth = this.textWidth("0000");
 }
 
 Window_StatCompare.prototype.refreshStatNameWidth = function() {
@@ -318,7 +321,8 @@ Window_StatCompare.prototype.drawStatName = function(y, statType, statId) {
 // Replaces "drawCurrentParam"
 Window_StatCompare.prototype.drawOldStatValue = function(y, statType, statId) {
 	let x = this.contents.width - this.textPadding();
-    x -= this._paramValueWidth * 3 + this._arrowWidth + this.textPadding() * 2;
+    //x -= this._paramValueWidth * 3 + this._arrowWidth + this.textPadding() * 2;
+    x -= this._paramValueWidth * 3 + this._arrowWidth - this.textPadding() * 2;
 
     const value = this.getOldStatValue(statType, statId);
     const symbol = this.getValueSymbol(statType);
@@ -330,7 +334,8 @@ Window_StatCompare.prototype.drawOldStatValue = function(y, statType, statId) {
 // Overwrites "drawRightArrow"
 Window_StatCompare.prototype.drawRightArrow = function(y) {
 	let x = this.contents.width - this.textPadding();
-    x -= this._paramValueWidth * 2 + this._arrowWidth + this.textPadding() * 2;
+    //x -= this._paramValueWidth * 2 + this._arrowWidth + this.textPadding() * 2;
+    x -= this._paramValueWidth * 2 + this._arrowWidth - this.textPadding() * 2;
 
     this.changeTextColor(this.systemColor());
     this.drawText(_.rightArrowSymbol, x, y, this._arrowWidth, 'center');
@@ -339,7 +344,8 @@ Window_StatCompare.prototype.drawRightArrow = function(y) {
 // Replaces "drawNewParam"
 Window_StatCompare.prototype.drawNewStatValue = function(y, statType, statId) {
     let x = this.contents.width - this.textPadding();
-    x -= this._paramValueWidth * 2 + this.textPadding() * 2;
+    //x -= this._paramValueWidth * 2 + this.textPadding() * 2;
+    x -= this._paramValueWidth * 2 - this.textPadding() * 2;
 
     const newValue = this.getNewStatValue(statType, statId);
     const diffValue = newValue - this.getOldStatValue(statType, statId);
@@ -360,7 +366,8 @@ Window_StatCompare.prototype.formatValueDifference = function(value) {
 // Replaces "drawParamDifference"
 Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) {
     let x = this.contents.width - this.textPadding();
-    x -= this._paramValueWidth + this.textPadding() * 2;
+    //x -= this._paramValueWidth + this.textPadding() * 2;
+    x -= this._paramValueWidth - this.textPadding() * 2;
 
     const newValue = this.getNewStatValue(statType, statId);
     let diffValue = newValue - this.getOldStatValue(statType, statId);
@@ -369,7 +376,7 @@ Window_StatCompare.prototype.drawStatDifference = function(y, statType, statId) 
     this.changeTextColor(this.paramchangeTextColor(diffValue));
 
     diffValue = this.formatValueDifference(diffValue);
-    this.drawText(diffValue, x, y, this.textWidth(diffValue), 'left');
+    this.drawText(diffValue, x, y, this.textWidth("0000"), 'left');
 };
 
 Window_StatCompare.prototype.drawPageIndicators = function() {
