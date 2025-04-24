@@ -131,26 +131,22 @@ _.pageOrder = [
 
 const TY_Window_StatCompare_initialize = Window_StatCompare.prototype.initialize;
 Window_StatCompare.prototype.initialize = function(wx, wy, ww, wh) {
-	this._currentPage = 1;
+	this._pageType = 1;
 	TY_Window_StatCompare_initialize.call(this, wx, wy, ww, wh);
 };
 
-// Check if the window should draw basic stats
 Window_StatCompare.prototype.isPageTypeBasic = function() {
-	return this._actor && this._currentPage == 1;
+	return this._pageType === _.PAGE_TYPE_BASIC;
 };
 
-// Check if the window should draw element resistances
 Window_StatCompare.prototype.isPageTypeResist = function() {
-	return this._actor && this._currentPage == 2;
+	return this._pageType === _.PAGE_TYPE_RESIST;
 };
 
-// Check if the window should draw complex stats
 Window_StatCompare.prototype.isPageTypeComplex = function() {
-	return this._actor && this._currentPage == 3;
+	return this._pageType === _.PAGE_TYPE_COMPLEX;
 };
 
-// 
 Window_StatCompare.prototype.getStatIds = function(statType) {
 	const list = {
 		[_.STAT_TYPE_PARAM]:   _.statIdsParam,
@@ -170,7 +166,7 @@ Window_StatCompare.prototype.getStatName = function(statType, statId) {
 		[_.STAT_TYPE_ELEMENT]() { return $dataSystem.elements[statId] }
 	}
 	if (list[statType]) {
-		return list[statType](statId) ?? "";
+		return list[statType]() ?? "";
 	}
 	return "";
 }
@@ -180,7 +176,7 @@ Window_StatCompare.prototype.createWidths = function() {
 	this._paramNameWidth = 0;
 	this._bonusValueWidth = _.valueSpacing;
 
-	var valueWidth = ('').padZero(_.valueDigits);
+	const valueWidth = ('').padZero(_.valueDigits);
 	this._paramValueWidth = this.textWidth(valueWidth);
 	this._arrowWidth = this.textWidth('\u2192' + ' ');
 
@@ -189,16 +185,16 @@ Window_StatCompare.prototype.createWidths = function() {
 
 Window_StatCompare.prototype.updatePageStatWidths = function() {
     if (this.isPageTypeBasic()) {
-		this.updateParamNameWidth(_.STAT_TYPE_PARAM);
+		this.updateStatNameWidth(_.STAT_TYPE_PARAM);
 	} else if (this.isPageTypeResist()) {
-		this.updateParamNameWidth(_.STAT_TYPE_ELEMENT);
+		this.updateStatNameWidth(_.STAT_TYPE_ELEMENT);
 	} else if (this.isPageTypeComplex()) {
-		this.updateParamNameWidth(_.STAT_TYPE_XPARAM);
-		this.updateParamNameWidth(_.STAT_TYPE_SPARAM);
+		this.updateStatNameWidth(_.STAT_TYPE_XPARAM);
+		this.updateStatNameWidth(_.STAT_TYPE_SPARAM);
 	}
 }
 
-Window_StatCompare.prototype.updateParamNameWidth = function(statType) {
+Window_StatCompare.prototype.updateStatNameWidth = function(statType) {
     const statIds = this.getStatIds(statType);
     for (const statId of statIds) {
     	const statName = this.getStatName(statType, statId);
@@ -207,17 +203,28 @@ Window_StatCompare.prototype.updateParamNameWidth = function(statType) {
     }
 }
 
-// Refresh the contents of the window
+Window_StatCompare.prototype.drawStatName = function(y, statType, statId) {
+    const x = this.textPadding();
+    const statName = this.getStatName(statType, statId);
+
+    this.changeTextColor(this.systemColor());
+    this.drawText(statName, x, y, this._paramNameWidth);
+};
+
+Window_StatCompare.prototype.drawStatList = function(statType) {
+	const stats = this.getStatIds(statType);
+	for (let i = 0; i < stats.length; i++) {
+		const statId = stats[i];
+		const y = this.lineHeight() * i;
+		this.drawItem(0, y, statType, statId);
+	}
+};
+
 Window_StatCompare.prototype.refresh = function() {
 	this.contents.clear();
 	this.drawPageLayout();
-	if (this.isPageTypeBasic()) {
-		this.drawParamList();
-	} else if (this.isPageTypeResist()) {
-		this.drawElementList();
-	} else if (this.isPageTypeComplex()) {
-		this.drawXSparamList();
-	}
+
+	this.drawStatList();
 };
 
 // Makes a list of basic stats to display
@@ -229,24 +236,6 @@ Window_StatCompare.prototype.drawParamList = function() {
 		this.drawParam(0, posY, paramId);
 	}
 };
-
-// Makes a list of element resistances to display
-Window_StatCompare.prototype.drawElementList = function() {
-	var elements = this.elementIdArray();
-	for (var i = 0; i < elements.length; i++) {
-		var elementId = elements[i];
-		var posY = this.lineHeight() * i;
-		this.drawElement(0, posY, elementId);
-	}
-};
-
-Window_StatCompare.prototype.drawXSparamList = function() {
-	
-};
-
-// Draw the names and values of basic stats
-// [Note] Alias for the original "drawItem" method
-Window_StatCompare.prototype.drawParam = Window_StatCompare.prototype.drawItem;
 
 // Draw the names and values of element resistances
 Window_StatCompare.prototype.drawElement = function(x, y, elementId) {
@@ -344,7 +333,7 @@ Window_StatCompare.prototype.drawPageLayout = function() {
 
 // Set the current displaying page
 Window_StatCompare.prototype.setPage = function(value) {
-    this._currentPage = value;
+    this._pageType = value;
 };
 
 //==========================================================
