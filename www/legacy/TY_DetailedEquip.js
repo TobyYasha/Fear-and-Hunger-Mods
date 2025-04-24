@@ -55,44 +55,16 @@ _.PAGE_TYPE_COMPLEX = "complex";
 	// Parameters
 //==========================================================
 
-/* 
-	Name: Value Digits
-	Desc: How many digits can a number have before its squashed.
-*/
 _.valueDigits = 4;
 
-/*
-	Name: Value Spacing
-	Desc: The spacing added between a stat's old and new value.
-	This is used when equipping/unequipping a new equipment.
-*/
 _.valueSpacing = 65;
 
-/*
-	Name: Page Arrows
-	Desc: Whether or not to draw arrow symbols next to the page text indicators
-	Example: <- Prev Page | Next Page ->
-*/
 _.drawPageArrows = true;
 
-/*
-	Name: Page Text Width
-	Desc: How wide the "Previous Page" and "Next Page" can be before its squashed.
-*/
 _.pageTextWidth = 120;
 
-/*
-	Name: Previous Page Text
-	Desc: The text used for indicating the previous page.
-	This is added at the bottom of the stat display.
-*/
 _.prevPageText = "Prev Page";
 
-/*
-	Name: Next Page Text
-	Desc: The text used for indicating the next page.
-	This is added at the bottom of the stat display.
-*/
 _.nextPageText = "Next Page";
 
 // BODY, MIND, ATTACK, M.ATTACK, AGILITY
@@ -148,27 +120,27 @@ Window_StatCompare.prototype.isPageTypeComplex = function() {
 };
 
 Window_StatCompare.prototype.getStatIds = function(statType) {
-	const list = {
-		[_.STAT_TYPE_PARAM]:   _.statIdsParam,
-		[_.STAT_TYPE_XPARAM]:  _.statIdsXparam,
-		[_.STAT_TYPE_SPARAM]:  _.statIdsSparam,
-		[_.STAT_TYPE_ELEMENT]: _.statIdsElement
+	switch (statType) {
+		case _.STAT_TYPE_PARAM:   return _.statIdsParam;
+		case _.STAT_TYPE_XPARAM:  return _.statIdsXparam;
+		case _.STAT_TYPE_SPARAM:  return _.statIdsSparam;
+		case _.STAT_TYPE_ELEMENT: return _.statIdsElement;
+		default: return [];
 	}
-	return list[statType] ?? [];
 }
 
 // 
 Window_StatCompare.prototype.getStatName = function(statType, statId) {
-	const list = {
-		[_.STAT_TYPE_PARAM]()   { return TextManager.param(statId) },
-		[_.STAT_TYPE_XPARAM]()  { return _.xparamNames[statId] },
-		[_.STAT_TYPE_SPARAM]()  { return _.sparamNames[statId] },
-		[_.STAT_TYPE_ELEMENT]() { return $dataSystem.elements[statId] }
+	let text = "";
+
+	switch (statType) {
+		case _.STAT_TYPE_PARAM:   text = TextManager.param(statId); break;
+		case _.STAT_TYPE_XPARAM:  text = _.statNamesXparam[statId]; break;
+		case _.STAT_TYPE_SPARAM:  text = _.statNamesSparam[statId]; break;
+		case _.STAT_TYPE_ELEMENT: text = $dataSystem.elements[statId]; break;
 	}
-	if (list[statType]) {
-		return list[statType]() ?? "";
-	}
-	return "";
+
+	return text;
 }
 
 // Configurations relating the width of names and values
@@ -184,6 +156,26 @@ Window_StatCompare.prototype.createWidths = function() {
 }
 
 Window_StatCompare.prototype.updatePageStatWidths = function() {
+	let types = [];
+
+	switch (this._pageType) {
+		case _.PAGE_TYPE_BASIC:
+			types.push(_.STAT_TYPE_PARAM);
+			break;
+		case _.PAGE_TYPE_RESIST:
+			types.push(_.STAT_TYPE_ELEMENT);
+			break;
+		case _.PAGE_TYPE_COMPLEX:
+			types.push(_.STAT_TYPE_XPARAM);
+			types.push(_.STAT_TYPE_SPARAM);
+			break;
+
+	}
+
+	for (const type of types) {
+		this.updateStatNameWidth(type);
+	}
+
     if (this.isPageTypeBasic()) {
 		this.updateStatNameWidth(_.STAT_TYPE_PARAM);
 	} else if (this.isPageTypeResist()) {
@@ -310,11 +302,7 @@ Window_StatCompare.prototype.drawElementDifference = function(y, elementId) {
 
 // If allowed, will add arrows to the page text
 Window_StatCompare.prototype.formatPageText = function(text, facing) {
-	if (_.drawPageArrows) {
-		return facing == 'left' ? '\u2190 '+ text : text + ' \u2192';
-	} else {
-		return text;
-	}
+	return facing == 'left' ? '\u2190 '+ text : text + ' \u2192';
 };
 
 // Display labels indicating the page layout
