@@ -1,6 +1,6 @@
 //=============================================================================
 /*:
- * @plugindesc v1.1.0 Displays Basic Stats and Element Resistances
+ * @plugindesc v1.1.1 Displays Basic Stats and Element Resistances
  * in the Equipment Scene.
  * @author Toby Yasha & Yanfly
  *
@@ -22,6 +22,12 @@
  * Changelog
  * ============================================================================
  *
+ * Version 1.1.1: [4/25/2025]
+ * - Changed "Hit Rate" display from "value - 1" to "value"
+ *   - This means the starting "Hit Rate" will be 
+ *     shown as 97% instead of -3%.
+ * - Added failsafe in case failing to retrieve stat name.
+ *
  * Version 1.1.0: [4/24/2025]
  * - Added a new page section for the following stats:
  *   - Hit Rate
@@ -33,6 +39,7 @@
  * - Increased the maximum width for values.
  *   - Previously values such as "-50%" would be squashed.
  *   - Now the only values that get squashed are "-100%".
+ * - Page contents wrap around when pressing LEFT / RIGHT
  *
  * Version 1.0.1:
  * - Mod should now work even without editing the plugins.js file.
@@ -178,7 +185,7 @@ Window_StatCompare.prototype.getStatIds = function(statType) {
 }
 
 Window_StatCompare.prototype.getStatName = function(statType, statId) {
-	let text = "";
+	let text = null;
 
 	switch (statType) {
 		case _.STAT_TYPE_PARAM:   text = TextManager.param(statId); break;
@@ -187,7 +194,7 @@ Window_StatCompare.prototype.getStatName = function(statType, statId) {
 		case _.STAT_TYPE_ELEMENT: text = $dataSystem.elements[statId]; break;
 	}
 
-	return text;
+	return text ?? "";
 }
 
 Window_StatCompare.prototype.getStatValue = function(statType, statId, tempActor) {
@@ -229,8 +236,6 @@ Window_StatCompare.prototype.needsFormattedValue = function(statType) {
 Window_StatCompare.prototype.getFormatBaseValue = function(statType, statId, value) {
 	if (_.STAT_TYPE_SPARAM === statType || _.STAT_TYPE_ELEMENT === statType) {
 		return 1 - value;
-	} else if (_.STAT_TYPE_XPARAM === statType && statId === 0) {
-		return value - 1;
 	} else {
 		return value;
 	}
