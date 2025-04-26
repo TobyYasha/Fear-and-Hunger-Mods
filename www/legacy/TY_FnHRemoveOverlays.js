@@ -1,7 +1,7 @@
 (function() {
 	
 	//==========================================================
-		// VERSION 1.1.0 -- by Toby Yasha
+		// VERSION 1.1.1 -- by Toby Yasha
 	//==========================================================
 		
 	// The following settings are meant to be edited by users:
@@ -34,28 +34,6 @@
 	//==========================================================
 		// Spriteset_Map
 	//==========================================================
-
-	var Imported = Imported || {};
-	
-	const TY_Spriteset_Map_initialize = Spriteset_Map.prototype.initialize;
-	Spriteset_Map.prototype.initialize = function() {
-		TY_Spriteset_Map_initialize.call(this);
-		if (Imported.Galv_LayerGraphics) {
-			this.disableFogOverlays();
-		}
-	};
-	
-	// GALV_LayerGraphics.js -- Disable fog on map in F&H 2
-	Spriteset_Map.prototype.disableFogOverlays = function() {
-		if (!allowFogOverlay) {
-			if (this.layerGraphics[1]) {
-				this.layerGraphics[1].visible = false;
-			}
-			if (this.layerGraphics[2]) {
-				this.layerGraphics[2].visible = false;
-			}
-		}
-	}
 	
 	// GALV_VisibilityRange.js -- Disable visibility range in F&H 2
 	const TY_Spriteset_Map_setVisibilityRange = Spriteset_Map.prototype.setVisibilityRange;
@@ -71,6 +49,29 @@
     	if (allowLightingOverlay) {
     		TY_Spriteset_Map_createLightmask.call(this);
     	}
+	};
+
+	//==========================================================
+		// Sprite_LayerGraphic
+	//==========================================================
+
+	const LAYER_GRAPHIC_FOG = ["fog1", "fog2"];
+
+	function isFogLayerGraphic(graphicName) {
+		return LAYER_GRAPHIC_FOG.includes(graphicName);
+	}
+
+	const TY_Sprite_LayerGraphic_update = Sprite_LayerGraphic.prototype.update;
+	Sprite_LayerGraphic.prototype.update = function() {
+		TY_Sprite_LayerGraphic_update.call(this);
+		this.updateVisibility();
+	};
+
+	// GALV_LayerGraphics.js -- Disable fog on map in F&H 2
+	Sprite_LayerGraphic.prototype.updateVisibility = function() {
+		if (!allowFogOverlay && isFogLayerGraphic(this.currentGraphic)) {
+			this.visible = false;
+		}
 	};
 
 	//==========================================================
