@@ -32,49 +32,6 @@
 	*/
 	
 	//==========================================================
-		// Spriteset_Map
-	//==========================================================
-	
-	// GALV_VisibilityRange.js -- Disable visibility range in F&H 2
-	const TY_Spriteset_Map_setVisibilityRange = Spriteset_Map.prototype.setVisibilityRange;
-	Spriteset_Map.prototype.setVisibilityRange = function(image) {
-		if (allowFogOverlay) {
-			TY_Spriteset_Map_setVisibilityRange.call(this, image);
-		}
-	};
-
-	// TerraxLighting.js -- Disable lighting in F&H 1 and F&H 2
-	const TY_Spriteset_Map_createLightmask = Spriteset_Map.prototype.createLightmask;
-    Spriteset_Map.prototype.createLightmask = function() {
-    	if (allowLightingOverlay) {
-    		TY_Spriteset_Map_createLightmask.call(this);
-    	}
-	};
-
-	//==========================================================
-		// Sprite_LayerGraphic
-	//==========================================================
-
-	const LAYER_GRAPHIC_FOG = ["fog1", "fog2"];
-
-	function isFogLayerGraphic(graphicName) {
-		return LAYER_GRAPHIC_FOG.includes(graphicName);
-	}
-
-	const TY_Sprite_LayerGraphic_update = Sprite_LayerGraphic.prototype.update;
-	Sprite_LayerGraphic.prototype.update = function() {
-		TY_Sprite_LayerGraphic_update.call(this);
-		this.updateVisibility();
-	};
-
-	// GALV_LayerGraphics.js -- Disable fog on map in F&H 2
-	Sprite_LayerGraphic.prototype.updateVisibility = function() {
-		if (!allowFogOverlay && isFogLayerGraphic(this.currentGraphic)) {
-			this.visible = false;
-		}
-	};
-
-	//==========================================================
 		// Game_Map
 	//==========================================================
 
@@ -114,6 +71,81 @@
 			TY_Game_Map_createFog.call(this, note);
 		}
     };
+
+    const LAYER_GRAPHICS_FOG = ["fog1", "fog2"];
+
+    // Check if the "layerNote" includes any word from "LAYER_GRAPHICS_FOG".
+	function isFogMapLayer(layerNote) {
+		return LAYER_GRAPHICS_FOG.some(graphic => layerNote.includes(graphic));
+	}
+
+	function removeFogNoteLayers() {
+		const layerNotes = $dataMap.note.match(/[^\r\n]+/g);
+		if (!layerNotes) return;
+	
+		for (const layerNote of layerNotes) {
+			const isLayer = layerNote.indexOf("LAYER ") >= 0;
+			if (isLayer && isFogMapLayer(layerNote)) {
+				$dataMap.note = $dataMap.note.replace(layerNote, "");
+			};
+		}
+	}
+
+	// GALV_LayerGraphics.js -- Disable fog on map in F&H 2
+	const TY_Game_Map_createNoteLayers = Game_Map.prototype.createNoteLayers;
+	Game_Map.prototype.createNoteLayers = function(mapId) {
+		
+		if (!allowFogOverlay) {
+			removeFogNoteLayers();
+		}
+
+		TY_Game_Map_createNoteLayers.call(this, mapId);
+	};
+
+	//==========================================================
+		// Spriteset_Map
+	//==========================================================
+	
+	// GALV_VisibilityRange.js -- Disable visibility range in F&H 2
+	const TY_Spriteset_Map_setVisibilityRange = Spriteset_Map.prototype.setVisibilityRange;
+	Spriteset_Map.prototype.setVisibilityRange = function(image) {
+		if (allowFogOverlay) {
+			TY_Spriteset_Map_setVisibilityRange.call(this, image);
+		}
+	};
+
+	// TerraxLighting.js -- Disable lighting in F&H 1 and F&H 2
+	const TY_Spriteset_Map_createLightmask = Spriteset_Map.prototype.createLightmask;
+    Spriteset_Map.prototype.createLightmask = function() {
+    	if (allowLightingOverlay) {
+    		TY_Spriteset_Map_createLightmask.call(this);
+    	}
+	};
+
+	//==========================================================
+		// Spriteset_Battle
+	//==========================================================
+
+	// Check if layer is valid and the layer's graphic 
+	// name matches the names found in "LAYER_GRAPHICS_FOG"
+	function isFogBattleLayer(layer) {
+		return layer && LAYER_GRAPHICS_FOG.includes(layer.graphic);
+	}
+
+	// GALV_LayerGraphics.js -- Disable fog in battle in F&H 2
+	const TY_Spriteset_Battle_createLayerGraphics = Spriteset_Battle.prototype.createLayerGraphics;
+	Spriteset_Battle.prototype.createLayerGraphics = function() {
+		const layers = {...$gameSystem._bLayers};
+
+		for (const layerId in layers) {
+			const targetLayer = $gameSystem._bLayers[layerId]
+			if (isFogBattleLayer(targetLayer)) {
+				delete $gameSystem._bLayers[layerId];
+			}
+		}
+
+		TY_Spriteset_Battle_createLayerGraphics.call(this);
+	};
 
     //==========================================================
 		// End of File
