@@ -35,12 +35,34 @@ TY.Scope = TY.Scope || {};
 // TY.ModLoader.MOD_LIST = [];
 
 // Note: Consider adding the Screen Freeze Fix in a QoL mod Graphics.render if (this._skipCount <= 0) {
+// Note: Consider adding a fix for the F&H1 enemy cursor in battle not moving if hovering the enemy with your mouse.
+// Note: Consider adding a fix for bitmap snapping for menu background(sometimes it crashes, see more info in the F&H Discord)
+
+
+// Note: Some users are trying to enter the game via index.html instead of game.exe, leaving this here so i don't forget the cause of the following errors:
+// F&H:         Failed to load: data/Actors.json
+// F&H Termina: Failed to load: img/SumRndmDde/menu/menu.png
+
+
+// Mechanic idea for F&H 1:
+// Cave mother soul or Crow mauler soul
+// Guarantee 1 crit per battle on first hit, but the critical damage is reduced to x2 instead of x3(Thanks Jaspie) <- Cavemother soul
+// Guarantee 1 crit per battle on first hit <- Crowmauler soul
+
+// Mechanic idea for F&H (Maybe not the greatest idea since if you were to break the legs the head becomes vulnerable aka you won the battle)
+// Chopping enemy legs increases running chance by a % (will involve reworking the running mechanic and accounting for escape plan).
+// 40%(base amount) + 15%(per leg max 30% or divided equally between all enemy legs)
+// escape plan adds another 30% to the base amount
+// FORMULA: 40% + 30% + 30%
+
+// Mechanic idea for F&H:
+// Make DoTs scale based on formulas and with a stack limit
 
 TY.Scope.modLoader = TY.Scope.modLoader || {};
 TY.Scope.modLoader.MOD_LIST = [];
 TY.Scope.modLoader.MOD_PATH = "mods/";
 TY.Scope.modLoader.MOD_TERM = "Mods";
-TY.Scope.modLoader.MOD_INFO = {
+TY.Scope.modLoader.MOD_INFO = { // check line 360 and below for more comments
 	name: "Fear & Hunger - Mod Loader",
 	author: "Toby Yasha",
 	version: "1.0.0",
@@ -362,6 +384,10 @@ TY.Scope.modLoader.scene.prototype.create = function() {
 // Direct Mode ->
 // Checks out each file for 
 
+// [1/15/2024] -> 
+// What stops you from having metadata inside the mod itself (ex: version, description)
+// And what stops you from using the json as a way to tell which mods to load and stuff?
+
 // Actually maybe it's just better to use a JSON approach similar to MATTIE + this way we ensure better compatibility.
 // P.S for compatibility reasons you should add the mod loader as a dependency to the mods(although we ignore this if we load it in our way).
 /*{
@@ -373,3 +399,13 @@ TY.Scope.modLoader.scene.prototype.create = function() {
         "_multiplayer/peerjs.min",
 	]
 }*/
+
+
+// Separate the mod loader into 2, the main mod loader file and mod utils file
+// Ensure better compatibility with MattieFM's Mod Manager
+
+// [4/19/2025] ->
+// I think it would be better if you don't create an overly complex Mod Loading system.
+// Reason being, if orange wants to add the mod to the game, it will be much harder for him to do so.
+// All i really want is to have customizeable parameters in-game for the mods. That's all.
+// And a way to manually load the mods in-game. That's all.
