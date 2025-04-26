@@ -409,3 +409,37 @@ TY.Scope.modLoader.scene.prototype.create = function() {
 // Reason being, if orange wants to add the mod to the game, it will be much harder for him to do so.
 // All i really want is to have customizeable parameters in-game for the mods. That's all.
 // And a way to manually load the mods in-game. That's all.
+
+// [4/26/2025] ->
+/* 
+* And so these are not really needed if i don't want to create dependencies between the mod files and mod loader
+* TY.Utils = TY.Utils || {}; // This could be rarely used if i want to add some utility methods (like checking if the game is F&H 1 or F&H 2)
+* TY.Alias = TY.Alias || {}; // Don't store aliases in a global object
+* TY.Scope = TY.Scope || {}; // Might be better named TY.modsData or something like that.
+* Example:
+*
+* TY = TY || {};
+* TY.modsData = TY.modsData || {};
+* TY.modsData.quickSave = {
+*   key: "quickSave",
+*   name: "Quick Save",
+*   desc: "This is an example",
+*   version: "1.0.0",
+*   scope: TY.MOD_SCOPE_FNH_1,
+* };
+* 
+*/
+
+/* Managing mod activation / deactivation in live game
+* const key = TY.modsData.quickSave.key;
+* TY.modsImported = TY.modsImported || [];
+* TY.modsImported.push({ key, status: true });
+*
+* NOTE: You could even have methods for this, like so:
+*
+* TY.Utils.setModStatus = function(key, newStatus) {
+*  if (TY.modsImported[key]) { 
+*    TY.modsImported[key].status = newStatus; 
+*  }
+* 
+*/
