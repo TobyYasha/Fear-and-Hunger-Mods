@@ -1,3 +1,7 @@
+//==========================================================
+      // VERSION 1.0.0 -- By Toby Yasha
+//==========================================================
+
 var TY = TY || {};
 TY.fnhUnlockCharacterSkills = TY.fnhUnlockCharacterSkills || {};
 
