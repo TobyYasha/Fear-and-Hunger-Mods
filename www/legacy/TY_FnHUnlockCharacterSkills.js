@@ -1,13 +1,3 @@
-// TY_FnHUnlockCharacterSkills.js
-
-// Design philosophy
-// 1. Enable switches/variables responsible for unlocking skills that require killing another character.
-// 2. Point 1 should happen only when the hexen table is activated.
-// 3. Point 1 should store the previous state of the switches/variables and set those states back when 
-//    hexen table is deactivated.
-// 4. This mod is useless if the TY_FnHFreeSkills.js mod is activated.
-// 5. This mod could reuse code from TY_FnHFreeSkills.js and TY_FnHHexenMenu.js
-
 var TY = TY || {};
 TY.fnhUnlockCharacterSkills = TY.fnhUnlockCharacterSkills || {};
 
@@ -20,8 +10,8 @@ Imported.TY_FnHUnlockCharacterSkills = true;
       // Mod Constants --
 //==========================================================
 
-_.FNH_1_HEXEN_MAP_ID = 0; // Not available for now
-_.FNH_2_HEXEN_MAP_ID = 31;
+_.FNH_1_HEXEN_MAP_ID = 0; // Not available for now // NOTE: This requires all maps with a hexen table
+_.FNH_2_HEXEN_MAP_ID = 31; // NOTE: Might transform both map id constants into arrays
 
 _.FNH_1_CHARACTER_SWITCHES = [
       // Not available for now
@@ -36,6 +26,12 @@ _.FNH_2_CHARACTER_SWITCHES = [
       498, // journalist_SOUL -- Karin
       499, // fighter_SOUL -- Marcoh
       500, // yellow_mage_SOUL -- Osaa
+      734, // apprentice_SOUL -- Samarie
+      735, // hunter_SOUL -- August
+      736, // chef_SOUL -- Henryk
+      737, // mobster_SOUL -- Caligura
+      738, // salaryman_SOUL -- Tanaka
+      739, // lieutenant_SOUL -- Pav
 ];
 
 //==========================================================
@@ -135,8 +131,8 @@ _.restoreCharacterSwitches = function() {
 const TY_Game_Player_reserveTransfer = Game_Player.prototype.reserveTransfer;
 Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
       TY_Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);
-      _.setLastMapId(mapId);
       _.onMapTransfer(mapId);
+      _.setLastMapId(mapId);
 };
 
 //==========================================================
