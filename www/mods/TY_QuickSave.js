@@ -145,6 +145,15 @@ TY.quickSave = TY.quickSave || {};
 	const _saveFailMessage = params["Fail Save Text"];
 
 	/**
+	 * The regexp string keyword used to reference the time remaining 
+	 * until a "Quick Save" is available.
+	 * 
+	 * @type regexp
+	*/
+	const _saveTimeRegexp = /SAVETIME/ig;
+
+
+	/**
 	 * How fast the "Quick Save" "Success/Fail" message "Fades In/Out" inside 
 	 * the "Quick Save Menu Popup Window".
 	 * 
@@ -384,6 +393,8 @@ TY.quickSave = TY.quickSave || {};
 
 	/**
 	 * Ensures the "Quick Save" cooldown system is updated(when needed)
+	 * 
+	 * @alias SceneManager.updateScene
 	*/
 	const TY_SceneManager_updateScene = SceneManager.updateScene;
 	SceneManager.updateScene = function() {
@@ -398,7 +409,7 @@ TY.quickSave = TY.quickSave || {};
 //==========================================================
 
 	/**
-	* Inserts the "Quick Load" command to the "Title Scene" window commands.
+	* Inserts the "Quick Load" command to the "Scene_Title" window commands.
 	* 
 	* @alias Window_TitleCommand.prototype.makeCommandList
 	*/
@@ -411,6 +422,7 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * Adds a "Quick Load" command to the list of commands.
 	 * NOTE: The command is only available if there is "Quick Save" data available.
+	 * This command can be used to load a "Quick Save" file.
 	*/
 	Window_TitleCommand.prototype.addQuickSaveCommand = function() {
 		const name = _loadCommandName;
@@ -423,108 +435,159 @@ TY.quickSave = TY.quickSave || {};
 	// Window_GameEnd
 //==========================================================
 
-const TY_Window_GameEnd_makeCommandList = Window_GameEnd.prototype.makeCommandList;
-Window_GameEnd.prototype.makeCommandList = function() {
-    this.addToDesktopCommand();
-};
-
-Window_GameEnd.prototype.addToDesktopCommand = function() {
-	const name = _desktopCommandName;
-	const symbol = "toDesktop";
-    this.addCommand(name, symbol);
-};
+	/**
+	 * Inserts the "To Desktop" command to the "Scene_GameEnd" window commands.
+	 * 
+	 * @alias Window_GameEnd.prototype.makeCommandList
+	*/
+	const TY_Window_GameEnd_makeCommandList = Window_GameEnd.prototype.makeCommandList;
+	Window_GameEnd.prototype.makeCommandList = function() {
+		TY_Window_GameEnd_makeCommandList.call(this);
+	    this.addToDesktopCommand();
+	};
+	
+	/**
+	 * Adds a "To Desktop" command to the list of commands.
+	 * This command can be used to close the game.
+	*/
+	Window_GameEnd.prototype.addToDesktopCommand = function() {
+		const name = _desktopCommandName;
+		const symbol = "toDesktop";
+	    this.addCommand(name, symbol);
+	};
 
 //==========================================================
 	// Window_QuickSave -- Inspired by Yanfly's Auto Save
 //==========================================================
 
-window.Window_QuickSave = function() {
-    this.initialize.apply(this, arguments);
-}
-
-Window_QuickSave.prototype = Object.create(Window_Base.prototype);
-Window_QuickSave.prototype.constructor = Window_QuickSave;
-
-Window_QuickSave.prototype.initialize = function(x, y) {
-    const width = this.windowWidth();
-    const height = this.windowHeight();
-    Window_Base.prototype.initialize.call(this, x, y, width, height);
-	this._showCount = 0;
-	this._closeCount = 0;
-	this.close();
-};
-
-Window_QuickSave.prototype.windowWidth = function() {
-    return 240;
-};
-
-Window_QuickSave.prototype.windowHeight = function() {
-    return this.fittingHeight(1);
-};
-
-Window_QuickSave.prototype.update = function() {
-	Window_Base.prototype.update.call(this);
-	this.updateFading();
-	this.updateClosing();
-};
-
-Window_QuickSave.prototype.updateFading = function() {
-	if (this._showCount > 0) {
-		this.updateFadeIn();
-		this._showCount--;
-	} else {
-		this.updateFadeOut();
+	/**
+	 * The UI window responsible for showing the "Save Message" 
+	 * to the user after using the "Quick Save" command.
+	 * 
+	 * @class
+	*/
+	window.Window_QuickSave = function() {
+	    this.initialize.apply(this, arguments);
 	}
-};
-
-Window_QuickSave.prototype.updateClosing = function() {
-	if (this._showCount <= 0) {
-		if (this._closeCount > 0) {
-			this._closeCount--;
+	
+	Window_QuickSave.prototype = Object.create(Window_Base.prototype);
+	Window_QuickSave.prototype.constructor = Window_QuickSave;
+	
+	Window_QuickSave.prototype.initialize = function(x, y) {
+	    const width = this.windowWidth();
+	    const height = this.windowHeight();
+	    Window_Base.prototype.initialize.call(this, x, y, width, height);
+		this._showCount = 0;
+		this._closeCount = 0;
+		this.close();
+	};
+	
+	/**
+	 * The width at which the window is drawn
+	 * 
+	 * @returns {number} The width value
+	*/
+	Window_QuickSave.prototype.windowWidth = function() {
+	    return 240;
+	};
+	
+	/**
+	 * The height at which the window is drawn
+	 * 
+	 * @returns {number} The height value
+	*/
+	Window_QuickSave.prototype.windowHeight = function() {
+	    return this.fittingHeight(1);
+	};
+	
+	/**
+	 * 
+	*/
+	Window_QuickSave.prototype.update = function() {
+		Window_Base.prototype.update.call(this);
+		this.updateFading();
+		this.updateClosing();
+	};
+	
+	/**
+	 * 
+	*/
+	Window_QuickSave.prototype.updateFading = function() {
+		if (this._showCount > 0) {
+			this.updateFadeIn();
+			this._showCount--;
 		} else {
-			this.close();
+			this.updateFadeOut();
 		}
-	}
-};
+	};
+	
+	Window_QuickSave.prototype.updateClosing = function() {
+		if (this._showCount <= 0) {
+			if (this._closeCount > 0) {
+				this._closeCount--;
+			} else {
+				this.close();
+			}
+		}
+	};
+	
+	Window_QuickSave.prototype.updateFadeIn = function() {
+		this.contentsOpacity += _messageFadeRate;
+	};
+	
+	Window_QuickSave.prototype.updateFadeOut = function() {
+		this.contentsOpacity -= _messageFadeRate;
+	};
+	
+	/**
+	 * 
+	*/
+	Window_QuickSave.prototype.open = function() {
+		Window_Base.prototype.open.call(this);
+		this.contentsOpacity = 0;
+		this._showCount = _messageDuration;
+		this._closeCount = _messageWindowDuration;
+		this.refresh();
+	};
+	
+	/**
+	 * Format and return the "Save Fail Message" string.
+	 * 
+	 * @returns {string} The formatted "Save Fail Message" string.
+	*/
+	Window_QuickSave.prototype.getFailMessage = function() {
+		let text = _saveFailMessage; 
 
-Window_QuickSave.prototype.updateFadeIn = function() {
-	this.contentsOpacity += _messageFadeRate;
-};
+		if (text.match(_saveTimeRegexp)) {
+			let remainingTime = _.getSaveCooldownTimer();
+			text = text.replace(_saveTimeRegexp, remainingTime);
+		}
 
-Window_QuickSave.prototype.updateFadeOut = function() {
-	this.contentsOpacity -= _messageFadeRate;
-};
-
-Window_QuickSave.prototype.open = function() {
-	Window_Base.prototype.open.call(this);
-	this.contentsOpacity = 0;
-	this._showCount = _messageDuration;
-	this._closeCount = _messageWindowDuration;
-	this.refresh();
-};
-
-Window_QuickSave.prototype.getFailSaveText = function() {
-	let failText = TY.Param.FailSaveText;
-	if (failText.contains('SAVETIME')) {
-		failText = failText.replace(/SAVETIME/g, DataManager.getSaveTime());
-	}
-	return failText;
-};
-
-Window_QuickSave.prototype.message = function() {
-	if (DataManager.canCreateQuickSave()) {
-		return TY.Param.GameSaveText;
-	} else {
-		return this.getFailSaveText();
-	}
-};
-
-Window_QuickSave.prototype.refresh = function() {
-    const x = this.textPadding();
-    const width = this.contents.width - this.textPadding() * 2;
-    this.contents.clear();
-	this.drawText(this.message(), x, 0, width, 'center');
-};
+		return text;
+	};
+	
+	/**
+	 * Gets a "Save Message" based on whether or not "Quick Saving" is currently allowed.
+	 * 
+	 * @returns {string} The "Save Success Message" or "Save Fail Message" string.
+	*/
+	Window_QuickSave.prototype.message = function() {
+		if (_.isSavingAllowed()) {
+			return _saveSuccessMessage;
+		} else {
+			return this.getFailMessage();
+		}
+	};
+	
+	/**
+	 * Renders the "Save Message" string.
+	*/
+	Window_QuickSave.prototype.refresh = function() {
+	    const x = this.textPadding();
+	    const width = this.contents.width - this.textPadding() * 2;
+	    this.contents.clear();
+		this.drawText(this.message(), x, 0, width, 'center');
+	};
 
 //==========================================================
 	// Scene_Title -- 
