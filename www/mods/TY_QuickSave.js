@@ -1,6 +1,6 @@
 //=============================================================================
 /*:
- * @plugindesc v1.1 A system which handles temporary saves.
+ * @plugindesc v1.2 A system which handles temporary saves.
  * @author Toby Yasha
  *
  * @param General Configurations
@@ -85,7 +85,7 @@
  *
 */
 
-var TY = TY || {};
+
 TY.Utils = TY.Utils || {};
 TY.Param = TY.Param || {};
 TY.Parameters = PluginManager.parameters("TY_QuickSave");
@@ -103,31 +103,244 @@ TY.Utils.SaveTimer = 0;
 TY.Utils.HasSaveLoaded = false;
 TY.Param.QuickSaveTime = Number(TY.Parameters["Quick Save Time"]);
 
+var TY = TY || {};
+TY.quickSave = TY.quickSave || {};
+
+(function(_) {
+
+	// NOTE: Be careful not to confuse this "_value" with this "_.value"
+
 //==========================================================
-	// SceneManager -- 
+	// Parameters | Static Private Members
 //==========================================================
 
-SceneManager.updateSaveTimer = function() {
-	var sceneName = this._scene.constructor.name;
-	var isSaveAllowed = DataManager.canCreateQuickSave();
-	if (!isSaveAllowed && sceneName == 'Scene_Map') {
-		TY.Utils.SaveTimer++;
-	} else if (isSaveAllowed) {
-		TY.Utils.HasSaveLoaded = false;
+	var params = PluginManager.parameters("TY_QuickSave");
+
+	/**
+	 * "Quick Load" Command name on the "Title Scene".
+	*/
+	const _loadCommandName = params["Quick Load Text"];
+	/**
+	 * "Quit to Desktop" Command name on the "Game End Scene".
+	*/
+	const _desktopCommandName = params["To Desktop Text"];
+
+
+	/**
+	 * Message show in the "Menu Scene" when a "Quick Save" was successful.
+	*/
+	const _saveSuccessMessage = params["Game Save Text"];
+	/**
+	 * Message show in the "Menu Scene" when a "Quick Save" has failed
+	 * (due to cooldown timer).
+	*/
+	const _saveFailMessage = params["Fail Save Text"];
+	/**
+	 * How fast the "Quick Save" "Success/Fail" message "Fades In/Out" inside 
+	 * the "Quick Save Menu Popup Window".
+	*/
+	const _messageFadeRate = Number(TY.Parameters["Save Text Fade"]);
+	/**
+	 * How long the "Quick Save" "Success/Fail" message lingers after appearing.
+	*/
+	const _messageDuration = Number(TY.Parameters["Save Text Duration"]);
+	/**
+	 * How long to wait before closing the "Quick Save Menu Popup Window".
+	*/
+	const _messageWindowDuration = Number(TY.Parameters["Window Duration"]);
+
+
+	/**
+	 * The "Game Variable" that is used to store the "Quick Save Data".
+	 * NOTE: This is and must be a "Global Variable" via the <Global Meta> tag.
+	*/
+	const _saveVariableId = Number(params["Quick Save Variable"]);
+	/**
+	 * The "Time Interval" (in minutes) before a new "Quick Save" can be created.
+	*/
+	const _saveTimeInterval = Number(params["Quick Save Time"]);
+
+//==========================================================
+	// Public Members
+//==========================================================
+
+	/**
+	 * The "Cooldown Time" (in game frames) that passed since 
+	 * the last "Quick Save" was made.
+	 * NOTE: 60 Frames = 1 Second
+	*/
+	_.saveTimeElapsed = 0;
+	/**
+	 * Flag that is used to check if a "Quick Save" was recently loaded into.
+	*/
+	_.saveLoaded = false;
+
+//==========================================================
+	// Methods 
+//==========================================================
+
+	/**
+	 * Get the current contents of the game variable designated
+	 * to hold the "Quick Save" data.
+	 * NOTE: Number types and anything else is treated as null.
+	 * 
+	 * @returns {object} Output should either be "Compressed Save Data" or null.
+	*/
+	_.getSaveVariableValue = function() {
+		const variableId = _saveVariableId;
+
+		if (variableId > 0) {
+
+			const value = $gameVariables.value(variableId);
+			if (typeof value === "object") {
+				return value;
+			}
+
+		}
+
+		return null;
 	}
-};
 
-var TY_RenderScene = SceneManager.renderScene;
-SceneManager.renderScene = function() {
-	TY_RenderScene.call(this); 
-	var hasSaveLoaded = TY.Utils.HasSaveLoaded;
-	if (this.isCurrentSceneStarted() && hasSaveLoaded) {
-		this.updateSaveTimer();
+	/**
+	 * Set the current contents of the game variable designated
+	 * to hold the "Quick Save" data.
+	 * 
+	 * @param {object} value - "Compressed Save Data" or null.
+	 * NOTE: Any other input type will be treated as null.
+	*/
+	_.setSaveVariableValue = function(value) {
+		const variableId = _saveVariableId;
+
+		if (variableId > 0) {
+
+			let trueValue = value;
+			if (typeof value !== "object") {
+				trueValue = null
+			}
+
+			$gameVariables.value(variableId, trueValue);
+		}
 	}
-};
+
+	/**
+	 * Clear out the "Compressed Save Data" from the "Quick Save" game variable.
+	*/
+	_.clearSaveVariableValue = function() {
+		_.setSaveVariableValue(null);
+	}
+
+	/**
+	 * Clear out old "Quick Save" data and preserve some pre-save data.
+	 * NOTE: This is important for preserving music tracks.
+	*/
+	_.onSaveDataCompressed = function() {
+		_.clearSaveVariableValue();
+		$gameSystem.onBeforeSave();
+	}
+
+	/**
+	 * Clear out existing "Quick Save" data and set the flag to alert the
+	 * system that a "Quick Save" was loaded.
+	*/
+	_.onSaveDataDecompressed = function() {
+		_.clearSaveVariableValue();
+		_.saveLoaded = true;
+	}
+
+	/**
+	 * Create and store the "Quick Save" data into the "Quick Save" game variable.
+	*/
+	_.compressSaveData = function() {
+		const variableId = _saveVariableId;
+
+		if (variableId > 0) {
+
+			_.onSaveDataCompressed();
+
+			const saveData = DataManager.makeSaveContents();
+			const jsonData = JsonEx.stringify(saveData);
+			const compressedData = LZString.compressToBase64(jsonData);
+
+			_.setSaveVariableValue(compressedData);
+
+		}
+	}
+
+	/**
+	 * Retrieve and apply the "Quick Save" data from the "Quick Save" game variable.
+	*/
+	_.decompressSaveData = function() {
+		const saveData = _.getSaveVariableValue();
+
+		if (!!saveData) {
+
+			const jsonData = LZString.decompressFromBase64(saveData);
+			const decompressedData = JsonEx.parse(jsonData);
+
+			_.onSaveDataDecompressed();
+
+			DataManager.createGameObjects();
+			DataManager.extractSaveContents(decompressedData);
+
+		}
+	}
+
+	/**
+	 * Checks whether a "Quick Save" can be made.
+	 * If a "Quick Save" was recently loaded, then we need to wait for the cooldown.
+	 * Otherwise "Quick Saving" is allowed.
+	 * 
+	 * @returns {boolean} True if "Quick Saving" is allowed.
+	*/
+	_.isSavingAllowed = function() {
+		if (_.saveLoaded) {
+			return _.getSaveCooldownTimer() <= 0;
+		}
+		return true;
+	}
+
+	/**
+	 * Checks whether "Quick Saving" is currently on cooldown
+	 * 
+	 * @returns {number} A positive number means that "Quick Saving" is on cooldown.
+	 * Numbers starting from 0 and below mean that "Quick Saving" is not on cooldown.
+	*/
+	_.getSaveCooldownTimer = function() {
+		const targetMins = _saveTimeInterval;
+
+		let seconds = Math.floor(_.saveTimeElapsed / 60);
+		let currentMins = Math.floor(seconds / 60) % 60;
+
+		return targetMins - currentMins;
+	}
+
+	_.canUpdateSaveCooldownTimer = function() {
+		const isMapScene = this._scene instanceof "Scene_Map";
+		return !_.isSavingAllowed() && isMapScene;
+	}
+
+	_.updateSaveCooldownTimer = function() {
+		if (_.canUpdateSaveCooldownTimer()) {
+			_.saveTimeElapsed++;
+		} else if (_.isSavingAllowed()) {
+			_.saveLoaded = false;
+		}
+	}
 
 //==========================================================
-	// DataManager -- 
+	// SceneManager 
+//==========================================================
+
+	const TY_SceneManager_updateScene = SceneManager.updateScene;
+	SceneManager.updateScene = function() {
+		TY_SceneManager_updateScene.call(this);
+		if (this.isCurrentSceneStarted() && _.saveLoaded) {
+			_.updateSaveCooldownTimer();
+		}
+	};
+
+//==========================================================
+	// DataManager 
 //==========================================================
 
 DataManager.getSaveTime = function() {
@@ -390,8 +603,4 @@ Scene_GameEnd.prototype.createCommandWindow = function() {
     // End of File
 //==========================================================
 
-// TODO:
-// - If starting a new game what happens to the quick save timer?
-// - FPS being too high or low affects timer.
-//	 but if new Date() is used then can't people just wait the
-//   computer time to pass(or edit their time) in order to bypass the timer?
+})(TY.quickSave);
