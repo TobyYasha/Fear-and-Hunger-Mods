@@ -118,34 +118,53 @@ TY.quickSave = TY.quickSave || {};
 
 	/**
 	 * "Quick Load" Command name on the "Title Scene".
+	 * 
+	 * @type string
 	*/
 	const _loadCommandName = params["Quick Load Text"];
+
 	/**
 	 * "Quit to Desktop" Command name on the "Game End Scene".
+	 * 
+	 * @type string
 	*/
 	const _desktopCommandName = params["To Desktop Text"];
 
 
 	/**
 	 * Message show in the "Menu Scene" when a "Quick Save" was successful.
+	 * 
+	 * @type string
 	*/
 	const _saveSuccessMessage = params["Game Save Text"];
+
 	/**
 	 * Message show in the "Menu Scene" when a "Quick Save" has failed
 	 * (due to cooldown timer).
+	 * 
+	 * @type string
 	*/
 	const _saveFailMessage = params["Fail Save Text"];
+
 	/**
 	 * How fast the "Quick Save" "Success/Fail" message "Fades In/Out" inside 
 	 * the "Quick Save Menu Popup Window".
+	 * 
+	 * @type number
 	*/
 	const _messageFadeRate = Number(TY.Parameters["Save Text Fade"]);
+
 	/**
 	 * How long the "Quick Save" "Success/Fail" message lingers after appearing.
+	 * 
+	 * @type number
 	*/
 	const _messageDuration = Number(TY.Parameters["Save Text Duration"]);
+
 	/**
 	 * How long to wait before closing the "Quick Save Menu Popup Window".
+	 * 
+	 * @type number
 	*/
 	const _messageWindowDuration = Number(TY.Parameters["Window Duration"]);
 
@@ -153,10 +172,15 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * The "Game Variable" that is used to store the "Quick Save Data".
 	 * NOTE: This is and must be a "Global Variable" via the <Global Meta> tag.
+	 * 
+	 * @type number
 	*/
 	const _saveVariableId = Number(params["Quick Save Variable"]);
+
 	/**
 	 * The "Time Interval" (in minutes) before a new "Quick Save" can be created.
+	 * 
+	 * @type number
 	*/
 	const _saveTimeInterval = Number(params["Quick Save Time"]);
 
@@ -168,10 +192,15 @@ TY.quickSave = TY.quickSave || {};
 	 * The "Cooldown Time" (in game frames) that passed since 
 	 * the last "Quick Save" was made.
 	 * NOTE: 60 Frames = 1 Second
+	 * 
+	 * @type number
 	*/
 	_.saveTimeElapsed = 0;
+	
 	/**
 	 * Flag that is used to check if a "Quick Save" was recently loaded into.
+	 * 
+	 * @type boolean
 	*/
 	_.saveLoaded = false;
 
