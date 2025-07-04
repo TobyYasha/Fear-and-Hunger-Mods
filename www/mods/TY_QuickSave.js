@@ -1,6 +1,6 @@
 //=============================================================================
 /*:
- * @plugindesc v1.1 A system which handles temporary saves.
+ * @plugindesc v1.2 A system which handles temporary saves.
  * @author Toby Yasha
  *
  * @param General Configurations
@@ -83,6 +83,18 @@
  * - Fixed quick saving messing with the play time of regular
  *   save files.
  *
+ * Version 1.2 - 12/2/2024
+ * - Changed the method which calls the update for the save
+ *   timer cooldown.
+ *
+ *   Previous: SceneManager.renderScene
+ *   Current: SceneManager.updateScene
+ *
+ *   NOTE: This is done in hopes that 'TDDP_FluidTimestep'
+ *   fixes the timer updating too fast/slow on different
+ *   devices.
+ * - 
+ *   
 */
 
 var TY = TY || {};
@@ -100,7 +112,8 @@ TY.Param.TextDuration = Number(TY.Parameters["Save Text Duration"]);
 TY.Param.WindowDuration = Number(TY.Parameters["Window Duration"]);
 
 TY.Utils.SaveTimer = 0;
-TY.Utils.HasSaveLoaded = false;
+TY.Utils.CanQuickLoad = false; // not used yet
+TY.Utils.HasQuickLoaded = false;
 TY.Param.QuickSaveTime = Number(TY.Parameters["Quick Save Time"]);
 
 //==========================================================
@@ -108,20 +121,19 @@ TY.Param.QuickSaveTime = Number(TY.Parameters["Quick Save Time"]);
 //==========================================================
 
 SceneManager.updateSaveTimer = function() {
-	var sceneName = this._scene.constructor.name;
+	var isMapScene = this._scene instanceof 'Scene_Map';
 	var isSaveAllowed = DataManager.canCreateQuickSave();
-	if (!isSaveAllowed && sceneName == 'Scene_Map') {
+	if (!isSaveAllowed && isMapScene) {
 		TY.Utils.SaveTimer++;
 	} else if (isSaveAllowed) {
-		TY.Utils.HasSaveLoaded = false;
+		TY.Utils.HasQuickLoaded = false;
 	}
 };
 
-var TY_RenderScene = SceneManager.renderScene;
-SceneManager.renderScene = function() {
-	TY_RenderScene.call(this); 
-	var hasSaveLoaded = TY.Utils.HasSaveLoaded;
-	if (this.isCurrentSceneStarted() && hasSaveLoaded) {
+var TY_UpdateScene = SceneManager.updateScene;
+SceneManager.updateScene = function() {
+	TY_UpdateScene.call(this);
+	if (this.isCurrentSceneStarted() && TY.Utils.HasQuickLoaded) {
 		this.updateSaveTimer();
 	}
 };
@@ -136,8 +148,8 @@ DataManager.getSaveTime = function() {
 };
 
 DataManager.canCreateQuickSave = function() {
-	var hasSaveLoaded = TY.Utils.HasSaveLoaded;
-	if (hasSaveLoaded) {
+	var hasQuickLoaded = TY.Utils.HasQuickLoaded;
+	if (hasQuickLoaded) {
 		var timeLeft = this.getSaveTime();
 		return timeLeft <= 0;
 	} else {
@@ -181,7 +193,7 @@ DataManager.loadQuickSave = function() {
 DataManager.onQuickLoad = function() {
 	var variableId = TY.Param.SaveVariableId;
 	$gameVariables.setValue(variableId, 0);
-	TY.Utils.HasSaveLoaded = true;
+	TY.Utils.HasQuickLoaded = true;
 };
 
 //==========================================================
@@ -392,6 +404,37 @@ Scene_GameEnd.prototype.createCommandWindow = function() {
 
 // TODO:
 // - If starting a new game what happens to the quick save timer?
-// - FPS being too high or low affects timer.
+// - If closing the game what happens to the quick save timer?
+// - You make a quick save, go into battle, press F5 and game reloads and the quick save is there in the title scene.
+//	 (Make it so the game removes quick save data upon reloading by F5)
+
+// - Issue: If game is incrementing the quick save timer and
+//   you exit the game you can immediately make a new quick save.
+
+// - Solution: Maybe store data in a new JSON with StoreManager
+//   And save timer data every 10-30 increments
+
+// - FPS being too high or low affects timer. [Solved?]
 //	 but if new Date() is used then can't people just wait the
 //   computer time to pass(or edit their time) in order to bypass the timer?
+
+// solution: 
+// https://forums.rpgmakerweb.com/index.php?threads/mac_high_hz_fixes-fixes-for-various-problems-with-60hz-monitors.171990/
+// https://forums.rpgmakerweb.com/index.php?threads/rpg-maker-mv-games-graphics-will-freeze-but-sound-keeps-playing-the-problem-the-solution.151887/
+
+// look into:
+// https://forums.rpgmakerweb.com/index.php?threads/activate-the-switch-when-the-game-is-closed.175734/#post-1500623
+
+// look into:
+// if you store the save data in a variable, does that data carry over to regular save files?
+// (of course, this would be bad since it would unnecessarily increase the data of those files).
+//
+// there's also the fact that saving data to a variable lags the game a bit, but then again this
+// could be normal behavior due to the sheer size of the save data.
+//
+// and this probably happens to normal save files as well.
+// in the worst case scenario you can save the quick save data to a different file, 
+// but still use the game variable in order to check if a quick save exists.
+// (just have to check how this would with multiple regular save files(?)
+// NO. because that game variable is global and so, the value is shared across regular save files.
+// So there is no need to worry about an exploit where you can use a quick save from every regular save file you load)
