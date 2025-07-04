@@ -42,21 +42,6 @@
  * Use 'SAVETIME' to reference the time until the next save.
  * @default Time Left: SAVETIME Minutes!
  *
- * @param Save Text Fade
- * @parent Window Configurations
- * @desc How fast the 'Game Save Text' appears/disappears.
- * @default 16
- *
- * @param Save Text Duration
- * @parent Window Configurations
- * @desc How long the 'Game Save Text' will stay before disappearing.
- * @default 120
- *
- * @param Window Duration
- * @parent Window Configurations
- * @desc How long the window with the text will stay open before disappearing.
- * @default 32
- *
  * @help
  *
  * ----------------------- COMPATIBILITY --------------------------
@@ -83,25 +68,32 @@
  * - Fixed quick saving messing with the play time of regular
  *   save files.
  *
+ * Version 1.2 - 7/4/2025
+ * - Removed "Save Text Fade" plugin parameter.
+ * - Removed "Save Text Duration" plugin parameter.
+ * - Removed "Window Duration" plugin parameter.
+ * Dev Comment: They were pretty niche parameters.
+ *
+ * - Refactored the code
+ * - Added JSDoc style comments for members and methods
+ * Dev Comment: The code should be 0.00001% more beautiful now
+ *
+ * - Changed the method that updated the "Quick Save" cooldown timer from:
+ *   - SceneManager.renderScene
+ *   to
+ *   - SceneManager.updateScene
+ * Dev Comment: On faster displays the cooldown timer would update too fast.
+ *
+ * - Changed the patching for following methods from overwrite to aliasing:
+ *   - Window_TitleCommand.prototype.makeCommandList
+ *   - Window_GameEnd.prototype.makeCommandList
+ * Dev Comment: The previous versions had "Window_TitleCommand" 
+ * remove the "Options" from the title screen.
+ * 
 */
 
-
-TY.Utils = TY.Utils || {};
-TY.Param = TY.Param || {};
-TY.Parameters = PluginManager.parameters("TY_QuickSave");
-
-TY.Param.QuickLoadText = TY.Parameters["Quick Load Text"];
-TY.Param.ToDesktopText = TY.Parameters["To Desktop Text"];
-TY.Param.SaveVariableId = Number(TY.Parameters["Quick Save Variable"]);
 TY.Param.GameSaveText = TY.Parameters["Game Save Text"];
 TY.Param.FailSaveText = TY.Parameters["Fail Save Text"];
-TY.Param.TextFadeSpeed = Number(TY.Parameters["Save Text Fade"]);
-TY.Param.TextDuration = Number(TY.Parameters["Save Text Duration"]);
-TY.Param.WindowDuration = Number(TY.Parameters["Window Duration"]);
-
-TY.Utils.SaveTimer = 0;
-TY.Utils.HasSaveLoaded = false;
-TY.Param.QuickSaveTime = Number(TY.Parameters["Quick Save Time"]);
 
 var TY = TY || {};
 TY.quickSave = TY.quickSave || {};
@@ -114,7 +106,13 @@ TY.quickSave = TY.quickSave || {};
 	// Parameters | Static Private Members
 //==========================================================
 
+	/**
+	 * Dummy variable to reference plugin parameters data
+	 * 
+	 * @type object
+	*/
 	var params = PluginManager.parameters("TY_QuickSave");
+
 
 	/**
 	 * "Quick Load" Command name on the "Title Scene".
@@ -152,21 +150,21 @@ TY.quickSave = TY.quickSave || {};
 	 * 
 	 * @type number
 	*/
-	const _messageFadeRate = Number(TY.Parameters["Save Text Fade"]);
+	const _messageFadeRate = 16;
 
 	/**
 	 * How long the "Quick Save" "Success/Fail" message lingers after appearing.
 	 * 
 	 * @type number
 	*/
-	const _messageDuration = Number(TY.Parameters["Save Text Duration"]);
+	const _messageDuration = 120;
 
 	/**
 	 * How long to wait before closing the "Quick Save Menu Popup Window".
 	 * 
 	 * @type number
 	*/
-	const _messageWindowDuration = Number(TY.Parameters["Window Duration"]);
+	const _messageWindowDuration = 32;
 
 
 	/**
@@ -196,7 +194,7 @@ TY.quickSave = TY.quickSave || {};
 	 * @type number
 	*/
 	_.saveTimeElapsed = 0;
-	
+
 	/**
 	 * Flag that is used to check if a "Quick Save" was recently loaded into.
 	 * 
@@ -209,13 +207,22 @@ TY.quickSave = TY.quickSave || {};
 //==========================================================
 
 	/**
+	 * Checks whether or not there is "Quick Save" data available.
+	 * 
+	 * @returns {boolean} True if "Quick Save" game variable is not null.
+	*/
+	_.hasSaveData = function() {
+		return !!_.getSaveData();
+	}
+
+	/**
 	 * Get the current contents of the game variable designated
 	 * to hold the "Quick Save" data.
 	 * NOTE: Number types and anything else is treated as null.
 	 * 
 	 * @returns {object} Output should either be "Compressed Save Data" or null.
 	*/
-	_.getSaveVariableValue = function() {
+	_.getSaveData = function() {
 		const variableId = _saveVariableId;
 
 		if (variableId > 0) {
@@ -237,7 +244,7 @@ TY.quickSave = TY.quickSave || {};
 	 * @param {object} value - "Compressed Save Data" or null.
 	 * NOTE: Any other input type will be treated as null.
 	*/
-	_.setSaveVariableValue = function(value) {
+	_.setSaveData = function(value) {
 		const variableId = _saveVariableId;
 
 		if (variableId > 0) {
@@ -254,8 +261,8 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * Clear out the "Compressed Save Data" from the "Quick Save" game variable.
 	*/
-	_.clearSaveVariableValue = function() {
-		_.setSaveVariableValue(null);
+	_.clearSaveData = function() {
+		_.setSaveData(null);
 	}
 
 	/**
@@ -263,7 +270,7 @@ TY.quickSave = TY.quickSave || {};
 	 * NOTE: This is important for preserving music tracks.
 	*/
 	_.onSaveDataCompressed = function() {
-		_.clearSaveVariableValue();
+		_.clearSaveData();
 		$gameSystem.onBeforeSave();
 	}
 
@@ -272,7 +279,7 @@ TY.quickSave = TY.quickSave || {};
 	 * system that a "Quick Save" was loaded.
 	*/
 	_.onSaveDataDecompressed = function() {
-		_.clearSaveVariableValue();
+		_.clearSaveData();
 		_.saveLoaded = true;
 	}
 
@@ -290,7 +297,7 @@ TY.quickSave = TY.quickSave || {};
 			const jsonData = JsonEx.stringify(saveData);
 			const compressedData = LZString.compressToBase64(jsonData);
 
-			_.setSaveVariableValue(compressedData);
+			_.setSaveData(compressedData);
 
 		}
 	}
@@ -299,7 +306,7 @@ TY.quickSave = TY.quickSave || {};
 	 * Retrieve and apply the "Quick Save" data from the "Quick Save" game variable.
 	*/
 	_.decompressSaveData = function() {
-		const saveData = _.getSaveVariableValue();
+		const saveData = _.getSaveData();
 
 		if (!!saveData) {
 
@@ -343,15 +350,30 @@ TY.quickSave = TY.quickSave || {};
 		return targetMins - currentMins;
 	}
 
+	/**
+	 * Checks whether the "Quick Save" cooldown timer can be updated or not.
+	 *  
+	 * @returs {boolean} True if:
+	 * - a "Quick Save" has been loaded
+	 * - The current scene has started(aka is ready)
+	 * - The current scene is the map scene(to prevent menu idling)
+	*/
 	_.canUpdateSaveCooldownTimer = function() {
+		const isSaveLoaded = _.saveLoaded;
+		const isSceneStarted = SceneManager.isCurrentSceneStarted();
 		const isMapScene = this._scene instanceof "Scene_Map";
-		return !_.isSavingAllowed() && isMapScene;
+		
+		return isSaveLoaded && isSceneStarted && isMapScene;
 	}
 
+	/**
+	 * Updates the "Quick Save" time elapsed timer until the user 
+	 * can create another "Quick Save" entry.
+	*/
 	_.updateSaveCooldownTimer = function() {
-		if (_.canUpdateSaveCooldownTimer()) {
-			_.saveTimeElapsed++;
-		} else if (_.isSavingAllowed()) {
+		_.saveTimeElapsed++;
+
+		if (_.isSavingAllowed()) {
 			_.saveLoaded = false;
 		}
 	}
@@ -360,102 +382,63 @@ TY.quickSave = TY.quickSave || {};
 	// SceneManager 
 //==========================================================
 
+	/**
+	 * Ensures the "Quick Save" cooldown system is updated(when needed)
+	*/
 	const TY_SceneManager_updateScene = SceneManager.updateScene;
 	SceneManager.updateScene = function() {
 		TY_SceneManager_updateScene.call(this);
-		if (this.isCurrentSceneStarted() && _.saveLoaded) {
+		if (_.canUpdateSaveCooldownTimer()) {
 			_.updateSaveCooldownTimer();
 		}
 	};
 
 //==========================================================
-	// DataManager 
+	// Window_TitleCommand 
 //==========================================================
 
-DataManager.getSaveTime = function() {
-	var time = Math.floor(TY.Utils.SaveTimer / 60);
-	return TY.Param.QuickSaveTime - Math.floor(time / 60) % 60;
-};
-
-DataManager.canCreateQuickSave = function() {
-	var hasSaveLoaded = TY.Utils.HasSaveLoaded;
-	if (hasSaveLoaded) {
-		var timeLeft = this.getSaveTime();
-		return timeLeft <= 0;
-	} else {
-		return true
-	}
-};
-
-DataManager.hasQuickSaveData = function() {
-	return !!this.getQuickSaveData();
-};
-
-DataManager.getQuickSaveData = function() {
-	var variableId = TY.Param.SaveVariableId;
-	if (variableId > 0) {
-		return $gameVariables.value(variableId);
-	} else {
-		return null;
-	}
-};
-
-DataManager.makeQuickSave = function() {
-	var variableId = TY.Param.SaveVariableId;
-	if (variableId > 0) {
-		$gameSystem.onBeforeSave();
-		$gameVariables.setValue(variableId, 0);
-		var saveData = DataManager.makeSaveContents();
-		var jsonData = JsonEx.stringify(saveData);
-		var compressedData = LZString.compressToBase64(jsonData);
-		$gameVariables.setValue(variableId, compressedData);
-	}
-};
-
-DataManager.loadQuickSave = function() {
-	var jsonData = this.getQuickSaveData();
-	var uncompressedData = LZString.decompressFromBase64(jsonData);
-	this.onQuickLoad();
-	this.createGameObjects();
-	this.extractSaveContents(JsonEx.parse(uncompressedData));
-};
-
-DataManager.onQuickLoad = function() {
-	var variableId = TY.Param.SaveVariableId;
-	$gameVariables.setValue(variableId, 0);
-	TY.Utils.HasSaveLoaded = true;
-};
+	/**
+	* Inserts the "Quick Load" command to the "Title Scene" window commands.
+	* 
+	* @alias Window_TitleCommand.prototype.makeCommandList
+	*/
+	const TY_Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
+	Window_TitleCommand.prototype.makeCommandList = function() {
+		TY_Window_TitleCommand_makeCommandList.call(this);
+		this.addQuickSaveCommand();
+	};
+	
+	/**
+	 * Adds a "Quick Load" command to the list of commands.
+	 * NOTE: The command is only available if there is "Quick Save" data available.
+	*/
+	Window_TitleCommand.prototype.addQuickSaveCommand = function() {
+		const name = _loadCommandName;
+		const symbol = "quickSave";
+		const enabled = _.hasSaveData();
+		this.addCommand(name, symbol, enabled);
+	};
 
 //==========================================================
-	// Window_TitleCommand -- 
+	// Window_GameEnd
 //==========================================================
 
-Window_TitleCommand.prototype.makeCommandList = function() {
-    this.addCommand(TextManager.newGame,   'newGame');
-    this.addCommand(TextManager.continue_, 'continue', this.isContinueEnabled());
-	this.addQuickSaveCommand();
-};
-
-Window_TitleCommand.prototype.addQuickSaveCommand = function() {
-	var enabled = DataManager.hasQuickSaveData();
-	this.addCommand(TY.Param.QuickLoadText, 'quickSave', enabled);
-};
-
-//==========================================================
-	// Window_GameEnd -- 
-//==========================================================
-
+const TY_Window_GameEnd_makeCommandList = Window_GameEnd.prototype.makeCommandList;
 Window_GameEnd.prototype.makeCommandList = function() {
-    this.addCommand(TextManager.toTitle, 'toTitle');
-    this.addCommand(TY.Param.ToDesktopText, 'toDesktop');
-    this.addCommand(TextManager.cancel,  'cancel');
+    this.addToDesktopCommand();
+};
+
+Window_GameEnd.prototype.addToDesktopCommand = function() {
+	const name = _desktopCommandName;
+	const symbol = "toDesktop";
+    this.addCommand(name, symbol);
 };
 
 //==========================================================
 	// Window_QuickSave -- Inspired by Yanfly's Auto Save
 //==========================================================
 
-function Window_QuickSave() {
+window.Window_QuickSave = function() {
     this.initialize.apply(this, arguments);
 }
 
@@ -463,8 +446,8 @@ Window_QuickSave.prototype = Object.create(Window_Base.prototype);
 Window_QuickSave.prototype.constructor = Window_QuickSave;
 
 Window_QuickSave.prototype.initialize = function(x, y) {
-    var width = this.windowWidth();
-    var height = this.windowHeight();
+    const width = this.windowWidth();
+    const height = this.windowHeight();
     Window_Base.prototype.initialize.call(this, x, y, width, height);
 	this._showCount = 0;
 	this._closeCount = 0;
@@ -505,23 +488,23 @@ Window_QuickSave.prototype.updateClosing = function() {
 };
 
 Window_QuickSave.prototype.updateFadeIn = function() {
-	this.contentsOpacity += TY.Param.TextFadeSpeed;
+	this.contentsOpacity += _messageFadeRate;
 };
 
 Window_QuickSave.prototype.updateFadeOut = function() {
-	this.contentsOpacity -= TY.Param.TextFadeSpeed;
+	this.contentsOpacity -= _messageFadeRate;
 };
 
 Window_QuickSave.prototype.open = function() {
 	Window_Base.prototype.open.call(this);
 	this.contentsOpacity = 0;
-	this._showCount = TY.Param.TextDuration;
-	this._closeCount = TY.Param.WindowDuration;
+	this._showCount = _messageDuration;
+	this._closeCount = _messageWindowDuration;
 	this.refresh();
 };
 
 Window_QuickSave.prototype.getFailSaveText = function() {
-	var failText = TY.Param.FailSaveText;
+	let failText = TY.Param.FailSaveText;
 	if (failText.contains('SAVETIME')) {
 		failText = failText.replace(/SAVETIME/g, DataManager.getSaveTime());
 	}
@@ -537,8 +520,8 @@ Window_QuickSave.prototype.message = function() {
 };
 
 Window_QuickSave.prototype.refresh = function() {
-    var x = this.textPadding();
-    var width = this.contents.width - this.textPadding() * 2;
+    const x = this.textPadding();
+    const width = this.contents.width - this.textPadding() * 2;
     this.contents.clear();
 	this.drawText(this.message(), x, 0, width, 'center');
 };
