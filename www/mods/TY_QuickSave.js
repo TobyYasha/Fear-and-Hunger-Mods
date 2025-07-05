@@ -72,7 +72,7 @@
  * - Fixed quick saving messing with the play time of regular
  *   save files.
  *
- * Version 1.2 - 7/4/2025
+ * Version 1.2 - 7/5/2025
  * - Removed "Save Text Fade" plugin parameter.
  * - Removed "Save Text Duration" plugin parameter.
  * - Removed "Window Duration" plugin parameter.
@@ -86,13 +86,18 @@
  *   - SceneManager.renderScene
  *   to
  *   - SceneManager.updateScene
- * Dev Comment: On faster displays the cooldown timer would update too fast.
+ * Dev Comment: On displays with faster refresh rate the cooldown timer was updating too fast.
  *
  * - Changed the patching for following methods from overwrite to aliasing:
  *   - Window_TitleCommand.prototype.makeCommandList
  *   - Window_GameEnd.prototype.makeCommandList
  * Dev Comment: The previous versions had "Window_TitleCommand" 
  * remove the "Options" from the title screen.
+ * 
+ * - "Quick Save" data is now cleared upon:
+ *   - Getting a "Game Over" screen.
+ *   - Reloading the game via the "F5" key.
+ * Dev Comment: Can you guys stop finding exploits? :(
  * 
 */
 
@@ -108,7 +113,7 @@ TY.quickSave = TY.quickSave || {};
 //==========================================================
 
 	/**
-	 * Dummy variable to reference plugin parameters data
+	 * Dummy variable used to reference plugin parameters data.
 	 * 
 	 * @type object
 	*/
@@ -298,6 +303,8 @@ TY.quickSave = TY.quickSave || {};
 			const jsonData = JsonEx.stringify(saveData);
 			const compressedData = LZString.compressToBase64(jsonData);
 
+			console.log(compressedData)
+
 			_.setSaveData(compressedData);
 
 		}
@@ -362,7 +369,7 @@ TY.quickSave = TY.quickSave || {};
 	_.canUpdateSaveCooldownTimer = function() {
 		const isSaveLoaded = _.saveLoaded;
 		const isSceneStarted = SceneManager.isCurrentSceneStarted();
-		const isMapScene = this._scene instanceof "Scene_Map";
+		const isMapScene = this._scene instanceof Scene_Map;
 		
 		return isSaveLoaded && isSceneStarted && isMapScene;
 	}
@@ -394,6 +401,27 @@ TY.quickSave = TY.quickSave || {};
 		if (_.canUpdateSaveCooldownTimer()) {
 			_.updateSaveCooldownTimer();
 		}
+	};
+
+	/**
+	 * Prevents exploits via the F5(Reload) key, 
+	 * which would not remove the "Quick Save" data.
+	*/
+	SceneManager.clearQuickSaveOnReload = function(event) {
+		if (!event.ctrlKey && !event.altKey && event.keyCode === 116) { // F5
+			_.clearSaveData();
+	    }
+	};
+
+	/**
+	 * Adds a method to prevent "Save & Reload" exploits
+	 * 
+	 * @alias SceneManager.onKeyDown
+	*/
+	const TY_SceneManager_onKeyDown = SceneManager.onKeyDown;
+	SceneManager.onKeyDown = function(event) {
+		this.clearQuickSaveOnReload(event);
+		TY_SceneManager_onKeyDown.call(this, event);
 	};
 
 //==========================================================
@@ -624,7 +652,8 @@ TY.quickSave = TY.quickSave || {};
 //==========================================================
 
 	/**
-	 * 
+	 * Decompresses the "Quick Save" data and boots the game.
+	 * Based on: Scene_Load.prototype.onLoadSuccess
 	*/
 	Scene_Title.prototype.commandQuickLoad = function() {
 		_.decompressSaveData();
@@ -638,14 +667,21 @@ TY.quickSave = TY.quickSave || {};
 	};
 	
 	/**
+	 * Refreshes the current map in case the current game's version id 
+	 * doesn't match the version id found in the save file data
+	 * $gameSystem.versionId().
 	 * 
+	 * This may probably not do much, but i wanted to mimic the behavior
+	 * of regular save file loading, so it stays.
 	*/
 	Scene_Title.prototype.reloadMapIfUpdated = function() {
 		Scene_Load.prototype.reloadMapIfUpdated.call(this);
 	};
 	
 	/**
+	 * Binds a method to the "Quick Load" command handler
 	 * 
+	 * @alias Scene_Title.prototype.createCommandWindow
 	*/
 	const TY_Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow
 	Scene_Title.prototype.createCommandWindow = function() {
@@ -657,59 +693,109 @@ TY.quickSave = TY.quickSave || {};
 	// Scene_Menu
 //==========================================================
 
+	/**
+	 * Initializes additional properties used by the "Quick Save" plugin.
+	 * 
+	 * @alias Scene_Menu.prototype.initialize
+	*/
+	const TY_Scene_Menu_initialize = Scene_Menu.prototype.initialize;
+	Scene_Menu.prototype.initialize = function() {
+		this._quickSaving = false;
+		this._quickSaveWindow = null;
+	    TY_Scene_Menu_initialize.call(this);
+	};
+
+	/**
+	 * Inserts the method to create the "Quick Save" popup window.
+	 * 
+	 * @alias Scene_Menu.prototype.create
+	*/
 	const TY_Scene_Menu_create = Scene_Menu.prototype.create;
 	Scene_Menu.prototype.create = function() {
 	    TY_Scene_Menu_create.call(this);
-		this._quickSaving = false;
-	    this.createSaveWindow();
+	    this.createQuickSaveWindow();
 	};
 	
-	const TY_Scene_Menu_Update = Scene_Menu.prototype.update;
-	Scene_Menu.prototype.update = function() {
-	    TY_Scene_Menu_Update.call(this);
-		this.isQuickSaving();
-	};
-	
-	Scene_Menu.prototype.createSaveWindow = function() {
-		this._saveWindow = new Window_QuickSave(0, 0);
-		this._saveWindow.x = Graphics.boxWidth - this._saveWindow.width;
-		this._saveWindow.y = Graphics.boxHeight - this._saveWindow.height;
-		this._saveWindow.hide();
-		this.addWindow(this._saveWindow);
-	};
-	
-	Scene_Menu.prototype.createQuickSave = function() {
-		if (!this._quickSaving) {
-			this._quickSaving = true;
-			this._saveWindow.show();
-			this._saveWindow.open();
-		}
-		this._commandWindow.activate();
+	/**
+	 * Creates the "Quick Save" popup window and hides it.
+	*/
+	Scene_Menu.prototype.createQuickSaveWindow = function() {
+		this._quickSaveWindow = new Window_QuickSave(0, 0);
+		this._quickSaveWindow.x = Graphics.boxWidth - this._quickSaveWindow.width;
+		this._quickSaveWindow.y = Graphics.boxHeight - this._quickSaveWindow.height;
+		this._quickSaveWindow.hide();
+		this.addWindow(this._quickSaveWindow);
 	};
 
-	Scene_Menu.prototype.isQuickSaving = function() {
+	/**
+	 * Updates the "Quick Save" process(if active)
+	 * 
+	 * @alias Scene_Menu.prototype.update
+	*/
+	const TY_Scene_Menu_update = Scene_Menu.prototype.update;
+	Scene_Menu.prototype.update = function() {
+	    TY_Scene_Menu_update.call(this);
+		this.updateQuickSaveProcess();
+	};
+
+	/**
+	 * Creates a "Quick Save" entry if "Quick Saving" is active and the 
+	 * "Quick Save" popup window is open.
+	*/
+	Scene_Menu.prototype.updateQuickSaveProcess = function() {
 		if (this._quickSaving) {
-			var windowOpen = this._saveWindow.isOpen();
-			var saveAllowed = DataManager.canCreateQuickSave();
+
+			const windowOpen = this._quickSaveWindow.isOpen();
+			const saveAllowed = _.isSavingAllowed();
+
 			if (windowOpen && saveAllowed) {
-				DataManager.makeQuickSave();
+				_.compressSaveData();
 				this._quickSaving = false;
 			} else if (windowOpen && !saveAllowed) {
 				this._quickSaving = false;
 			}
+
 		}
+	};
+
+	/**
+	 * Starts the "Quick Save" process.
+	 * 
+	 * NOTE: In order to prevent spamming the command, we make sure 
+	 * that another "Quick Save" process isn't already underway.
+	 * 
+	 * NOTE: A better name would have been "startQuickSaveProcess", 
+	 * but it will be left as is since it would requiring re-editing 
+	 * the entry in Yanfly's Main Menu Manager plugin.
+	*/
+	Scene_Menu.prototype.createQuickSave = function() {
+		if (!this._quickSaving) {
+			this._quickSaving = true;
+			this._quickSaveWindow.show();
+			this._quickSaveWindow.open();
+		}
+
+		this._commandWindow.activate();
 	};
 
 //==========================================================
 	// Scene_GameEnd 
 //==========================================================
 
-	const TY_Scene_GameEnd_createCommandWindow = Scene_GameEnd.prototype.createCommandWindow
+	/**
+	 * Binds a method to the "To Desktop" command handler
+	 * 
+	 * @alias Scene_GameEnd.prototype.createCommandWindow
+	*/
+	const TY_Scene_GameEnd_createCommandWindow = Scene_GameEnd.prototype.createCommandWindow;
 	Scene_GameEnd.prototype.createCommandWindow = function() {
 		TY_Scene_GameEnd_createCommandWindow.call(this);
-	    this._commandWindow.setHandler(_desktopCommandSymbol,  this.commandToDesktop.bind(this));
+	    this._commandWindow.setHandler(_desktopCommandSymbol, this.commandToDesktop.bind(this));
 	};
 	
+	/**
+	 * Exits the game processing altogether.
+	*/
 	Scene_GameEnd.prototype.commandToDesktop = function() {
 		this.fadeOutAll();
 		SceneManager.exit();
@@ -719,15 +805,37 @@ TY.quickSave = TY.quickSave || {};
 	// Scene_Gameover 
 //==========================================================
 
-	const TY_Scene_Gameover_create = Scene_Gameover.prototype.create
+	/**
+	 * Clears any existing "Quick Save" data upon getting a game over.
+	 * 
+	 * @alias Scene_Gameover.prototype.create
+	*/
+	const TY_Scene_Gameover_create = Scene_Gameover.prototype.create;
 	Scene_Gameover.prototype.create = function() {
 	    TY_Scene_Gameover_create.call(this);
 	    this.clearQuickSave();
 	};
 	
+	/**
+	 * Clears "Quick Save" data.
+	*/
 	Scene_Gameover.prototype.clearQuickSave = function() {
 		_.clearSaveData();
 	};
+
+	const beforeUnloadHandler = (event) => {
+		//_.clearSaveData();
+
+		// Recommended
+  		//event.preventDefault();
+		
+  		// Included for legacy support, e.g. Chrome/Edge < 119
+  		//event.returnValue = true;
+	};
+
+	window.addEventListener("beforeunload", beforeUnloadHandler);
+
+	// SceneManager._scene._commandWindow._list.findIndex(item => item && item.symbol === "options");
 
 //==========================================================
     // End of File
