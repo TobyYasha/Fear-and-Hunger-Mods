@@ -46,9 +46,13 @@
  *
  * ----------------------- COMPATIBILITY --------------------------
  *
- * VERY IMPORTANT!
+ * [!] VERY IMPORTANT
  * This plugin requires the Olivia_MetaControls plugin in order to function!
  * Must be placed anywhere below Olivia_MetaControls.
+ * 
+ * [!] WARNING
+ * Just like with regular save files, the "Quick Save" may break if trying
+ * to load a "Quick Save" from an older version into a newer version.
  * 
  * ----------------------- HOW TO USE -----------------------------
  * 
@@ -92,9 +96,6 @@
  * 
 */
 
-TY.Param.GameSaveText = TY.Parameters["Game Save Text"];
-TY.Param.FailSaveText = TY.Parameters["Fail Save Text"];
-
 var TY = TY || {};
 TY.quickSave = TY.quickSave || {};
 
@@ -122,11 +123,25 @@ TY.quickSave = TY.quickSave || {};
 	const _loadCommandName = params["Quick Load Text"];
 
 	/**
+	 * "Quick Load" Command symbol on the "Title Scene".
+	 * 
+	 * @type string
+	*/
+	const _loadCommandSymbol = "quickLoad";
+
+	/**
 	 * "Quit to Desktop" Command name on the "Game End Scene".
 	 * 
 	 * @type string
 	*/
 	const _desktopCommandName = params["To Desktop Text"];
+
+	/**
+	 * "Quit to Desktop" Command symbol on the "Game End Scene".
+	 * 
+	 * @type string
+	*/
+	const _desktopCommandSymbol = "toDesktop";
 
 
 	/**
@@ -146,34 +161,11 @@ TY.quickSave = TY.quickSave || {};
 
 	/**
 	 * The regexp string keyword used to reference the time remaining 
-	 * until a "Quick Save" is available.
+	 * until the next "Quick Save" can be created.
 	 * 
 	 * @type regexp
 	*/
 	const _saveTimeRegexp = /SAVETIME/ig;
-
-
-	/**
-	 * How fast the "Quick Save" "Success/Fail" message "Fades In/Out" inside 
-	 * the "Quick Save Menu Popup Window".
-	 * 
-	 * @type number
-	*/
-	const _messageFadeRate = 16;
-
-	/**
-	 * How long the "Quick Save" "Success/Fail" message lingers after appearing.
-	 * 
-	 * @type number
-	*/
-	const _messageDuration = 120;
-
-	/**
-	 * How long to wait before closing the "Quick Save Menu Popup Window".
-	 * 
-	 * @type number
-	*/
-	const _messageWindowDuration = 32;
 
 
 	/**
@@ -237,7 +229,7 @@ TY.quickSave = TY.quickSave || {};
 		if (variableId > 0) {
 
 			const value = $gameVariables.value(variableId);
-			if (typeof value === "object") {
+			if (typeof value === "object" && !Array.isArray(value)) {
 				return value;
 			}
 
@@ -263,7 +255,7 @@ TY.quickSave = TY.quickSave || {};
 				trueValue = null
 			}
 
-			$gameVariables.value(variableId, trueValue);
+			$gameVariables.setValue(variableId, trueValue);
 		}
 	}
 
@@ -416,7 +408,7 @@ TY.quickSave = TY.quickSave || {};
 	const TY_Window_TitleCommand_makeCommandList = Window_TitleCommand.prototype.makeCommandList;
 	Window_TitleCommand.prototype.makeCommandList = function() {
 		TY_Window_TitleCommand_makeCommandList.call(this);
-		this.addQuickSaveCommand();
+		this.addQuickLoadCommand();
 	};
 	
 	/**
@@ -424,9 +416,9 @@ TY.quickSave = TY.quickSave || {};
 	 * NOTE: The command is only available if there is "Quick Save" data available.
 	 * This command can be used to load a "Quick Save" file.
 	*/
-	Window_TitleCommand.prototype.addQuickSaveCommand = function() {
+	Window_TitleCommand.prototype.addQuickLoadCommand = function() {
 		const name = _loadCommandName;
-		const symbol = "quickSave";
+		const symbol = _loadCommandSymbol;
 		const enabled = _.hasSaveData();
 		this.addCommand(name, symbol, enabled);
 	};
@@ -452,7 +444,7 @@ TY.quickSave = TY.quickSave || {};
 	*/
 	Window_GameEnd.prototype.addToDesktopCommand = function() {
 		const name = _desktopCommandName;
-		const symbol = "toDesktop";
+		const symbol = _desktopCommandSymbol;
 	    this.addCommand(name, symbol);
 	};
 
@@ -499,9 +491,38 @@ TY.quickSave = TY.quickSave || {};
 	Window_QuickSave.prototype.windowHeight = function() {
 	    return this.fittingHeight(1);
 	};
+
+	/**
+	 * The rate at which the "Quick Save" "Success/Fail" message "Fades In/Out".
+	 * 
+	 * @returns {number} The "Fade In/Out" rate
+	*/
+	Window_QuickSave.prototype.messageFadeRate = function() {
+	    return 16;
+	};
+
+	/**
+	 * The amount of frames that the "Quick Save" "Success/Fail" message 
+	 * stays on screen for after "Fading In".
+	 * 
+	 * @returns {number} The message duration in frames
+	*/
+	Window_QuickSave.prototype.messageDuration = function() {
+	    return 120;
+	};
+
+	/**
+	 * The amount of frames to wait before closing the window.
+	 * NOTE: This should happen after the window's contents have "Faded Out".
+	 * 
+	 * @returns {number} The waiting duration in frames
+	*/
+	Window_QuickSave.prototype.messageWindowDuration = function() {
+	    return 32;
+	};
 	
 	/**
-	 * 
+	 * Updates the window's "Fading" and "Closing" processes
 	*/
 	Window_QuickSave.prototype.update = function() {
 		Window_Base.prototype.update.call(this);
@@ -510,7 +531,7 @@ TY.quickSave = TY.quickSave || {};
 	};
 	
 	/**
-	 * 
+	 * Updates the process of "Fading In/Out" of the contents
 	*/
 	Window_QuickSave.prototype.updateFading = function() {
 		if (this._showCount > 0) {
@@ -521,6 +542,9 @@ TY.quickSave = TY.quickSave || {};
 		}
 	};
 	
+	/**
+	 * Updates the timer that prevents closing the window for a number of frames
+	*/
 	Window_QuickSave.prototype.updateClosing = function() {
 		if (this._showCount <= 0) {
 			if (this._closeCount > 0) {
@@ -531,22 +555,28 @@ TY.quickSave = TY.quickSave || {};
 		}
 	};
 	
+	/**
+	 * Increments the window's contents's opacity by the "Fading Rate" per frame
+	*/
 	Window_QuickSave.prototype.updateFadeIn = function() {
-		this.contentsOpacity += _messageFadeRate;
-	};
-	
-	Window_QuickSave.prototype.updateFadeOut = function() {
-		this.contentsOpacity -= _messageFadeRate;
+		this.contentsOpacity += this.messageFadeRate();
 	};
 	
 	/**
-	 * 
+	 * Decrements the window's contents's opacity by the "Fading Rate" per frame
+	*/
+	Window_QuickSave.prototype.updateFadeOut = function() {
+		this.contentsOpacity -= this.messageFadeRate();
+	};
+	
+	/**
+	 * Initialize the window's properties for the animation
 	*/
 	Window_QuickSave.prototype.open = function() {
 		Window_Base.prototype.open.call(this);
 		this.contentsOpacity = 0;
-		this._showCount = _messageDuration;
-		this._closeCount = _messageWindowDuration;
+		this._showCount = this.messageDuration();
+		this._closeCount = this.messageWindowDuration();
 		this.refresh();
 	};
 	
@@ -590,89 +620,114 @@ TY.quickSave = TY.quickSave || {};
 	};
 
 //==========================================================
-	// Scene_Title -- 
+	// Scene_Title
 //==========================================================
 
-Scene_Title.prototype.loadQuickSave = function() {
-	DataManager.loadQuickSave();
-    SoundManager.playLoad();
-    this.fadeOutAll();
-    this.reloadMapIfUpdated();
-    SceneManager.goto(Scene_Map);
-    $gameSystem.onAfterLoad();
-};
+	/**
+	 * 
+	*/
+	Scene_Title.prototype.commandQuickLoad = function() {
+		_.decompressSaveData();
+	    SoundManager.playLoad();
 
-Scene_Title.prototype.reloadMapIfUpdated = function() {
-	Scene_Load.prototype.reloadMapIfUpdated.call(this);
-};
+	    this.fadeOutAll();
+	    this.reloadMapIfUpdated();
 
-var TY_CreateCommandWindow1 = Scene_Title.prototype.createCommandWindow
-Scene_Title.prototype.createCommandWindow = function() {
-	TY_CreateCommandWindow1.call(this);
-	this._commandWindow.setHandler('quickSave', this.loadQuickSave.bind(this));
-};
+	    SceneManager.goto(Scene_Map);
+	    $gameSystem.onAfterLoad();
+	};
+	
+	/**
+	 * 
+	*/
+	Scene_Title.prototype.reloadMapIfUpdated = function() {
+		Scene_Load.prototype.reloadMapIfUpdated.call(this);
+	};
+	
+	/**
+	 * 
+	*/
+	const TY_Scene_Title_createCommandWindow = Scene_Title.prototype.createCommandWindow
+	Scene_Title.prototype.createCommandWindow = function() {
+		TY_Scene_Title_createCommandWindow.call(this);
+		this._commandWindow.setHandler(_loadCommandSymbol, this.commandQuickLoad.bind(this));
+	};
 
 //==========================================================
-	// Scene_Menu -- 
+	// Scene_Menu
 //==========================================================
 
-var TY_Scene_Menu_Create = Scene_Menu.prototype.create;
-Scene_Menu.prototype.create = function() {
-    TY_Scene_Menu_Create.call(this);
-	this._quickSaving = false;
-    this.createSaveWindow();
-};
-
-var TY_Scene_Menu_Update = Scene_Menu.prototype.update;
-Scene_Menu.prototype.update = function() {
-    TY_Scene_Menu_Update.call(this);
-	this.isQuickSaving();
-};
-
-Scene_Menu.prototype.createSaveWindow = function() {
-	this._saveWindow = new Window_QuickSave(0, 0);
-	this._saveWindow.x = Graphics.boxWidth - this._saveWindow.width;
-	this._saveWindow.y = Graphics.boxHeight - this._saveWindow.height;
-	this._saveWindow.hide();
-	this.addWindow(this._saveWindow);
-};
-
-Scene_Menu.prototype.createQuickSave = function() {
-	if (!this._quickSaving) {
-		this._quickSaving = true;
-		this._saveWindow.show();
-		this._saveWindow.open();
-	}
-	this._commandWindow.activate();
-};
-
-Scene_Menu.prototype.isQuickSaving = function() {
-	if (this._quickSaving) {
-		var windowOpen = this._saveWindow.isOpen();
-		var saveAllowed = DataManager.canCreateQuickSave();
-		if (windowOpen && saveAllowed) {
-			DataManager.makeQuickSave();
-			this._quickSaving = false;
-		} else if (windowOpen && !saveAllowed) {
-			this._quickSaving = false;
+	const TY_Scene_Menu_create = Scene_Menu.prototype.create;
+	Scene_Menu.prototype.create = function() {
+	    TY_Scene_Menu_create.call(this);
+		this._quickSaving = false;
+	    this.createSaveWindow();
+	};
+	
+	const TY_Scene_Menu_Update = Scene_Menu.prototype.update;
+	Scene_Menu.prototype.update = function() {
+	    TY_Scene_Menu_Update.call(this);
+		this.isQuickSaving();
+	};
+	
+	Scene_Menu.prototype.createSaveWindow = function() {
+		this._saveWindow = new Window_QuickSave(0, 0);
+		this._saveWindow.x = Graphics.boxWidth - this._saveWindow.width;
+		this._saveWindow.y = Graphics.boxHeight - this._saveWindow.height;
+		this._saveWindow.hide();
+		this.addWindow(this._saveWindow);
+	};
+	
+	Scene_Menu.prototype.createQuickSave = function() {
+		if (!this._quickSaving) {
+			this._quickSaving = true;
+			this._saveWindow.show();
+			this._saveWindow.open();
 		}
-	}
-};
+		this._commandWindow.activate();
+	};
+
+	Scene_Menu.prototype.isQuickSaving = function() {
+		if (this._quickSaving) {
+			var windowOpen = this._saveWindow.isOpen();
+			var saveAllowed = DataManager.canCreateQuickSave();
+			if (windowOpen && saveAllowed) {
+				DataManager.makeQuickSave();
+				this._quickSaving = false;
+			} else if (windowOpen && !saveAllowed) {
+				this._quickSaving = false;
+			}
+		}
+	};
 
 //==========================================================
-	// Scene_GameEnd -- 
+	// Scene_GameEnd 
 //==========================================================
 
-Scene_GameEnd.prototype.commandToDesktop = function() {
-	this.fadeOutAll();
-	SceneManager.exit();
-};
+	const TY_Scene_GameEnd_createCommandWindow = Scene_GameEnd.prototype.createCommandWindow
+	Scene_GameEnd.prototype.createCommandWindow = function() {
+		TY_Scene_GameEnd_createCommandWindow.call(this);
+	    this._commandWindow.setHandler(_desktopCommandSymbol,  this.commandToDesktop.bind(this));
+	};
+	
+	Scene_GameEnd.prototype.commandToDesktop = function() {
+		this.fadeOutAll();
+		SceneManager.exit();
+	};
 
-var TY_CreateCommandWindow2 = Scene_GameEnd.prototype.createCommandWindow
-Scene_GameEnd.prototype.createCommandWindow = function() {
-	TY_CreateCommandWindow2.call(this);
-    this._commandWindow.setHandler('toDesktop',  this.commandToDesktop.bind(this));
-};
+//==========================================================
+	// Scene_Gameover 
+//==========================================================
+
+	const TY_Scene_Gameover_create = Scene_Gameover.prototype.create
+	Scene_Gameover.prototype.create = function() {
+	    TY_Scene_Gameover_create.call(this);
+	    this.clearQuickSave();
+	};
+	
+	Scene_Gameover.prototype.clearQuickSave = function() {
+		_.clearSaveData();
+	};
 
 //==========================================================
     // End of File
