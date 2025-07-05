@@ -193,12 +193,18 @@ TY.quickSave = TY.quickSave || {};
 	//const _saveTimeInterval = Number(params["Quick Save Time"]);
 
 	/**
-	 * The key used when saving the "Quick Save" cooldown timer 
-	 * to the local storage.
+	 * The reserved local storage key for the "Quick Save" cooldown timer 
 	 * 
 	 * @type string
 	*/
-	const _localStorageKey = "quickSaveCooldownTimer";
+	const _storageTimeElapsedKey = "quickSaveTimeElapsed";
+
+	/**
+	 *  The reserved local storage key for the "Quick Save" cooldown active flag
+	 * 
+	 * @type string
+	*/
+	const _storageCooldownActiveKey = "quickSaveCooldownActive";
 
 //==========================================================
 	// Public Members
@@ -214,11 +220,11 @@ TY.quickSave = TY.quickSave || {};
 	_.saveTimeElapsed = 0;
 
 	/**
-	 * Flag that is used to check if a "Quick Save" was recently loaded into.
+	 * Flag that is used to check if the "Quick Save" system is on cooldown or not.
 	 * 
 	 * @type boolean
 	*/
-	_.saveLoaded = false;
+	_.saveCooldownActive = false;
 
 //==========================================================
 	// Methods 
@@ -298,8 +304,7 @@ TY.quickSave = TY.quickSave || {};
 	*/
 	_.onSaveDataDecompressed = function() {
 		_.clearSaveData();
-		_.restoreSaveCooldownTimer();
-		_.saveLoaded = true;
+		_.saveCooldownActive = true;
 	}
 
 	/**
@@ -348,7 +353,7 @@ TY.quickSave = TY.quickSave || {};
 	 * @returns {boolean} True if "Quick Saving" is allowed.
 	*/
 	_.isSavingAllowed = function() {
-		if (_.saveLoaded) {
+		if (_.saveCooldownActive) {
 			return _.getSaveCooldownTimer() <= 0;
 		}
 		return true;
@@ -378,11 +383,11 @@ TY.quickSave = TY.quickSave || {};
 	 * - The current scene is the map scene(to prevent menu idling)
 	*/
 	_.canUpdateSaveCooldownTimer = function() {
-		const isSaveLoaded = _.saveLoaded;
+		const isCooldownActive = _.saveCooldownActive;
 		const isSceneStarted = SceneManager.isCurrentSceneStarted();
 		const isMapScene = SceneManager._scene instanceof Scene_Map;
 		
-		return isSaveLoaded && isSceneStarted && isMapScene;
+		return isCooldownActive && isSceneStarted && isMapScene;
 	}
 
 	/**
@@ -393,26 +398,48 @@ TY.quickSave = TY.quickSave || {};
 		_.saveTimeElapsed++;
 
 		if (_.isSavingAllowed()) {
-			_.saveLoaded = false;
+			_.saveCooldownActive = false;
 		}
 	}
 
 	/**
-	 * 
+	 * Store the current "Quick Save" cooldown timer and flag.
 	*/
-	_.storeSaveCooldownTimer = function() {
-		localStorage.setItem(_localStorageKey, _.saveTimeElapsed);
+	_.storeSaveCooldownData = function() {
+		localStorage.setItem(_storageTimeElapsedKey, _.saveTimeElapsed);
+		localStorage.setItem(_storageCooldownActiveKey, _.saveCooldownActive);
+	}
+
+	/**
+	 * Restore the "Quick Save" cooldown timer and flag(if data available).
+	*/
+	_.restoreSaveCooldownData = function() {
+		_.restoreSaveTimeElapsed();
+		_.restoreSaveActiveCooldown();
 	}
 
 	/**
 	 * 
 	*/
-	_.restoreSaveCooldownTimer = function() {
-		const value = localStorage.getItem(_localStorageKey);
+	_.restoreSaveTimeElapsed = function() {
+		const timeElapsed = localStorage.getItem(_storageTimeElapsedKey);
 
-		if (value) {
-			_.saveTimeElapsed = Number(value);
-			localStorage.removeItem(_localStorageKey);
+		if (timeElapsed) {
+			_.saveTimeElapsed = Number(timeElapsed);
+			localStorage.removeItem(_storageTimeElapsedKey);
+		}
+		
+	}
+
+	/**
+	 * 
+	*/
+	_.restoreSaveActiveCooldown = function() {
+		const isActive = localStorage.getItem(_storageCooldownActiveKey);
+
+		if (isActive) {
+			_.saveCooldownActive = isActive === "true";
+			localStorage.removeItem(_storageCooldownActiveKey);
 		}
 		
 	}
@@ -436,7 +463,7 @@ TY.quickSave = TY.quickSave || {};
 	_.hookTimerMemorizer = function() {
 		nw.Window.get().on("close", function() {
 
-			_.storeSaveCooldownTimer();
+			_.storeSaveCooldownData();
 
 			if (_.canCloseGame()) {
 				this.close(true);
@@ -446,6 +473,7 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	_.hookTimerMemorizer();
+	_.restoreSaveCooldownData();
 
 //==========================================================
 	// SceneManager 
