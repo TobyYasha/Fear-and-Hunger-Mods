@@ -65,7 +65,7 @@
  * ------------------------ UPDATES ------------------------------
  * 
  * Version 1.1 - 10/12/2024
- * - Reduced size of quick saved data by compressing it.
+ * - Added Base64 compression/decompression for "Quick Save" data.
  * - Fixed quick save window appearing briefly in the bottom
  *   right corner when opening the menu.
  * - Restore BGM and BGS upon loading a quick save.
@@ -99,6 +99,9 @@
  *   - Reloading the game via the "F5" key.
  * Dev Comment: Can you guys stop finding exploits? :(
  * 
+ * - The "Quick Save" cooldown timer now persist even after quitting the game.
+ * Dev Comment: This has bothering me for a while now, so i'm glad i got it fixed.
+ * 
 */
 
 var TY = TY || {};
@@ -109,7 +112,7 @@ TY.quickSave = TY.quickSave || {};
 	// NOTE: Be careful not to confuse this "_value" with this "_.value"
 
 //==========================================================
-	// Parameters | Static Private Members
+	// Static Private Members
 //==========================================================
 
 	/**
@@ -186,7 +189,16 @@ TY.quickSave = TY.quickSave || {};
 	 * 
 	 * @type number
 	*/
-	const _saveTimeInterval = Number(params["Quick Save Time"]);
+	const _saveTimeInterval = 15; // TEST ONLY
+	//const _saveTimeInterval = Number(params["Quick Save Time"]);
+
+	/**
+	 * The key used when saving the "Quick Save" cooldown timer 
+	 * to the local storage.
+	 * 
+	 * @type string
+	*/
+	const _localStorageKey = "quickSaveCooldownTimer";
 
 //==========================================================
 	// Public Members
@@ -234,7 +246,7 @@ TY.quickSave = TY.quickSave || {};
 		if (variableId > 0) {
 
 			const value = $gameVariables.value(variableId);
-			if (typeof value === "object" && !Array.isArray(value)) {
+			if (typeof value === "string") {
 				return value;
 			}
 
@@ -256,7 +268,7 @@ TY.quickSave = TY.quickSave || {};
 		if (variableId > 0) {
 
 			let trueValue = value;
-			if (typeof value !== "object") {
+			if (typeof value !== "string") {
 				trueValue = null
 			}
 
@@ -286,6 +298,7 @@ TY.quickSave = TY.quickSave || {};
 	*/
 	_.onSaveDataDecompressed = function() {
 		_.clearSaveData();
+		_.restoreSaveCooldownTimer();
 		_.saveLoaded = true;
 	}
 
@@ -302,8 +315,6 @@ TY.quickSave = TY.quickSave || {};
 			const saveData = DataManager.makeSaveContents();
 			const jsonData = JsonEx.stringify(saveData);
 			const compressedData = LZString.compressToBase64(jsonData);
-
-			console.log(compressedData)
 
 			_.setSaveData(compressedData);
 
@@ -369,13 +380,13 @@ TY.quickSave = TY.quickSave || {};
 	_.canUpdateSaveCooldownTimer = function() {
 		const isSaveLoaded = _.saveLoaded;
 		const isSceneStarted = SceneManager.isCurrentSceneStarted();
-		const isMapScene = this._scene instanceof Scene_Map;
+		const isMapScene = SceneManager._scene instanceof Scene_Map;
 		
 		return isSaveLoaded && isSceneStarted && isMapScene;
 	}
 
 	/**
-	 * Updates the "Quick Save" time elapsed timer until the user 
+	 * Updates the "Quick Save" time elapsed timer until the user
 	 * can create another "Quick Save" entry.
 	*/
 	_.updateSaveCooldownTimer = function() {
@@ -385,6 +396,56 @@ TY.quickSave = TY.quickSave || {};
 			_.saveLoaded = false;
 		}
 	}
+
+	/**
+	 * 
+	*/
+	_.storeSaveCooldownTimer = function() {
+		localStorage.setItem(_localStorageKey, _.saveTimeElapsed);
+	}
+
+	/**
+	 * 
+	*/
+	_.restoreSaveCooldownTimer = function() {
+		const value = localStorage.getItem(_localStorageKey);
+
+		if (value) {
+			_.saveTimeElapsed = Number(value);
+			localStorage.removeItem(_localStorageKey);
+		}
+		
+	}
+
+	/**
+	 * This method check is only added to ensure compatibility with other 
+	 * plugins that might add hooks to the NW.js window "Close" listener.
+	 * 
+	 * IMPORTANT: Only patch this method if you know what you are doing!
+	 * 
+	 * @returns {boolean} True if game window can be closed
+	*/
+	_.canCloseGame = function() {
+		return true;
+	}
+
+	/**
+	 * Adds a hook to the NW.js window "Close" listener so that the timer
+	 * can be preserved when quitting the game.
+	*/
+	_.hookTimerMemorizer = function() {
+		nw.Window.get().on("close", function() {
+
+			_.storeSaveCooldownTimer();
+
+			if (_.canCloseGame()) {
+				this.close(true);
+			}
+
+		});
+	}
+
+	_.hookTimerMemorizer();
 
 //==========================================================
 	// SceneManager 
@@ -822,18 +883,6 @@ TY.quickSave = TY.quickSave || {};
 	Scene_Gameover.prototype.clearQuickSave = function() {
 		_.clearSaveData();
 	};
-
-	const beforeUnloadHandler = (event) => {
-		//_.clearSaveData();
-
-		// Recommended
-  		//event.preventDefault();
-		
-  		// Included for legacy support, e.g. Chrome/Edge < 119
-  		//event.returnValue = true;
-	};
-
-	window.addEventListener("beforeunload", beforeUnloadHandler);
 
 	// SceneManager._scene._commandWindow._list.findIndex(item => item && item.symbol === "options");
 
