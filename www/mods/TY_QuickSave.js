@@ -7,25 +7,24 @@
  *
  * @param Quick Load Text
  * @parent General Configurations
- * @desc The text used for the 'Quick Load' command on the title screen.
+ * @desc The text used for the "Quick Load" command on the "Title Scene".
  * @default Quick Load
  *
  * @param To Desktop Text
  * @parent General Configurations
- * @desc The text used for the 'To Desktop' command on the game quit menu.
+ * @desc The text used for the 'To Desktop' command on the "Game End Scene".
  * @default To Desktop
  *
  * @param Quick Save Variable
  * @parent General Configurations
  * @type variable
- * @desc The variable which will store the quick save data.
+ * @desc The variable which will be used to store the "Quick Save" data.
  * @default 0
  *
  * @param Quick Save Time
  * @parent General Configurations
  * @type number
- * @desc The time in minutes before a new save can be made again.
- * This is only considered if a Quick Save has been loaded.
+ * @desc The cooldown time(in minutes) before a new "Quick Save" can be created again.
  * @default 5
  * @min 0
  *
@@ -33,13 +32,13 @@
  *
  * @param Game Save Text
  * @parent Window Configurations
- * @desc The text used for when that the game has been saved.
+ * @desc The text used for when the "Quick Save" was successfully created.
  * @default Game Saved!
  *
  * @param Fail Save Text
  * @parent Window Configurations
- * @desc The text used for when that the game hasn't been saved.
- * Use 'SAVETIME' to reference the time until the next save.
+ * @desc The text used for when the "Quick Save" is still on cooldown.
+ * Use 'SAVETIME' to reference the minutes remaining until the next save.
  * @default Time Left: SAVETIME Minutes!
  *
  * @help
@@ -84,6 +83,8 @@
  *   save files.
  *
  * Version 1.2 - 7/6/2025
+ * - Slightly updated plugin parameter descriptions for better clarity.
+ *
  * - Removed "Save Text Fade" plugin parameter.
  * - Removed "Save Text Duration" plugin parameter.
  * - Removed "Window Duration" plugin parameter.
@@ -91,7 +92,7 @@
  *
  * - Refactored the code
  * - Added JSDoc style comments for members and methods
- * Dev Comment: The code should be 0.00001% more beautiful now
+ * Dev Comment: The code should be 0.00001% more beautiful now.
  *
  * - Changed the method that updated the "Quick Save" cooldown timer from:
  *   - SceneManager.renderScene
@@ -102,13 +103,13 @@
  * - Changed the patching for following methods from overwrite to aliasing:
  *   - Window_TitleCommand.prototype.makeCommandList
  *   - Window_GameEnd.prototype.makeCommandList
- * Dev Comment: The previous versions had "Window_TitleCommand" 
- * remove the "Options" from the title screen.
+ * Dev Comment: The previous versions of the plugin had "Window_TitleCommand"
+ * remove the "Options" command from the title screen.
  * 
  * - "Quick Save" data is now cleared upon:
  *   - Getting a "Game Over" screen.
  *   - Reloading the game via the "F5" key.
- * Dev Comment: Can you guys stop finding exploits? :(
+ * Dev Comment: Can you guys stop finding exploits? For the love of...
  * 
  * - The "Quick Save" cooldown timer now persist even after quitting the game.
  * Dev Comment: This has bothering me for a while now, so i'm glad i got it fixed.
@@ -223,7 +224,7 @@ TY.quickSave = TY.quickSave || {};
 
 	/**
 	 * The "Cooldown Time" (in game frames) that passed since 
-	 * the last "Quick Save" was made.
+	 * the last "Quick Save" was created.
 	 * 
 	 * NOTE: 60 Frames = 1 Second
 	 * 
@@ -377,7 +378,7 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Obtain the remaining minutes until a "Quick Save" can be made.
+	 * Obtain the remaining minutes until a "Quick Save" can be created again.
 	 * 
 	 * @returns {number} A positive number means that "Quick Saving" is on cooldown.
 	 * Numbers starting from 0 and below mean that "Quick Saving" is not on cooldown.
