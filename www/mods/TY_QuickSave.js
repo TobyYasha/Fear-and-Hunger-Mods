@@ -489,22 +489,27 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Adds a hook to the NW.js window "Close" listener so that the timer
-	 * can be preserved when quitting the game.
+	 * When the game window is to be closed, store the "Quick Save" cooldown data
+	 * in the localStorage to be re-used when opening up the game next time.
 	*/
-	_.hookTimerMemorizer = function() {
-		nw.Window.get().on("close", function() {
-
-			_.storeSaveCooldownData();
-
-			if (_.canCloseGame()) {
-				this.close(true);
-			}
-
-		});
+	_.onGameClosed = function() {
+		_.storeSaveCooldownData();
+	
+		if (_.canCloseGame()) {
+			nw.Window.get().close(true);
+		}
 	}
 
-	_.hookTimerMemorizer();
+	/**
+	 * Adds a callback to the NW.js window "Close" listener.
+	*/
+	_.hookGameCloseListener = function() {
+		if (Utils.isNwjs()) {
+			nw.Window.get().on("close", _.onGameClosed.bind(this));
+		}
+	}
+
+	_.hookGameCloseListener();
 	_.restoreSaveCooldownData();
 
 //==========================================================
