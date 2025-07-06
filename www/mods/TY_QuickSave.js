@@ -43,7 +43,7 @@
  *
  * @help
  *
- * ------------------------- FEATURES -----------------------------
+ * ------------------------------- FEATURES -----------------------------------
  *
  * - Can create temporary save files.
  *   - Temporary save files get deleted once you load into them.
@@ -56,7 +56,7 @@
  *
  * - You can now quit to desktop via the last command inside the game's menu.
  *
- * ----------------------- COMPATIBILITY --------------------------
+ * ---------------------------- COMPATIBILITY --------------------------------
  *
  * [!] VERY IMPORTANT
  * This plugin requires the Olivia_MetaControls plugin in order to function!
@@ -66,22 +66,14 @@
  * Just like with regular save files, the "Quick Save" may break if trying
  * to load a "Quick Save" from an older version into a newer version.
  * 
- * ----------------------- HOW TO USE -----------------------------
+ * ----------------------------- HOW TO USE -----------------------------------
  * 
  * The variable which will store the Quick Save data
  * must contain <Global Meta> in its name.
  * Example: <Global Meta> My Variable 1
  * 
- * ------------------------ UPDATES ------------------------------
+ * ------------------------------ UPDATES ------------------------------------
  * 
- * Version 1.1 - 10/12/2024
- * - Added Base64 compression/decompression for "Quick Save" data.
- * - Fixed quick save window appearing briefly in the bottom
- *   right corner when opening the menu.
- * - Restore BGM and BGS upon loading a quick save.
- * - Fixed quick saving messing with the play time of regular
- *   save files.
- *
  * Version 1.2 - 7/6/2025
  * - Slightly updated plugin parameter descriptions for better clarity.
  *
@@ -89,6 +81,9 @@
  * - Removed "Save Text Duration" plugin parameter.
  * - Removed "Window Duration" plugin parameter.
  * Dev Comment: They were pretty niche parameters.
+ *
+ * - Increased the "Quick Save" popup window width in the "Scene_Menu" from 240px to 300px.
+ * Dev Comment: This is done in order to fix the "Fail Save Text" message from being squashed.
  *
  * - Refactored the code
  * - Added JSDoc style comments for members and methods
@@ -114,10 +109,21 @@
  * - The "Quick Save" cooldown timer now persist even after quitting the game.
  * Dev Comment: This has bothering me for a while now, so i'm glad i got it fixed.
  * 
+ * Version 1.1 - 10/12/2024
+ * - Added Base64 compression/decompression for "Quick Save" data.
+ * - Fixed quick save window appearing briefly in the bottom
+ *   right corner when opening the menu.
+ * - Restore BGM and BGS upon loading a quick save.
+ * - Fixed quick saving messing with the play time of regular
+ *   save files.
+ * 
 */
 
 var TY = TY || {};
 TY.quickSave = TY.quickSave || {};
+
+var Imported = Imported || {};
+Imported.TY_QuickSave = true;
 
 (function(_) {
 
@@ -240,7 +246,7 @@ TY.quickSave = TY.quickSave || {};
 	_.saveCooldownActive = false;
 
 //==========================================================
-	// Methods 
+	// Public Methods 
 //==========================================================
 
 	/**
@@ -535,6 +541,7 @@ TY.quickSave = TY.quickSave || {};
 	*/
 	SceneManager.clearQuickSaveOnReload = function(event) {
 		if (!event.ctrlKey && !event.altKey && event.keyCode === 116) { // F5
+			_.storeSaveCooldownData();
 			_.clearSaveData();
 	    }
 	};
@@ -673,7 +680,7 @@ TY.quickSave = TY.quickSave || {};
 	 * @returns {number} The width value
 	*/
 	Window_QuickSave.prototype.windowWidth = function() {
-	    return 240;
+	    return 300;
 	};
 	
 	/**
