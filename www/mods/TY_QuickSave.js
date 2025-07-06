@@ -254,9 +254,10 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * Get the current contents of the game variable designated
 	 * to hold the "Quick Save" data.
-	 * NOTE: Number types and anything else is treated as null.
 	 * 
-	 * @returns {object} Output should either be "Compressed Save Data" or null.
+	 * NOTE: Number types and anything else are treated as null.
+	 * 
+	 * @returns {string} Output should either be "Compressed Save Data" or null.
 	*/
 	_.getSaveData = function() {
 		const variableId = _saveVariableId;
@@ -277,8 +278,9 @@ TY.quickSave = TY.quickSave || {};
 	 * Set the current contents of the game variable designated
 	 * to hold the "Quick Save" data.
 	 * 
-	 * @param {object} value - "Compressed Save Data" or null.
-	 * NOTE: Any other input type will be treated as null.
+	 * NOTE: Number types and anything else are treated as null.
+	 * 
+	 * @param {string} value - "Compressed Save Data" or null.
 	*/
 	_.setSaveData = function(value) {
 		const variableId = _saveVariableId;
@@ -302,21 +304,22 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Clear out old "Quick Save" data and preserve some pre-save data.
-	 * NOTE: This is important for preserving music tracks.
+	 * Active the "Quick Save" cooldown system and preserve some pre-save data.
+	 * 
+	 * NOTE: $gameSystem.onBeforeSave() - This is important for preserving 
+	 * music tracks and ensuring that regular save files retain the correct 
+	 * playtime.
 	*/
 	_.onSaveDataCompressed = function() {
-		_.clearSaveData();
+		_.saveCooldownActive = true;
 		$gameSystem.onBeforeSave();
 	}
 
 	/**
-	 * Clear out existing "Quick Save" data and set the flag to alert the
-	 * system that a "Quick Save" was loaded.
+	 * Clear out existing "Quick Save" data after loading a "Quick Save". 
 	*/
 	_.onSaveDataDecompressed = function() {
 		_.clearSaveData();
-		_.saveCooldownActive = true;
 	}
 
 	/**
@@ -358,14 +361,10 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Checks whether a "Quick Save" can be currently made.
+	 * Checks whether "Quick Saving" is currently on cooldown.
 	 * 
-	 * If a "Quick Save" was recently loaded, then we need to wait for the cooldown.
-	 * Otherwise "Quick Saving" is allowed.
-	 * 
-	 * NOTE: Negative numbers should be allowed so that the "Quick Saving" 
-	 * check doesn't break if changing "_saveTimeInterval" to lower values 
-	 * than previously adjusted.
+	 * NOTE: Negative numbers should be allowed so that the plugin doesn't break if
+	 * "_saveTimeInterval" is changed to a different lower value than expected.
 	 * Example: From 15 minutes to 5 minutes.
 	 * 
 	 * @returns {boolean} True if "Quick Saving" is allowed.
@@ -378,7 +377,7 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Checks whether "Quick Saving" is currently on cooldown
+	 * Obtain the remaining minutes until a "Quick Save" can be made.
 	 * 
 	 * @returns {number} A positive number means that "Quick Saving" is on cooldown.
 	 * Numbers starting from 0 and below mean that "Quick Saving" is not on cooldown.
