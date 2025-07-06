@@ -44,6 +44,19 @@
  *
  * @help
  *
+ * ------------------------- FEATURES -----------------------------
+ *
+ * - Can create temporary save files.
+ *   - Temporary save files get deleted once you load into them.
+ *
+ * - Anti-cheat systems:
+ *   - Temporary save files gain a cooldown once you load into them.
+ *     - via the "Quick Save Time" parameter.
+ *   - Temporary save files are deleted once you get a game over screen.
+ *   - Temporary save files are deleted if you try reloading via F5.
+ *
+ * - You can now quit to desktop via the last command inside the game's menu.
+ *
  * ----------------------- COMPATIBILITY --------------------------
  *
  * [!] VERY IMPORTANT
@@ -60,8 +73,6 @@
  * must contain <Global Meta> in its name.
  * Example: <Global Meta> My Variable 1
  * 
- * As a bonus you can now close game from the last command inside the game's menu.
- * 
  * ------------------------ UPDATES ------------------------------
  * 
  * Version 1.1 - 10/12/2024
@@ -72,7 +83,7 @@
  * - Fixed quick saving messing with the play time of regular
  *   save files.
  *
- * Version 1.2 - 7/5/2025
+ * Version 1.2 - 7/6/2025
  * - Removed "Save Text Fade" plugin parameter.
  * - Removed "Save Text Duration" plugin parameter.
  * - Removed "Window Duration" plugin parameter.
@@ -213,6 +224,7 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * The "Cooldown Time" (in game frames) that passed since 
 	 * the last "Quick Save" was made.
+	 * 
 	 * NOTE: 60 Frames = 1 Second
 	 * 
 	 * @type number
@@ -346,9 +358,15 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Checks whether a "Quick Save" can be made.
+	 * Checks whether a "Quick Save" can be currently made.
+	 * 
 	 * If a "Quick Save" was recently loaded, then we need to wait for the cooldown.
 	 * Otherwise "Quick Saving" is allowed.
+	 * 
+	 * NOTE: Negative numbers should be allowed so that the "Quick Saving" 
+	 * check doesn't break if changing "_saveTimeInterval" to lower values 
+	 * than previously adjusted.
+	 * Example: From 15 minutes to 5 minutes.
 	 * 
 	 * @returns {boolean} True if "Quick Saving" is allowed.
 	*/
@@ -393,17 +411,29 @@ TY.quickSave = TY.quickSave || {};
 	/**
 	 * Updates the "Quick Save" time elapsed timer until the user
 	 * can create another "Quick Save" entry.
+	 * 
+	 * If the cooldown timer reaches the target minutes goal,
+	 * then we clear the "Cooldown State".
 	*/
 	_.updateSaveCooldownTimer = function() {
 		_.saveTimeElapsed++;
 
 		if (_.isSavingAllowed()) {
-			_.saveCooldownActive = false;
+			_.resetSaveCooldownData();
 		}
 	}
 
 	/**
-	 * Store the current "Quick Save" cooldown timer and flag.
+	 * Reset the current "Quick Save" cooldown timer and flag states back to default.
+	*/
+	_.resetSaveCooldownData = function() {
+		_.saveTimeElapsed = 0;
+		_.saveCooldownActive = false;
+	}
+
+	/**
+	 * Store the current "Quick Save" cooldown timer and flag in the localStorage.
+	 * So that the data persists even after the game is closed.
 	*/
 	_.storeSaveCooldownData = function() {
 		localStorage.setItem(_storageTimeElapsedKey, _.saveTimeElapsed);
@@ -411,7 +441,7 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
-	 * Restore the "Quick Save" cooldown timer and flag(if data available).
+	 * Restore previously stored "Quick Save" cooldown data from the localStorage.
 	*/
 	_.restoreSaveCooldownData = function() {
 		_.restoreSaveTimeElapsed();
@@ -419,6 +449,8 @@ TY.quickSave = TY.quickSave || {};
 	}
 
 	/**
+	 * Restore the value of the "Quick Save" cooldown timer from previously
+	 * saved in the localStorage.
 	 * 
 	*/
 	_.restoreSaveTimeElapsed = function() {
@@ -526,6 +558,7 @@ TY.quickSave = TY.quickSave || {};
 	Window_TitleCommand.prototype.makeCommandList = function() {
 		TY_Window_TitleCommand_makeCommandList.call(this);
 		this.addQuickLoadCommand();
+		this.reorderQuickLoadCommand();
 	};
 	
 	/**
@@ -540,6 +573,25 @@ TY.quickSave = TY.quickSave || {};
 		this.addCommand(name, symbol, enabled);
 	};
 
+	/**
+	 * Swaps the positions of the "Options" and "Quick Load" commands.
+	 * This is done so that the "Quick Load" command gets drawn before "Options" command.
+	*/
+	Window_TitleCommand.prototype.reorderQuickLoadCommand = function() {
+		const indexA = this.findSymbol("options");
+		const indexB = this.findSymbol(_loadCommandSymbol);
+
+		if (indexA >= 0 && indexB >= 0) {
+			const commandA = this._list[indexA];
+			const commandB = this._list[indexB];
+
+			this._list[indexA] = commandB;
+			this._list[indexB] = commandA;
+		}
+
+	};
+	
+
 //==========================================================
 	// Window_GameEnd
 //==========================================================
@@ -553,6 +605,7 @@ TY.quickSave = TY.quickSave || {};
 	Window_GameEnd.prototype.makeCommandList = function() {
 		TY_Window_GameEnd_makeCommandList.call(this);
 	    this.addToDesktopCommand();
+	    this.reorderToDesktopCommand();
 	};
 	
 	/**
@@ -563,6 +616,24 @@ TY.quickSave = TY.quickSave || {};
 		const name = _desktopCommandName;
 		const symbol = _desktopCommandSymbol;
 	    this.addCommand(name, symbol);
+	};
+
+	/**
+	 * Swaps the positions of the "Cancel" and "To Desktop" commands.
+	 * This is done so that the "To Desktop" command gets drawn before "Cancel" command.
+	*/
+	Window_GameEnd.prototype.reorderToDesktopCommand = function() {
+		const indexA = this.findSymbol("cancel");
+		const indexB = this.findSymbol(_desktopCommandSymbol);
+
+		if (indexA >= 0 && indexB >= 0) {
+			const commandA = this._list[indexA];
+			const commandB = this._list[indexB];
+
+			this._list[indexA] = commandB;
+			this._list[indexB] = commandA;
+		}
+
 	};
 
 //==========================================================
@@ -706,7 +777,7 @@ TY.quickSave = TY.quickSave || {};
 		let text = _saveFailMessage; 
 
 		if (text.match(_saveTimeRegexp)) {
-			let remainingTime = _.getSaveCooldownTimer();
+			const remainingTime = _.getSaveCooldownTimer();
 			text = text.replace(_saveTimeRegexp, remainingTime);
 		}
 
@@ -761,7 +832,7 @@ TY.quickSave = TY.quickSave || {};
 	 * $gameSystem.versionId().
 	 * 
 	 * This may probably not do much, but i wanted to mimic the behavior
-	 * of regular save file loading, so it stays.
+	 * of regular save file loading, so this will stay.
 	*/
 	Scene_Title.prototype.reloadMapIfUpdated = function() {
 		Scene_Load.prototype.reloadMapIfUpdated.call(this);
@@ -895,7 +966,8 @@ TY.quickSave = TY.quickSave || {};
 //==========================================================
 
 	/**
-	 * Clears any existing "Quick Save" data upon getting a game over.
+	 * Clears any existing "Quick Save" data upon getting a 
+	 * game over screen.
 	 * 
 	 * @alias Scene_Gameover.prototype.create
 	*/
@@ -911,8 +983,6 @@ TY.quickSave = TY.quickSave || {};
 	Scene_Gameover.prototype.clearQuickSave = function() {
 		_.clearSaveData();
 	};
-
-	// SceneManager._scene._commandWindow._list.findIndex(item => item && item.symbol === "options");
 
 //==========================================================
     // End of File
