@@ -2,18 +2,6 @@
  * @plugindesc v1.9 - Includes a list of QoL and General changes to the game.
  * @author Toby Yasha, Fokuto, Nemesis, Atlasle
  *
- * @param optAnimWait
- * @text Wait for Animation
- * @type boolean
- * @desc Wait for animations to stop playing before damaging/healing battlers.
- * @default true
- *
- * @param optReflectWait
- * @text Wait for Reflect
- * @type boolean
- * @desc Wait for reflect animation to stop playing before applying effect.
- * @default true
- *
  * @help
  *
  * ------------------------ CHANGES ------------------------------
@@ -154,6 +142,11 @@
  *   - Window_ActorCommand.prototype.selectLast (Affected method)
  *
  * Version 1.9 - 7/7/2025
+ * - Removed "Wait for Animation" parameter (temporarily(?)).
+ * - Removed "Wait for Reflect" parameter (temporarily(?)).
+ * Dev Comment: These two were basically not even used.
+ * Might return them in the future if used or in another form.
+ * 
  * - Slightly refactored code.
  * - Added JSDoc style comments for members and methods.
  * - Added compatibility patches for "TY_QuickSave":
@@ -174,37 +167,7 @@ TY.terminaTweaks = TY.terminaTweaks || {};
  
 (function(_) {
 
-//===============================================================
-    // Static Private Members
-//===============================================================
-
-    /**
-     * Dummy variable used to reference plugin parameters data.
-     * 
-     * @type object
-    */
-    var params = PluginManager.parameters("TY_TerminaTweaks");
-
-
-    /**
-     * Determines if animations(in battle) have a delay before 
-     * playing another animation.
-     * 
-     * NOTE: Currently disabled.
-     * 
-     * @type boolean
-    */
-    const _optAnimWait = params.optAnimWait === "false"; // === "true";
-
-    /**
-     * Determines if reflect animations(in battle) have a delay
-     * before playing another reflect animation.
-     * 
-     * NOTE: Currently disabled.
-     * 
-     * @type boolean
-    */
-    const _optReflectWait = params.optReflectWait === "false"; // === "true";
+    let fEXTURNvisible = true;
 
 //===============================================================
     // Public Methods
@@ -260,7 +223,7 @@ TY.terminaTweaks = TY.terminaTweaks || {};
     */
     Game_Battler.prototype.addState = function(stateId) {
         if (!this.isStatePrevented(stateId) && !(this.stateRate(stateId) === 0)) {
-            var affected = this.isStateAffected(stateId);
+            const affected = this.isStateAffected(stateId);
             Olivia.OctoBattle.Effects.___Game_Battler_addState___.call(this, stateId);
             this.setupBreakDamagePopup(stateId, affected)
             this.setStateMaximumTurns(stateId);
@@ -321,10 +284,9 @@ TY.terminaTweaks = TY.terminaTweaks || {};
         let states = target.states();
         states = states.reverse();
 
-        let length = states.length;
         let originalValue = value;
 
-        for (let i = 0; i < length; ++i) {
+        for (let i = 0; i < states.length; ++i) {
             let state = states[i];
             if (!state) continue;
             value = this.processStProtectEffects(target, state, value, originalValue);
@@ -393,28 +355,6 @@ TY.terminaTweaks = TY.terminaTweaks || {};
      * NOTE: Because they aren't draw properly due to limited space.
     */
     Window_BattleStatus.prototype.drawActorIcons = function() {};
-
-//===============================================================
-    // Window_BattleLog
-//===============================================================
-
-    if (Imported.YEP_BattleEngineCore && _optReflectWait) {
-
-        /**
-         * Removed the reflect animation delay, making the animation and damage apply instantly.
-         * (by Toby Yasha).
-        */
-        Window_BattleLog.prototype.displayReflection = function(target) {
-            if (Yanfly.Param.BECShowRflText) {
-                this.addText(TextManager.magicReflection.format(target.name()));
-            }
-
-            target.performReflection();
-            const animationId = BattleManager._action.item().animationId;
-            this.showNormalAnimation([BattleManager._subject], animationId);
-        };
-
-    }
 
 //===============================================================
     // Window_ActorCommand
@@ -567,16 +507,6 @@ TY.terminaTweaks = TY.terminaTweaks || {};
         this._battleSpritesSorted = false;
     }
 
-    /**
-     * Animations should no longer delay applying damage(by Fokuto).
-     * Also, an animation should not wait for the previous animation to finish playing.
-    */
-    if (_optAnimWait) {
-        Spriteset_Battle.prototype.isAnimationPlaying = function() {
-            return false;
-        };
-    }
-
     if (Imported.EnemyReinforcements) { /** HIME_EnemyReinforcements */
     
         /**
@@ -707,36 +637,6 @@ TY.terminaTweaks = TY.terminaTweaks || {};
             }
         }
     };
-    
-    /**
-     * Above but unhiding after exiting(by Fokuto).
-     * 
-     * NOTE[7/7/2025]: Temporarily disabled until proper implementation for fixing equipment change not consuming a turn.
-    */
-    /*Scene_Battle.prototype.commandEquipmentCancel = function() {
-        fEXTURNvisible = true;
-        fWINDOWopen = false;
-
-        MalEquipCancel.call(this);
-
-        if (Mal.Param.coolD != 0) {
-
-            if (!this.equipCheck()) {
-                BattleManager.actor().addState(Number(Mal.Param.coolD) || 0);
-                BattleManager.queueForceAction(BattleManager.actor(), Number(Mal.Param.coolA), -1);
-                BattleManager.selectNextCommand();
-                this.changeInputWindow();
-                BattleManager._statusWindow.refresh();
-
-                if (!BattleManager.actor()) {
-                    BattleManager.startTurn();
-                    this._actorCommandWindow.deactivate();
-                }
-           }
-
-        }
-
-    };*/
 
 //===============================================================
     // SceneManager
