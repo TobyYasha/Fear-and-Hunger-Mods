@@ -474,7 +474,6 @@ Imported.TY_QuickSave = true;
 
 		if (timeElapsed) {
 			_.saveTimeElapsed = Number(timeElapsed);
-			localStorage.removeItem(_storageTimeElapsedKey);
 		}
 		
 	}
@@ -488,7 +487,6 @@ Imported.TY_QuickSave = true;
 
 		if (isActive) {
 			_.saveCooldownActive = isActive === "true";
-			localStorage.removeItem(_storageCooldownActiveKey);
 		}
 		
 	}
