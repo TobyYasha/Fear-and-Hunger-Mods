@@ -190,17 +190,21 @@ TY.terminaTweaks = TY.terminaTweaks || {};
      * Determines if animations(in battle) have a delay before 
      * playing another animation.
      * 
+     * NOTE: Currently disabled.
+     * 
      * @type boolean
     */
-    const _optAnimWait = params.optAnimWait === "false";
+    const _optAnimWait = params.optAnimWait === "false"; // === "true";
 
     /**
      * Determines if reflect animations(in battle) have a delay
      * before playing another reflect animation.
      * 
+     * NOTE: Currently disabled.
+     * 
      * @type boolean
     */
-    const _optReflectWait = params.optReflectWait === "false";
+    const _optReflectWait = params.optReflectWait === "false"; // === "true";
 
 //===============================================================
     // Public Methods
