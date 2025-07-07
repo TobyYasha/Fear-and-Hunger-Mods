@@ -23,16 +23,40 @@
  *
  * General Changes:
  * - Fixed battle status window showing status effect icons.
+ *
  * - Added option for enabling/disabling waiting for 
  *   animations to complete before applying damage/healing.
+ *
  * - Fixed 'scope' of null and hopefully 'action' of null crashes
  *   by porting changes from the RPG Maker MZ 1.7.0 update.
+ *
+ * - Fixed various action methods that would having undefined:
+ *   - Subject
+ *   - Target
+ *   - Action Item(aka skill or item data)
+ *
+ * - Fixed 0% state rate to not clear status when
+ *   equipping equipment.
+ *
+ * - Fixed Hardened heart and Last Defense reducing damage
+ *   by too much.
+ *
+ * - Fixed select highlight not playing correctly on
+ *   enemies when they have a state animation.
+ *
+ * - Fixed the NW.js process not properly closing due to NW.js
+ *   update to v78.
+ *   - This basically means the game would still be open in the 
+ *     Task Manager.
  *
  * YEP_BattleEngineCore Changes:
  * - Added option for enabling/disabling waiting
  *   for reflect animation before applying effect.
+ *
  * - Prevents access to the party window(Fight, Run) by any means.
+ *
  * - Prevents actor window from changing selected command when pressing cancel.
+ *
  * - Fixed crash when unable to retrieve action speed.
  *
  * YEP_X_AnimatedSVEnemies Changes:
@@ -41,6 +65,12 @@
  * GALV_LayerGraphics Changes:
  * - Fixed crash on hexen scene by preventing the plugin from 
  *   removing non-existing layers.
+ *
+ * Galv_ExAgiTurn Changes:
+ * - Extra turn label will now be hidden when in the equipment menu.
+ *
+ * malcommandequip_edits Changes:
+ * - Extra turn label will now be hidden when in the equipment menu.
  *
  * HIME_EnemyReinforcements Changes:
  * - Fixed enemy sprites being on top of actor sprites in battle
@@ -53,6 +83,7 @@
  * Place below these plugins or as low as possible:
  * - PrettySleekGauges
  * - YEP_BattleEngineCore
+ * - YEP_BuffsStatesCore
  * - YEP_X_AnimatedSVEnemies
  * - HIME_EnemyReinforcements
  * - VE_BasicModule
