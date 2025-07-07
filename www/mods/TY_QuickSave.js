@@ -74,7 +74,7 @@
  * 
  * ------------------------------ UPDATES ------------------------------------
  * 
- * Version 1.2 - 7/6/2025
+ * Version 1.2 - 7/7/2025
  * - Slightly updated plugin parameter descriptions for better clarity.
  *
  * - Removed "Save Text Fade" plugin parameter.
@@ -106,7 +106,7 @@
  *   - Reloading the game via the "F5" key.
  * Dev Comment: Can you guys stop finding exploits? For the love of...
  * 
- * - The "Quick Save" cooldown timer now persist even after quitting the game.
+ * - The "Quick Save" cooldown data now persist even after closing/reloading the game.
  * Dev Comment: This has bothering me for a while now, so i'm glad i got it fixed.
  * 
  * Version 1.1 - 10/12/2024
@@ -207,7 +207,7 @@ Imported.TY_QuickSave = true;
 	 * 
 	 * @type number
 	*/
-	const _saveTimeInterval = 15; // TEST ONLY
+	const _saveTimeInterval = 20; // TEST ONLY
 	//const _saveTimeInterval = Number(params["Quick Save Time"]);
 
 	/**
@@ -384,13 +384,24 @@ Imported.TY_QuickSave = true;
 	}
 
 	/**
+	 * Getter method to access the private member "_saveTimeInterval".
+	 * 
+	 * NOTE: Also ensures modding compatibility.
+	 * 
+	 * @returns {number} The value of the "_saveTimeInterval" member.
+	*/
+	_.getSaveTimeInterval = function() {
+		return _saveTimeInterval;
+	}
+
+	/**
 	 * Obtain the remaining minutes until a "Quick Save" can be created again.
 	 * 
 	 * @returns {number} A positive number means that "Quick Saving" is on cooldown.
 	 * Numbers starting from 0 and below mean that "Quick Saving" is not on cooldown.
 	*/
 	_.getSaveCooldownTimer = function() {
-		const targetMins = _saveTimeInterval;
+		const targetMins = _.getSaveTimeInterval();
 
 		let seconds = Math.floor(_.saveTimeElapsed / 60);
 		let currentMins = Math.floor(seconds / 60) % 60;
@@ -457,7 +468,6 @@ Imported.TY_QuickSave = true;
 	/**
 	 * Restore the value of the "Quick Save" cooldown timer from previously
 	 * saved in the localStorage.
-	 * 
 	*/
 	_.restoreSaveTimeElapsed = function() {
 		const timeElapsed = localStorage.getItem(_storageTimeElapsedKey);
@@ -470,7 +480,8 @@ Imported.TY_QuickSave = true;
 	}
 
 	/**
-	 * 
+	 * Restore the value of the "Quick Save" cooldown flag if the 
+	 * "Quick Save" cooldown system was active before closing/reloading the game.
 	*/
 	_.restoreSaveActiveCooldown = function() {
 		const isActive = localStorage.getItem(_storageCooldownActiveKey);
@@ -517,6 +528,7 @@ Imported.TY_QuickSave = true;
 
 	_.hookGameCloseListener();
 	_.restoreSaveCooldownData();
+	console.log("boot - quick save");
 
 //==========================================================
 	// SceneManager 
@@ -536,8 +548,10 @@ Imported.TY_QuickSave = true;
 	};
 
 	/**
-	 * Prevents exploits via the F5(Reload) key, 
-	 * which would not remove the "Quick Save" data.
+	 * Clear "Quick Save" data and store "Quick Save" cooldown data
+	 * upon reloading the game via the F5 key.
+	 *
+	 * NOTE: This is done in order to prevent exploits.
 	*/
 	SceneManager.clearQuickSaveOnReload = function(event) {
 		if (!event.ctrlKey && !event.altKey && event.keyCode === 116) { // F5
@@ -547,7 +561,7 @@ Imported.TY_QuickSave = true;
 	};
 
 	/**
-	 * Adds a method to prevent "Save & Reload" exploits
+	 * Adds a method to prevent "Save & Reload" exploits.
 	 * 
 	 * @alias SceneManager.onKeyDown
 	*/
