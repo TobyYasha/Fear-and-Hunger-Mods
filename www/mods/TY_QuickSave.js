@@ -528,7 +528,6 @@ Imported.TY_QuickSave = true;
 
 	_.hookGameCloseListener();
 	_.restoreSaveCooldownData();
-	console.log("boot - quick save");
 
 //==========================================================
 	// SceneManager 
