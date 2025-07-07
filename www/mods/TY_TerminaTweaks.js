@@ -18,10 +18,7 @@
  *
  * ------------------------ CHANGES ------------------------------
  *
- * PrettySleekGauges Changes:
- * - Fixed gauges not clearing number values when updating.
- *
- * General Changes:
+ * [!] General Changes:
  * - Fixed battle status window showing status effect icons.
  *
  * - Added option for enabling/disabling waiting for 
@@ -49,7 +46,10 @@
  *   - This basically means the game would still be open in the 
  *     Task Manager.
  *
- * YEP_BattleEngineCore Changes:
+ * [!] PrettySleekGauges Changes:
+ * - Fixed gauges not clearing number values when updating.
+ *
+ * [!] YEP_BattleEngineCore Changes:
  * - Added option for enabling/disabling waiting
  *   for reflect animation before applying effect.
  *
@@ -59,28 +59,28 @@
  *
  * - Fixed crash when unable to retrieve action speed.
  *
- * YEP_X_AnimatedSVEnemies Changes:
+ * [!] YEP_X_AnimatedSVEnemies Changes:
  * - Fixed crash when trying to update enemy position.
  *
- * GALV_LayerGraphics Changes:
+ * [!] GALV_LayerGraphics Changes:
  * - Fixed crash on hexen scene by preventing the plugin from 
  *   removing non-existing layers.
  *
- * Galv_ExAgiTurn Changes:
+ * [!] Galv_ExAgiTurn Changes:
  * - Extra turn label will now be hidden when in the equipment menu.
  *
- * malcommandequip_edits Changes:
+ * [!] malcommandequip_edits Changes:
  * - Extra turn label will now be hidden when in the equipment menu.
  *
- * HIME_EnemyReinforcements Changes:
+ * [!] HIME_EnemyReinforcements Changes:
  * - Fixed enemy sprites being on top of actor sprites in battle
  *   when adding reinforcements.
  *
- * VE_BasicModule/VE_FogAndOverlay Changes:
+ * [!] VE_BasicModule/VE_FogAndOverlay Changes:
  * - Fixed sprite order in battle being messed up because it was
  *   updated every frame.
  *
- * Place below these plugins or as low as possible:
+ * [!] Place below these plugins or as low as possible:
  * - PrettySleekGauges
  * - YEP_BattleEngineCore
  * - YEP_BuffsStatesCore
@@ -706,8 +706,10 @@ TY.terminaTweaks = TY.terminaTweaks || {};
     
     /**
      * Above but unhiding after exiting(by Fokuto).
+     * 
+     * NOTE[7/7/2025]: Temporarily disabled until proper implementation for fixing equipment change not consuming a turn.
     */
-    Scene_Battle.prototype.commandEquipmentCancel = function() {
+    /*Scene_Battle.prototype.commandEquipmentCancel = function() {
         fEXTURNvisible = true;
         fWINDOWopen = false;
 
@@ -730,7 +732,7 @@ TY.terminaTweaks = TY.terminaTweaks || {};
 
         }
 
-    };
+    };*/
 
 //===============================================================
     // SceneManager
