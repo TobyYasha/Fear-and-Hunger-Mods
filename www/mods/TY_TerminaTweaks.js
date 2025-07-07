@@ -20,9 +20,6 @@
  *   - Target
  *   - Action Item(aka skill or item data)
  *
- * - Fixed 0% state rate to not clear status when
- *   equipping equipment.
- *
  * - Fixed Hardened heart and Last Defense reducing damage
  *   by too much.
  *
@@ -147,6 +144,8 @@
  * Dev Comment: These two were basically not even used.
  * Might return them in the future if used or in another form.
  * 
+ * - Removed "0% state rate" fix since it would crash the game.
+ * 
  * - Slightly refactored code.
  * - Added JSDoc style comments for members and methods.
  * - Added compatibility patches for "TY_QuickSave":
@@ -214,19 +213,6 @@ TY.terminaTweaks = TY.terminaTweaks || {};
     
             this._actions.push(action);
 
-        }
-    };
-
-    /**
-     * BUGFIX: 0% state rate acts similar to state resist now,
-     * but does not clear status on equip(by Fokuto).
-    */
-    Game_Battler.prototype.addState = function(stateId) {
-        if (!this.isStatePrevented(stateId) && !(this.stateRate(stateId) === 0)) {
-            const affected = this.isStateAffected(stateId);
-            Olivia.OctoBattle.Effects.___Game_Battler_addState___.call(this, stateId);
-            this.setupBreakDamagePopup(stateId, affected)
-            this.setStateMaximumTurns(stateId);
         }
     };
 
