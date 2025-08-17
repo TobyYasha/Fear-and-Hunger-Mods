@@ -4,12 +4,14 @@ I ask you if it would be possible to make a version of the free skills mod, spec
 where every skill is unlocked from the start, meaning I never need to kill other contestants for their abilities,
 but I still need to unlock the skills with soul stones.
 edit: if it can be made for both, it would be even better, but prioritize termina if you can't
+STATUS: Completed
 
 
 Chandler Voss -- discord
 6/20/2024
 is it possible to add two slots in the first game just like in termina
 two slots of accessories
+STATUS: -
 
 
 Mithara_Crabu -- itch.io
@@ -22,6 +24,7 @@ Donkarasu -- itch.io
 6/10/2024
 For funger 1 is there i way for the mod to give me the items at a slower pace? (other than just setting the amount to 1 as opposed to 99)
 Perhaps even say like a 1 time thing?
+STATUS: On hold until i figure this out
 
 
 Donkarasu -- itch.io
@@ -30,6 +33,8 @@ So if I set items to be given to 1 over 99 I still hit 99 in amount fairly quick
 For example if I got 1 every other map change or perhaps on battle start instead.
 Also perhaps a mod for slower  hunger and mind decay rate would be sweet. 
 Cut preferably by half.
+STATUS: On hold
+
 
 Alucard -- discord
 9/6/2024
@@ -38,6 +43,8 @@ The mod didn't work unless you entered a fight on an old save
 It works perfectly fine in a new game
 
 DEV NOTE: This might be a problem in other mods as well
+STATUS: On hold until i go back to work on this
+
 
 Atlas20 -- itch.io
 4/12/2025
@@ -46,3 +53,16 @@ Hello, I wanted to ask if it's possible to create a mod that gives you access to
 I know the Gain All Skills mod already exists, but I think it would be more interesting to gradually acquire the skills little by little with the added benefit of not having to kill anyone else.
 
 DEV NOTE: CastroGamer also suggested this
+STATUS: Completed
+
+
+Reinhard Heydrich -- discord
+8/17/2025
+(Infinite Stamina Mod - BUG)
+Fix "updateDashToggle" method working when using double coin flip.
+Fix "allowDrawStaminaBar" const not being used.
+(could fix by modifying the "makeCommonEventFilterList" method).
+
+bugfix was posted for the "updateDashToggle" bug.
+
+STATUS: On hold until next update
