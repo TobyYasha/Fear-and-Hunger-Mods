@@ -66,3 +66,9 @@ Fix "allowDrawStaminaBar" const not being used.
 bugfix was posted for the "updateDashToggle" bug.
 
 STATUS: On hold until next update
+
+ME
+8/21/2025
+The mod that shows the HP of limbs could be updated to use more accurate information for the torso HP.
+basically, search inside troop events the HP requirement for when the torso dies and use that value to determine the torso HP.
+if there is no such event page, just use the default enemy HP.
