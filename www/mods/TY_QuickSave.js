@@ -1,6 +1,6 @@
 //=============================================================================
 /*:
- * @plugindesc v1.2 A system which handles temporary saves.
+ * @plugindesc v1.2.1 A system which handles temporary saves.
  * @author Toby Yasha
  *
  * @param General Configurations
@@ -73,6 +73,10 @@
  * Example: <Global Meta> My Variable 1
  * 
  * ------------------------------ UPDATES ------------------------------------
+ * 
+ * Version 1.2.1 - 9/2/2025
+ * - "Quick Save" cooldown timer also update in battles now.
+ * Dev Comment: This is a bug fix pretty much.
  * 
  * Version 1.2 - 7/7/2025
  * - Slightly updated plugin parameter descriptions for better clarity.
@@ -207,7 +211,7 @@ Imported.TY_QuickSave = true;
 	 * 
 	 * @type number
 	*/
-	const _saveTimeInterval = 20; // TEST ONLY
+	const _saveTimeInterval = 15; // TEST ONLY
 	//const _saveTimeInterval = Number(params["Quick Save Time"]);
 
 	/**
@@ -416,13 +420,15 @@ Imported.TY_QuickSave = true;
 	 * - a "Quick Save" has been loaded
 	 * - The current scene has started(aka is ready)
 	 * - The current scene is the map scene(to prevent menu idling)
+	 * - The current scene is the battle scene(to not make the timer update rate feel slow)
 	*/
 	_.canUpdateSaveCooldownTimer = function() {
 		const isCooldownActive = _.saveCooldownActive;
 		const isSceneStarted = SceneManager.isCurrentSceneStarted();
 		const isMapScene = SceneManager._scene instanceof Scene_Map;
+		const isBattleScene = SceneManager._scene instanceof Scene_Battle;
 		
-		return isCooldownActive && isSceneStarted && isMapScene;
+		return isCooldownActive && isSceneStarted && (isMapScene || isBattleScene);
 	}
 
 	/**
