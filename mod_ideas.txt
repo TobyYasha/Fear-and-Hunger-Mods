@@ -12,3 +12,34 @@
   - Basically have a list of the events that need to be affected and then change
     the appearance if the event is within the list of events we want to modify.
   - It can be a lot of work since there's lots of events to look into.
+
+2. Ghoul Expansion Mod(s)
+ 2.1 Controllable Ghouls - Pretty self-explanatory. You can now choose what the ghoul attacks.
+
+ 2.2 Equiments for Ghouls - You can give equipments to ghouls and control what items the ghouls can equip*
+  - I think it would be interesting if the Ghouls had a leveling system that allowed them to unlock equipment slots.
+  - They would start at 1-2 equipment slots and gradually unlock more by doing certain tasks.
+  - It would be neat if the Ghouls were allowed to be Reserve Party Members, so that you always have access to them.
+  (This would mean you could add the ghouls to your party at any time, but the limit of in-battle characters is still 4).
+
+ 2.3 Ghoul Rework - Ghouls have a leveling system(inspired by Moonless, but different).
+  - Not only that but Ghouls could also have skills(that may get better over time?)
+
+  - Rampage Skill       - Hits 4 random limbs, but is pretty inaccurate and the damage is ok at best?
+  - Mindless Rage Skill - Cannot Attack normally but attacks hit twice and have a slight chance to critically hit.
+    - If its too good, it could also lower defense by a bit?
+    - Otherwise give a minor chance to attack allies.
+  - Withstand Skill     - Gives the Ghoul increased odds of being targeted and a high chance of surviving a devasting hit with 1 HP.
+    - The effect doesn't work if already at 1 HP and also, it only lasts 2-3 turns at has a hefty mind cost or something.
+  - Feral Bite Skill    - Bite an enemy for moderate damage and has a chance to poison them. If the enemy is bleeding, the user also heals some HP.
+
+  Ghouls could level up by devouring corpses(like Ragnavaldr) and/or being fed rotten food.
+  - It is important to note that devouring corpses should give x3-x5 times more XP than eating rotten food(for balancing reasons).
+    - This also gives a purpose to rotten food.
+  - Leveling up could:
+    - unlock new skills
+    - improve the ghoul's existing skills
+      - although i would argue increasing the ghoul's stats is far easier to implement.
+    - increase the ghoul's stats.
+
+ 2.4 Curse of the Ghoul - This is more of a meme mod. It transforms all party members in battle into ghouls.
