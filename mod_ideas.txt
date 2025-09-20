@@ -32,6 +32,7 @@
   - Withstand Skill     - Gives the Ghoul increased odds of being targeted and a high chance of surviving a devasting hit with 1 HP.
     - The effect doesn't work if already at 1 HP and also, it only lasts 2-3 turns at has a hefty mind cost or something.
   - Feral Bite Skill    - Bite an enemy for moderate damage and has a chance to poison them. If the enemy is bleeding, the user also heals some HP.
+    - Could have a mind cost for balance reasons.
 
   Ghouls could level up by devouring corpses(like Ragnavaldr) and/or being fed rotten food.
   - It is important to note that devouring corpses should give x3-x5 times more XP than eating rotten food(for balancing reasons).
