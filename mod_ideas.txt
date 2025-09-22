@@ -44,3 +44,14 @@
     - increase the ghoul's stats.
 
  2.4 Curse of the Ghoul - This is more of a meme mod. It transforms all party members in battle into ghouls.
+
+3. Quick Eat Hotkey
+ 3.1 Automatically feed 1 non-lethal food item to all of your party members.
+   - Might make some exceptions for Ghouls, Skeletons, Black Kalev, Demon Kid, etc.
+ 3.2 Could add a gab window in the top left that shows the face image of the character that just ate, what they ate and how much hunger they recovered.
+   - Multiple of these gab windows could be added in the top left before slowly scrolling up(smoothly) and fading out.
+   - Or even just fading out, but the scrolling up would be a neat.
+ 3.3 Could have a configuration menu to set exactly who eats what food, or even just omit someone until they have a certain amount of hunger.
+   - Although this would be a tad complicated.
+ 3.4 Could have a gab window appear in the top right to show if a character is feeling hungry?
+   - Although doesn't the game already tell you that?
