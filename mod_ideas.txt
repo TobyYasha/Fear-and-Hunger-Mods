@@ -22,6 +22,11 @@
   - It would be neat if the Ghouls were allowed to be Reserve Party Members, so that you always have access to them.
   (This would mean you could add the ghouls to your party at any time, but the limit of in-battle characters is still 4).
 
+  NOTE: If Ghouls having access to more equipments as they level up is too good, then:
+  - Either allow only certain equipments to be equipped by making an array of allowed items.
+  OR
+  - Only give them stats on level up, no equipments(BORING).
+
  2.3 Ghoul Rework - Ghouls have a leveling system(inspired by Moonless, but different).
   - Not only that but Ghouls could also have skills(that may get better over time?)
 
