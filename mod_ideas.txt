@@ -60,3 +60,13 @@
    - Although this would be a tad complicated.
  3.4 Could have a gab window appear in the top right to show if a character is feeling hungry?
    - Although doesn't the game already tell you that?
+
+4. Food Rotting Mechanic
+ 4.1 Basically each food item lasts a number of frames before it is converted into a rotting item that isn't as good to eat.
+   - The only problem is that not all items may have a rotting food variant.
+     - Maybe some items could be created separately.
+     OR
+     - You could modify the stats of the existing items and/or add debuffs on top of the existing effects...?
+     (Doesn't sound like the best idea doing it this way).
+   - Some items will obviously be immune to the rotting effect.
+   - For items that don't have a rotting sprite, their icons could be darkened when they are rotten?
