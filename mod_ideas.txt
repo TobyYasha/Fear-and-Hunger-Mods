@@ -70,3 +70,8 @@
      (Doesn't sound like the best idea doing it this way).
    - Some items will obviously be immune to the rotting effect.
    - For items that don't have a rotting sprite, their icons could be darkened when they are rotten?
+
+5. Stat Allocation Mechanic
+  5.1 When you create your character, you can give them x amount of stats.
+    - NOTE: Base Stats might be nerfed as a consequence.
+    - There might be ways to increase your stats again, in-game, not just when creating your character.
