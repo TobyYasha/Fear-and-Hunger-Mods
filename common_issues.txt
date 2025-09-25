@@ -1,0 +1,9 @@
+InvalidStateError
+Failed to execute 'drawImage' on 'CanvasRenderingContext2D': HTMLImageElement provided is in the 'broken' state.
+  
+Issue(1): rpg_core.js - line 2569
+Issue(2): 'Loading.png' might not exist or is corrupted.
+(Might happen if the game was modded or altered in any way).
+  
+Solution: Either replacing the corrupted materials or doing a fresh install of the game.
+NOTE: It is wise to create a copy of the game's folder for modded content.
