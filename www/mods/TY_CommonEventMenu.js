@@ -1,5 +1,5 @@
 /*:
- * @plugindesc v1.0 - Calls common events for items without going to the map.
+ * @plugindesc v1.0.1 - Calls common events for items without going to the map.
  * @author Toby Yasha
  *
  * @param optAutoActorClose
@@ -54,6 +54,15 @@
  * Version 1.0 - 10/8/2024
  * - Released.
  *
+ * Version 1.0.1 - 10/9/2024
+ * - Fixed actor gauges not being properly updated after being
+ *   automatically kicked out of the select actor window when
+ *   the "Auto Close Actor Window" paramater is enabled.
+ *   
+ * - Fixed common events potentially being called because the
+ *   "checkItemCategory" method would always return true if 
+ *   YEP_X_ItemCategories wasn't imported.
+ *
  */
 
 var TY = TY || {};
@@ -106,10 +115,8 @@ Scene_ItemBase.prototype.checkItemCategory = function(item) {
 				}
 			}
 		}
-		return false;
-	} else {
-		return true;
 	}
+	return false;
 };
 
 // Check if the item should call the common event inside
@@ -137,10 +144,9 @@ Scene_ItemBase.prototype.canHideActorWindow = function() {
 // Bonus: If no more items are left to use just close the window
 Scene_ItemBase.prototype.updateActorRefresh = function() {
 	if (!this._interpreter.isRunning() && this._needsActorRefresh) {
+		this._actorWindow.refresh();
 		if (this.canHideActorWindow()) {
 			this.hideSubWindow(this._actorWindow);
-		} else {
-			this._actorWindow.refresh();
 		}
 		this._needsActorRefresh = false;
 	}
