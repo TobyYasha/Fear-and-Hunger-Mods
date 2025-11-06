@@ -72,3 +72,9 @@ ME
 The mod that shows the HP of limbs could be updated to use more accurate information for the torso HP.
 basically, search inside troop events the HP requirement for when the torso dies and use that value to determine the torso HP.
 if there is no such event page, just use the default enemy HP.
+
+Abyss -- discord
+11/6/2025
+Inside the "isHexenExitCalled" method change the "escape" string with "cancel" to ensure compatibility with Controllers.
+
+STATUS: On hold until next update
