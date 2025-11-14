@@ -37,7 +37,7 @@
      */
     const TY_Game_BattlerBase_xparam = Game_BattlerBase.prototype.xparam;
     Game_BattlerBase.prototype.xparam = function(xparamId) {
-        const paramRate = this.traitsSum(Game_BattlerBase.TRAIT_XPARAM, xparamId);
+        const paramRate = TY_Game_BattlerBase_xparam.call(this, xparamId);
         switch (xparamId) {
             case 1: // Physical Evasion
             case 4: // Magical Evasion
@@ -47,5 +47,6 @@
         };
 
     };
+
 
 });
