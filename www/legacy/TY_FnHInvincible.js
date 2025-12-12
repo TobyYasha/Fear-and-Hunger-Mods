@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.5.0 -- by Toby Yasha
+		// VERSION 1.5.1 -- by Toby Yasha
 	//==========================================================
 
 	/**
@@ -15,7 +15,7 @@
 	 * OPTIONS: true | false
 	 * DEFAULT: true
 	 */
-	const disableOnMapTraps = false;
+	const disableOnMapTraps = true;
 
 	/**
 	 * Disables in-battle events that can harm the player in any way.
@@ -23,7 +23,7 @@
 	 * OPTIONS: true | false
 	 * DEFAULT: true
 	 */
-	const disableCoinFlipDeaths = false;
+	const disableCoinFlipDeaths = true;
 	
 	//==========================================================
 		// Mod Parameters -- Fear & Hunger
@@ -519,7 +519,9 @@
 	 */
 	const Game_Variables_OnChange = Game_Variables.prototype.onChange;
 	Game_Variables.prototype.onChange = function() { 
+
 		refreshTrapVariables();
+
 		Game_Variables_OnChange.call(this);
 	}
 	
@@ -533,6 +535,7 @@
 	const Game_Map_SetupEvents = Game_Map.prototype.setupEvents;
 	Game_Map.prototype.setupEvents = function() {
 		Game_Map_SetupEvents.call(this);
+
 		this.removeTrapEvents();
 	};
 	
