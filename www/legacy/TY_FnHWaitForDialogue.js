@@ -32,6 +32,11 @@
 	}
 
 	/**
+	 * 
+	 */
+	InterpreterHelper.POPUP_VISIBILITY_INTERVAL = 120;
+
+	/**
 	 * Flag that determines if the system is currently working.
 	 * NOTE: The role of this feature is for debugging purposes.
 	 * 
@@ -39,6 +44,16 @@
 	 * @private
 	 */
 	InterpreterHelper._systemEnabled = true;
+
+	/**
+	 * Field that stores the Rectangle object for the popup bitmap
+	 * so that we don't need to re-create the Rectangle object 
+	 * every single time we try to retrieve it.
+	 * 
+	 * @type {Rectangle}
+	 * @private
+	 */
+	InterpreterHelper._popupBitmapRect = null;
 
 	/**
 	 * Check whether the system is currently working or not.
@@ -57,6 +72,17 @@
 	 */
 	InterpreterHelper.setSystemStatus = function(isEnabled) {
 		this._systemEnabled = isEnabled;
+	}
+
+	/**
+	 * Get a dynamically formatted string of the system's current status.
+	 * 
+	 * @returns {string} The system's current status in a formatted string format.
+	 */
+	InterpreterHelper.getSystemStatusAsString = function() {
+		const systemStatus = InterpreterHelper.isSystemEnabled();
+		const statusText = systemStatus ? "Enabled" : "Disabled";
+		return `Interpreter Helper Status: ${statusText}`;
 	}
 
 	/**
@@ -112,6 +138,25 @@
 			);
 		}
 		return true;
+	}
+
+	InterpreterHelper.createPopupBitmapRect = function() {
+		const padding = 16;
+
+		const width = 350; // hardcoded bitmap width
+		const height = Window_Base.prototype.lineHeight();
+		const x = Graphics.boxWidth - width - padding;
+		const y = padding;
+
+		return new Rectangle(x, y, width, height);
+	}
+
+	InterpreterHelper.getPopupBitmapRect = function() {
+		if (!this._popupBitmapRect) {
+			this._popupBitmapRect = this.createPopupBitmapRect();
+		} 
+
+		return this._popupBitmapRect;
 	}
 
 	//==========================================================
@@ -207,6 +252,17 @@
 	};
 
 	//==========================================================
+		// Sprite_HelperPopup
+	//==========================================================
+
+	/*function Sprite() {
+	    this.initialize.apply(this, arguments);
+	}
+	
+	Sprite.prototype = Object.create(PIXI.Sprite.prototype);
+	Sprite.prototype.constructor = Sprite;*/
+
+	//==========================================================
 		// Scene_Map 
 	//==========================================================
 
@@ -217,24 +273,22 @@
 		this.createInterpreterHelperPopup();
 	};
 
+	// this._popupVisibilityInterval = 0;
+
 	Scene_Map.prototype.createInterpreterHelperPopup = function() {
-		const bitmapWidth = 350;
-		const bitmapHeight = Window_Base.prototype.lineHeight();
-		const padding = 16;
-		const bitmap = new Bitmap(bitmapWidth, bitmapHeight);
+		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+		const bitmap = new Bitmap(bitmapRect.width, bitmapRect.height);
 
 	    this._interpreterHelperPopup = new Sprite(bitmap);
-	    this._interpreterHelperPopup.x = Graphics.boxWidth - bitmapWidth - padding;
-	    this._interpreterHelperPopup.y = padding;
+	    this._interpreterHelperPopup.x = bitmapRect.x;
+	    this._interpreterHelperPopup.y = bitmapRect.y;
 
 	    this.addChild(this._interpreterHelperPopup);
-
-	    this._helperPopupCount = 0;
 	};
 
 	Scene_Map.prototype.refreshInterpreterHelperPopup = function() {
-		const systemStatus = InterpreterHelper.isSystemEnabled();
-		const statusText = `Interpreter Helper Status: ${systemStatus ? "Enabled" : "Disabled"}`;
+		const statusText = InterpreterHelper.getSystemStatusAsString();
+		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
 		const bitmap = this._interpreterHelperPopup.bitmap;
 
 		if (bitmap) {
@@ -246,20 +300,23 @@
 			
 			bitmap.fontFace = Window_Base.prototype.standardFontFace();
 			bitmap.fontSize = Window_Base.prototype.standardFontSize() - 6;
-			bitmap.drawText(statusText, 0, 0, 350, 36, "center");
+			bitmap.drawText(statusText, 0, 0, bitmapRect.width, bitmapRect.height, "center");
 		}
 
 		this._interpreterHelperPopup.opacity = 255;
-		this._helperPopupCount = 120;
+		this._popupVisibilityInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL;
 	};
 
 	Scene_Map.prototype.updateInterpreterHelperPopup = function() {
-		if (this._helperPopupCount > 0) {
+		if (this._popupVisibilityInterval > 0) {
 
-			this._helperPopupCount--;
+			const fadeInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL / 2;
 
-			if (this._helperPopupCount < 60) {
-				this._interpreterHelperPopup.opacity = 255 * this._helperPopupCount / 60;
+			this._popupVisibilityInterval--;
+
+			if (this._popupVisibilityInterval < fadeInterval) {
+				this._interpreterHelperPopup.opacity = 
+					255 * this._popupVisibilityInterval / fadeInterval;
 			}
 		}
 	};
@@ -278,6 +335,7 @@
 	SceneManager.onKeyDown = function(event) {
 
     	if (!event.ctrlKey && !event.altKey && event.keyCode === 118) { // F7
+
     		const systemStatus = InterpreterHelper.isSystemEnabled();
     		InterpreterHelper.setSystemStatus(!systemStatus);
 
