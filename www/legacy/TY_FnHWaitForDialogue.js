@@ -207,6 +207,90 @@
 	};
 
 	//==========================================================
+		// Scene_Map 
+	//==========================================================
+
+	const TY_Scene_Map_createDisplayObjects = Scene_Map.prototype.createDisplayObjects;
+	Scene_Map.prototype.createDisplayObjects = function() {
+		TY_Scene_Map_createDisplayObjects.call(this);
+
+		this.createInterpreterHelperPopup();
+	};
+
+	Scene_Map.prototype.createInterpreterHelperPopup = function() {
+		const bitmapWidth = 350;
+		const bitmapHeight = Window_Base.prototype.lineHeight();
+		const padding = 16;
+		const bitmap = new Bitmap(bitmapWidth, bitmapHeight);
+
+	    this._interpreterHelperPopup = new Sprite(bitmap);
+	    this._interpreterHelperPopup.x = Graphics.boxWidth - bitmapWidth - padding;
+	    this._interpreterHelperPopup.y = padding;
+
+	    this.addChild(this._interpreterHelperPopup);
+
+	    this._helperPopupCount = 0;
+	};
+
+	Scene_Map.prototype.refreshInterpreterHelperPopup = function() {
+		const systemStatus = InterpreterHelper.isSystemEnabled();
+		const statusText = `Interpreter Helper Status: ${systemStatus ? "Enabled" : "Disabled"}`;
+		const bitmap = this._interpreterHelperPopup.bitmap;
+
+		if (bitmap) {
+			bitmap.clear();
+
+			bitmap.paintOpacity = 192;
+			bitmap.fillAll("black");
+			bitmap.paintOpacity = 255;
+			
+			bitmap.fontFace = Window_Base.prototype.standardFontFace();
+			bitmap.fontSize = Window_Base.prototype.standardFontSize() - 6;
+			bitmap.drawText(statusText, 0, 0, 350, 36, "center");
+		}
+
+		this._interpreterHelperPopup.opacity = 255;
+		this._helperPopupCount = 120;
+	};
+
+	Scene_Map.prototype.updateInterpreterHelperPopup = function() {
+		if (this._helperPopupCount > 0) {
+
+			this._helperPopupCount--;
+
+			if (this._helperPopupCount < 60) {
+				this._interpreterHelperPopup.opacity = 255 * this._helperPopupCount / 60;
+			}
+		}
+	};
+
+	const TY_Scene_Map_update = Scene_Map.prototype.update;
+	Scene_Map.prototype.update = function() {
+		TY_Scene_Map_update.call(this);
+		this.updateInterpreterHelperPopup();
+	};
+
+	//==========================================================
+		// SceneManager 
+	//==========================================================
+
+	const TY_SceneManager_onKeyDown = SceneManager.onKeyDown;
+	SceneManager.onKeyDown = function(event) {
+
+    	if (!event.ctrlKey && !event.altKey && event.keyCode === 118) { // F7
+    		const systemStatus = InterpreterHelper.isSystemEnabled();
+    		InterpreterHelper.setSystemStatus(!systemStatus);
+
+    		if (this._scene instanceof Scene_Map) {
+    			this._scene.refreshInterpreterHelperPopup();
+    		}
+
+	    }
+
+		TY_SceneManager_onKeyDown.call(this, event);
+	};
+
+	//==========================================================
 		// End of File
 	//==========================================================
 
