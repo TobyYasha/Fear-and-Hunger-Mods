@@ -255,12 +255,67 @@
 		// Sprite_HelperPopup
 	//==========================================================
 
-	/*function Sprite() {
+	function Sprite_HelperPopup() {
 	    this.initialize.apply(this, arguments);
 	}
 	
-	Sprite.prototype = Object.create(PIXI.Sprite.prototype);
-	Sprite.prototype.constructor = Sprite;*/
+	Sprite_HelperPopup.prototype = Object.create(Sprite.prototype);
+	Sprite_HelperPopup.prototype.constructor = Sprite_HelperPopup;
+
+	Sprite_HelperPopup.prototype.initialize = function() {
+
+		this._visibilityInterval = 0;
+
+		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+		const bitmap = new Bitmap(bitmapRect.width, bitmapRect.height);
+
+		Sprite.prototype.initialize.call(this, bitmap);
+	}
+
+	Sprite_HelperPopup.prototype.refreshDisplay = function() {
+		const statusText = InterpreterHelper.getSystemStatusAsString();
+		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+
+		const textObject = {
+			text: statusText,
+			x: 0,
+			y: 0,
+			maxWidth: bitmapRect.width,
+			lineHeight: bitmapRect.height,
+			align: "center"
+		};
+
+		if (this.bitmap) {
+			this.bitmap.clear();
+
+			this.bitmap.fillAll("rbga(0, 0, 0, 0.6)");
+			
+			this.bitmap.fontFace = Window_Base.prototype.standardFontFace();
+			this.bitmap.fontSize = Window_Base.prototype.standardFontSize() - 6;
+			this.bitmap.drawText(...Object.values(textObject));
+		}
+
+		this.opacity = 255;
+		this._visibilityInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL;
+	}
+
+	Sprite_HelperPopup.prototype.update = function() {
+		Sprite.prototype.update.call(this);
+		this.updateVisibility();
+	};
+
+	Sprite_HelperPopup.prototype.updateVisibility = function() {
+		if (this._visibilityInterval > 0) {
+
+			const fadeInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL / 2;
+
+			this._visibilityInterval--;
+
+			if (this._visibilityInterval < fadeInterval) {
+				this.opacity = 255 * this._visibilityInterval / fadeInterval;
+			}
+		}
+	};
 
 	//==========================================================
 		// Scene_Map 
@@ -270,61 +325,21 @@
 	Scene_Map.prototype.createDisplayObjects = function() {
 		TY_Scene_Map_createDisplayObjects.call(this);
 
-		this.createInterpreterHelperPopup();
+		this.createHelperPopupSprites();
 	};
 
-	// this._popupVisibilityInterval = 0;
-
-	Scene_Map.prototype.createInterpreterHelperPopup = function() {
+	Scene_Map.prototype.createHelperPopupSprites = function() {
 		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
-		const bitmap = new Bitmap(bitmapRect.width, bitmapRect.height);
 
-	    this._interpreterHelperPopup = new Sprite(bitmap);
-	    this._interpreterHelperPopup.x = bitmapRect.x;
-	    this._interpreterHelperPopup.y = bitmapRect.y;
+	    this.systemStatusPopup = new Sprite_HelperPopup();
+	    this.systemStatusPopup.x = bitmapRect.x;
+		this.systemStatusPopup.y = bitmapRect.y;
 
-	    this.addChild(this._interpreterHelperPopup);
+	    this.addChild(this.systemStatusPopup);
 	};
 
-	Scene_Map.prototype.refreshInterpreterHelperPopup = function() {
-		const statusText = InterpreterHelper.getSystemStatusAsString();
-		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
-		const bitmap = this._interpreterHelperPopup.bitmap;
-
-		if (bitmap) {
-			bitmap.clear();
-
-			bitmap.paintOpacity = 192;
-			bitmap.fillAll("black");
-			bitmap.paintOpacity = 255;
-			
-			bitmap.fontFace = Window_Base.prototype.standardFontFace();
-			bitmap.fontSize = Window_Base.prototype.standardFontSize() - 6;
-			bitmap.drawText(statusText, 0, 0, bitmapRect.width, bitmapRect.height, "center");
-		}
-
-		this._interpreterHelperPopup.opacity = 255;
-		this._popupVisibilityInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL;
-	};
-
-	Scene_Map.prototype.updateInterpreterHelperPopup = function() {
-		if (this._popupVisibilityInterval > 0) {
-
-			const fadeInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL / 2;
-
-			this._popupVisibilityInterval--;
-
-			if (this._popupVisibilityInterval < fadeInterval) {
-				this._interpreterHelperPopup.opacity = 
-					255 * this._popupVisibilityInterval / fadeInterval;
-			}
-		}
-	};
-
-	const TY_Scene_Map_update = Scene_Map.prototype.update;
-	Scene_Map.prototype.update = function() {
-		TY_Scene_Map_update.call(this);
-		this.updateInterpreterHelperPopup();
+	Scene_Map.prototype.refreshHelperPopupSprites = function() {
+	    this.systemStatusPopup.refreshDisplay();
 	};
 
 	//==========================================================
@@ -340,7 +355,7 @@
     		InterpreterHelper.setSystemStatus(!systemStatus);
 
     		if (this._scene instanceof Scene_Map) {
-    			this._scene.refreshInterpreterHelperPopup();
+    			this._scene.refreshHelperPopupSprites();
     		}
 
 	    }
