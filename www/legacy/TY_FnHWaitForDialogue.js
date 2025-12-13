@@ -3,8 +3,25 @@
 	//==========================================================
 		// VERSION 2.0.0 -- by Toby Yasha
 	//==========================================================
-	
-		// This mod has been commissioned by s0mthinG.
+
+	/**
+	 * [QUICK-SUMMARY]:
+	 * 
+	 * Stops certain parellel map events and common events 
+	 * from running their commands when dialogue is being displayed.
+	 * 
+	 * This in turn may prevent losing/gaining:
+	 * - Body
+	 * - Mind
+	 * - Hunger
+	 * 
+	 * The mod may also potentially improve the game's
+	 * performance while dialogue is being displayed.
+	 * 
+	 * [SPECIAL-THANKS]:
+	 * 
+	 * This mod has been commissioned by s0mthinG.
+	 */
 
 	//==========================================================
 		// Mod Parameters 
@@ -46,17 +63,6 @@
 		"mahabre_TIMER",
 		"mahabre_TIMER2"
 	]
-
-	/**
-	 * Because the Yellow Mage Dance Parallel Map Events don't
-	 * have a proper naming convention, we instead make use
-	 * of the switch to determine if the event should update or not.
-	 * 
-	 * This is for Fear and Hunger 1.
-	 * 
-	 * @type {number[]}
-	 */
-	const fnh1RestrictedGameSwitches = [343]; // Yellow Mage Dance
 
 	/**
 	 * The name of Parallel Common Events that are not allowed
@@ -110,6 +116,27 @@
 	]
 
 	//==========================================================
+		// Mod Parameters -- Edge Case Handling
+	//==========================================================
+
+	/**
+	 * The ids of Game Switches that are found in the page
+	 * conditions of certain Game_Event instance.
+	 * 
+	 * This is used to dynamically retrieve the name of
+	 * events that do not have a naming convention and
+	 * instead use the default RPG Maker event naming.
+	 * (ex: "EV176")
+	 * 
+	 * (See "EventHelper" class for use case)
+	 * 
+	 * This is for Fear and Hunger 1.
+	 * 
+	 * @type {number[]}
+	 */
+	const fnh1RestrictedSwitchIds = [343]; // Yellow Mage Dance
+
+	//==========================================================
 		// Mod Utility Methods
 	//==========================================================
 
@@ -123,23 +150,34 @@
 	}
 
 	/**
-	 * Get the current list of restricted Parallel Map Events by their map name.
+	 * Get a list of restricted Parallel Map Events by their name.
 	 * 
 	 * @returns {string[]} A list with the names of the restricted
 	 * Parallel Map Events based on the Fear and Hunger game.
 	 */
-	function getRestrictedMapEventNames() {
-		return isGameTermina() ? restrictedMapEvents : fnh1RestrictedMapEvents;
+	function getRestrictedMapEvents() {
+		const eventNames = isGameTermina() ? restrictedMapEvents : fnh1RestrictedMapEvents;
+		return eventNames.concat(EventHelper.getRestrictedMapEvents());
 	}
 
 	/**
-	 * Get the current list of restricted Parallel Common Events by their map name.
+	 * Get a list of restricted Parallel Common Events by their name.
 	 * 
 	 * @returns {string[]} A list with the names of the restricted
 	 * Parallel Common Events based on the Fear and Hunger game.
 	 */
-	function getRestrictedCommonEventNames() {
+	function getRestrictedCommonEvents() {
 		return isGameTermina() ? fnh2RestrictedCommonEvents : fnh1RestrictedCommonEvents;
+	}
+
+	/**
+	 * Get a list of restricted Game Switches by their id.
+	 * 
+	 * @returns {number[]} A list with the ids of the restricted
+	 * Game Switches based on the Fear and Hunger game.
+	 */
+	function getRestrictedSwitches() {
+		return isGameTermina() ? [] : fnh1RestrictedSwitchIds;
 	}
 
 	/**
@@ -149,7 +187,7 @@
 	 * @returns {boolean} True if the Game_Event is going to be a restricted event.
 	 */
 	function isRestrictedMapEvent(gameEvent) {
-		const eventNames = getRestrictedMapEventNames();
+		const eventNames = getRestrictedMapEvents();
 		const eventData = gameEvent.event();
 		return eventNames.includes(eventData.name);
 	}
@@ -161,9 +199,139 @@
 	 * @returns {boolean} True if the Game_CommonEvent is going to be a restricted event. 
 	 */
 	function isRestrictedCommonEvent(commonEvent) {
-		const commonEventNames = getRestrictedCommonEventNames();
+		const commonEventNames = getRestrictedCommonEvents();
 		const commonEventData = commonEvent.event();
 		return commonEventNames.includes(commonEventData.name);
+	}
+
+	/**
+	 * Check if a Game_Event needs to have their update cycles
+	 * delayed after the Map Interpreter is no longer busy.
+	 * 
+	 * @see {@link gameEvent} in the "isRestrictedMapEvent" method for more details.
+	 * @returns {boolean} True if the Game_Event interpreter will resume running its
+	 * commands after a certain delay interval.
+	 */
+	function needsDelayedInterpreterUpdates(gameEvent) {
+		const eventNames = EventHelper.getRestrictedMapEvents();
+		const eventData = gameEvent.event();
+		return eventNames.includes(eventData.name); 
+ 	}
+
+	//==========================================================
+		// EventHelper
+	//==========================================================
+
+	function EventHelper() {
+		throw new Error("This is a static class");
+	}
+
+	/**
+	 * A container for restricted Parallel Map Events.
+	 * This is used to store/retrieve event names based on a given map id.
+	 * 
+	 * @type {Object<{ mapId: string[] }>}
+	 * @private
+	 */
+	EventHelper._restrictedMapEvents = {};
+
+	/**
+	 * Check if the page conditions of a Game_Event instance uses a given 
+	 * restricted switch id as a condition and that switch must be ON.
+	 * 
+	 * @param {Object} page - The page object of a Game_Event instance.
+	 * @param {number} targetSwitchId - The restricted switch id to look for.
+	 * 
+	 * @returns {boolean} True if the current page of a 
+	 * Game_Event uses a restricted switch id.
+	 */
+	EventHelper.checkPageHasSwitchId = function(page, targetSwitchId) {
+		const c = page.conditions;
+		return (
+			(c.switch1Id === targetSwitchId && c.switch1Valid) ||
+			(c.switch2Id === targetSwitchId && c.switch2Valid)
+		)
+	}
+
+	/**
+	 * Check if a Game_Event instance uses a given restricted switch id in
+	 * any of their page conditions.
+	 * 
+	 * @param {Game_Event} gameEvent - The Game_Event instance to inspect.
+	 * @see {@link targetSwitchId} in the "checkPageHasSwitchId" method for more details.
+	 * 
+	 * @returns {boolean} True if any of the Game_Event's 
+	 * page conditions use a restricted switch id.
+	 */
+	EventHelper.checkEventHasSwitchId = function(gameEvent, targetSwitchId) {
+		const eventData = gameEvent.event();
+		return eventData.pages.some(page => 
+			this.checkPageHasSwitchId(page, targetSwitchId)
+		);
+	}
+
+	/**
+	 * Search a Game_Event instance from the current Game_Map to
+	 * see if it uses any restricted switch ids.
+	 * 
+	 * If the Game_Event uses any restricted switch ids, it will
+	 * be stored and referenced any time the current Game_Map is
+	 * loaded into the game.
+	 * 
+	 * @see {@link gameEvent} in the "checkEventHasSwitchId" method for more details.
+	 */
+	EventHelper.searchForRestrictedSwitches = function(gameEvent) {
+		const switchIds = getRestrictedSwitches();
+
+		if (!switchIds.length) return;
+		if (this.isRestrictedMapEvent(gameEvent)) return;
+
+		for (const id of switchIds) {
+			if (this.checkEventHasSwitchId(gameEvent, id)) {
+				this.addRestrictedMapEvent(gameEvent);
+			}
+		}
+	}
+
+	/**
+	 * Store the name of a Game_Event instance into the container for
+	 * restricted map events based on the current Game_Map map id.
+	 * 
+	 * @see {@link gameEvent} in the "checkEventHasSwitchId" method for more details.
+	 */
+	EventHelper.addRestrictedMapEvent = function(gameEvent) {
+		const mapId = $gameMap.mapId();
+		const eventName = gameEvent.event().name;
+
+		this._restrictedMapEvents[mapId] = this._restrictedMapEvents[mapId] || [];
+		this._restrictedMapEvents[mapId].push(eventName);
+	}
+
+	/**
+	 * Check if a Game_Event instance is already considered
+	 * to be a restricted map event, so that we don't add it again.
+	 * 
+	 * @see {@link gameEvent} in the "checkEventHasSwitchId" method for more details.
+	 * @returns {boolean} True if the Game_Event instance is already stored internally.
+	 */
+	EventHelper.isRestrictedMapEvent = function(gameEvent) {
+		const mapId = $gameMap.mapId();
+		const eventName = gameEvent.event().name;
+		const restrictedEvents = this._restrictedMapEvents[mapId] || [];
+
+		return restrictedEvents.includes(eventName);
+	}
+
+	/**
+	 * Get all Game_Event instances that are considered
+	 * restricted events based on the current map.
+	 * 
+	 * @returns {string[]} A list of Game_Event instance names 
+	 * that are considered restricted.
+	 */
+	EventHelper.getRestrictedMapEvents = function() {
+		const mapId = $gameMap.mapId();
+		return this._restrictedMapEvents[mapId] || [];
 	}
 
 	//==========================================================
@@ -173,6 +341,19 @@
 	function InterpreterHelper() {
     	throw new Error("This is a static class");
 	}
+
+	/**
+	 * The amount of frames to delay the interpreter by 
+	 * before it can resume its updates cycles.
+	 * 
+	 * NOTE: This will only be taken into consideration
+	 * if the following Interpreter flags are enabled:
+	 * - Restricted Updates
+	 * - Delayed Updates
+	 * 
+	 * @type {number}
+	 */
+	InterpreterHelper.UPDATE_DELAY_INTERVAL = 120;
 
 	/**
 	 * Flag that determines if the system is currently working.
@@ -245,8 +426,8 @@
 	 * NOTE: If the system is enabled, only the Map Interpreter 
 	 * will be allowed to run restricted commands freely.
 	 * 
-	 * @see {@link eventId} on the "isMatchingEventId" for more details.
-	 * @see {@link commonEventId} on the "isMatchingCommonEventId" for more details.
+	 * @see {@link eventId} in the "isMatchingEventId" method for more details.
+	 * @see {@link commonEventId} in the "isMatchingCommonEventId" method for more details.
 	 * 
 	 * @returns {boolean} True if the Game_Interpreter's command is allowed to run.
 	 */
@@ -265,42 +446,68 @@
 	//==========================================================
 
 	/**
-	 * Call the methods for handling the restricted events when entering on a map.
+	 * Search all Game_Event for restricted switches and convert
+	 * the events that use them into restricted map events. 
 	 */
 	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
 	Game_Map.prototype.setupEvents = function() {
 	    TY_Game_Map_setupEvents.call(this);
 
-	    this.setupRestrictedMapEvents();
-	    this.setupRestrictedCommonEvents();
-
-	};
-
-	/**
-	 * Iterate over the Parallel Map Events and check which ones need to have
-	 * their updates restricted when the Map Interpreter is running and showing text.
-	 */
-	Game_Map.prototype.setupRestrictedMapEvents = function() {
 	    for (const event of this.events()) {
-	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
-	    		event._interpreter.restrictUpdates(true);
-	    	}
+	    	EventHelper.searchForRestrictedSwitches(event);
 	    }
+
 	};
 
+	//==========================================================
+		// Game_CommonEvent 
+	//==========================================================
+
 	/**
-	 * Iterate over the Parallel Common Events and check which ones need to have
-	 * their updates restricted when the Map Interpreter is running and showing text. 
+	 * Ensure that the interpreter exists before 
+	 * putting restricting the updates of a parallel common event.
+	 * 
+	 * NOTE: Doing this in the "Game_Map.prototype.setupEvents" 
+	 * method means the interpreter is not yet available since 
+	 * no "refresh" called by the game just yet.
 	 */
-	Game_Map.prototype.setupRestrictedCommonEvents = function() {
-	    for (const event of this._commonEvents) {
-	    	if (!!event && !!event._interpreter && isRestrictedCommonEvent(event)) {
-	    		event._interpreter.restrictUpdates(true);
-	    	} else {
-	    		console.log(`Couldn't restrict the following event: ${event.event().name}`);
-	    		console.log(`Interpreter Status: ${!!event._interpreter}`);
-	    	}
-	    }
+	const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
+	Game_CommonEvent.prototype.refresh = function() {
+		TY_Game_CommonEvent_refresh.call(this);
+
+		if (this._interpreter && isRestrictedCommonEvent(this)) {
+			this._interpreter.setRestrictedUpdates(true);
+		}
+
+	};
+
+	//==========================================================
+		// Game_Event 
+	//==========================================================
+
+	/**
+	 * Ensure that the interpreter exists before 
+	 * putting restricting the updates of a parallel map event.
+	 * 
+	 * 
+	 * 
+	 * NOTE: Doing this in the "Game_Map.prototype.setupEvents" 
+	 * method means the interpreter is not yet available since 
+	 * no "refresh" called by the game just yet.
+	 */
+	const TY_Game_Event_refresh = Game_Event.prototype.refresh;
+	Game_Event.prototype.refresh = function() {
+	    TY_Game_Event_refresh.call(this);
+
+	    if (!this._interpreter) return;
+	    if (!isRestrictedMapEvent(this)) return;
+
+		this._interpreter.setRestrictedUpdates(true);
+
+		if (needsDelayedInterpreterUpdates(this)) {
+			this._interpreter.setDelayedUpdates(true);
+		}
+
 	};
 
 	//==========================================================
@@ -316,6 +523,9 @@
 
 	    this._commonEventId = 0;
 	    this._updatesRestricted = false;
+	    this._updatesDelayed = false;
+
+	    this._updateDelayInterval = 0;
 	};
 
 	/**
@@ -357,7 +567,7 @@
 	 * @param {boolean} isRestricted - Whether or not the interpreter
 	 * should have restricted update cycles.
 	 */
-	Game_Interpreter.prototype.restrictUpdates = function(isRestricted) {
+	Game_Interpreter.prototype.setRestrictedUpdates = function(isRestricted) {
 		this._updatesRestricted = isRestricted;
 	}
 
@@ -369,6 +579,17 @@
 	 */
 	Game_Interpreter.prototype.areUpdatesRestricted = function() {
 		return this._updatesRestricted;
+	}
+
+	/**
+	 * 
+	 */
+	Game_Interpreter.prototype.setDelayedUpdates = function(isDelayed) {
+		this._updatesDelayed = isDelayed;
+	}
+
+	Game_Interpreter.prototype.areUpdatesDelayed = function() {
+		return this._updatesDelayed;
 	}
 
 	/**
@@ -393,6 +614,16 @@
 	 */
 	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
 	Game_Interpreter.prototype.update = function() {
+		if (!this.canRunCommands() && this.areUpdatesDelayed() && this._updateDelayInterval <= 0) {
+			this._updateDelayInterval = InterpreterHelper.UPDATE_DELAY_INTERVAL;
+			return;
+		}
+
+		if (this.canRunCommands() && this._updateDelayInterval > 0) {
+			this._updateDelayInterval--;
+			return;
+		}
+
 		if (this.canRunCommands()) {
 			TY_Game_Interpreter_update.call(this);
 		}
@@ -442,7 +673,7 @@
 	 * NOTE: This is a fallback in case a restricted event does not conform to
 	 * the naming conventions established in the "Mod Parameters" section of the mod.
 	 */
-	/*const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
+	const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
 	Game_Interpreter.prototype.command315 = function() {
 
 		const eventId = this.eventId();
@@ -453,7 +684,7 @@
 		}
 
 	    return true;
-	};*/
+	};
 
 	//==========================================================
 		// Sprite_HelperPopup
