@@ -10,18 +10,19 @@
 		// Mod Parameters -- 
 	//==========================================================
 
-	//==========================================================
-		// Mod Utility Methods
-	//==========================================================
-	
 	/**
-	 * Checks which FnH game instance is currently being played.
-	 * 
-	 * @returns {boolean} True if the current FnH instance is Termina.
+	 * Parallel Map Events that are not allowed
+	 * to update while dialogue is being displayed.
 	 */
-	function isGameTermina() {
-		return $dataSystem.gameTitle.match(/TERMINA/gi);
-	}
+	const restrictedEvents = [
+		"blood",
+		"blood2",
+		"bleeding",
+		"bleeding2",
+		"bleeding3",
+		"sanity",
+		"regain_sanity"
+	]
 
 	//==========================================================
 		// InterpreterHelper
@@ -32,11 +33,6 @@
 	}
 
 	/**
-	 * 
-	 */
-	InterpreterHelper.POPUP_VISIBILITY_INTERVAL = 120;
-
-	/**
 	 * Flag that determines if the system is currently working.
 	 * NOTE: The role of this feature is for debugging purposes.
 	 * 
@@ -44,16 +40,6 @@
 	 * @private
 	 */
 	InterpreterHelper._systemEnabled = true;
-
-	/**
-	 * Field that stores the Rectangle object for the popup bitmap
-	 * so that we don't need to re-create the Rectangle object 
-	 * every single time we try to retrieve it.
-	 * 
-	 * @type {Rectangle}
-	 * @private
-	 */
-	InterpreterHelper._popupBitmapRect = null;
 
 	/**
 	 * Check whether the system is currently working or not.
@@ -72,17 +58,6 @@
 	 */
 	InterpreterHelper.setSystemStatus = function(isEnabled) {
 		this._systemEnabled = isEnabled;
-	}
-
-	/**
-	 * Get a dynamically formatted string of the system's current status.
-	 * 
-	 * @returns {string} The system's current status in a formatted string format.
-	 */
-	InterpreterHelper.getSystemStatusAsString = function() {
-		const systemStatus = InterpreterHelper.isSystemEnabled();
-		const statusText = systemStatus ? "Enabled" : "Disabled";
-		return `Interpreter Helper Status: ${statusText}`;
 	}
 
 	/**
@@ -125,6 +100,9 @@
 	/**
 	 * Check if a "Game_Interpreter" instance is allowed to run a given command.
 	 * 
+	 * NOTE: If the system is enabled, only the Map Interpreter 
+	 * will be allowed to run restricted commands freely.
+	 * 
 	 * @see {@link eventId} on the "isMatchingEventId" for more details.
 	 * @see {@link commonEventId} on the "isMatchingCommonEventId" for more details.
 	 * 
@@ -133,37 +111,32 @@
 	InterpreterHelper.canInterpreterRunCommand = function(eventId, commonEventId) {
 		if (this.isSystemEnabled() && this.isMapInterpreterBusy()) {
 			return (
-				this.isMatchingEventId(eventId) || 
+				this.isMatchingEventId(eventId) && 
 				this.isMatchingCommonEventId(commonEventId)
 			);
 		}
 		return true;
 	}
 
-	InterpreterHelper.createPopupBitmapRect = function() {
-		const padding = 16;
+	//==========================================================
+		// Game_Map 
+	//==========================================================
 
-		const width = 350; // hardcoded bitmap width
-		const height = Window_Base.prototype.lineHeight();
-		const x = Graphics.boxWidth - width - padding;
-		const y = padding;
+	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+	Game_Map.prototype.setupEvents = function() {
+	    TY_Game_Map_setupEvents.call(this);
 
-		return new Rectangle(x, y, width, height);
-	}
+	    for (const event of this.events()) {
+	    	if (!!event._interpreter && restrictedEvents.includes(event.event().name)) {
+	    		event._interpreter.setRestricted(true);
+	    	}
+	    }
 
-	InterpreterHelper.getPopupBitmapRect = function() {
-		if (!this._popupBitmapRect) {
-			this._popupBitmapRect = this.createPopupBitmapRect();
-		} 
-
-		return this._popupBitmapRect;
-	}
+	};
 
 	//==========================================================
 		// Game_Interpreter 
 	//==========================================================
-
-	// setupStartingMapEvent
 
 	/**
 	 * Define the new "_commonEventId" property.
@@ -180,7 +153,11 @@
 	 * interpreter when a common event is reserved.
 	 * 
 	 * NOTE: This doesn't take into account parallel common events
-	 * because i didn't see a good reason to also track their ids.
+	 * because the Map Interpreter doesn't even run them.
+	 * (see "Game_Map.prototype.setupEvents")
+	 * 
+	 * But if the "isMapInterpreterBusy" method returns true, then
+	 * parallel common events won't be able to run restricted commands.
 	 */
 	const TY_Game_Interpreter_setupReservedCommonEvent = 
 		Game_Interpreter.prototype.setupReservedCommonEvent;
@@ -201,6 +178,30 @@
 	 */
 	Game_Interpreter.prototype.commonEventId = function() {
 	    return this._commonEventId;
+	};
+
+	Game_Interpreter.prototype._restricted = false;
+
+	Game_Interpreter.prototype.setRestricted = function(restricted) {
+		this._restricted = restricted;
+	}
+
+	Game_Interpreter.prototype.isRestricted = function() {
+		return this._restricted;
+	}
+
+	Game_Interpreter.prototype.isAllowedToRun = function() {
+		return !this.isRestricted() || (
+			this.isRestricted() && 
+			InterpreterHelper.canInterpreterRunCommand(this.eventId(), this.commonEventId())
+		);
+	}
+
+	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
+	Game_Interpreter.prototype.update = function() {
+		if (this.isAllowedToRun()) {
+			TY_Game_Interpreter_update.call(this);
+		}
 	};
 
 	/**
@@ -262,22 +263,82 @@
 	Sprite_HelperPopup.prototype = Object.create(Sprite.prototype);
 	Sprite_HelperPopup.prototype.constructor = Sprite_HelperPopup;
 
+	/**
+	 * 
+	 */
+	Sprite_HelperPopup.VISIBILITY_INTERVAL = 120;
+
+	Sprite_HelperPopup.TEXT_DISPLAY = {
+		SYSTEM_STATUS: "systemStatus",
+		HUNGER_STATUS: "hungerStatus",
+	}
+
+	/**
+	 * Field that stores the Rectangle object for the popup bitmap
+	 * so that we don't need to re-create the Rectangle object 
+	 * every single time we try to retrieve it.
+	 * 
+	 * @type {Rectangle}
+	 * @private
+	 */
+	Sprite_HelperPopup._defaultBitmapRect = null;
+
+	Sprite_HelperPopup.createDefaultBitmapRect = function() {
+		const padding = 16;
+
+		const width = 350; // hardcoded bitmap width
+		const height = Window_Base.prototype.lineHeight();
+		const x = Graphics.boxWidth - width - padding;
+		const y = padding;
+
+		return new Rectangle(x, y, width, height);
+	}
+
+	Sprite_HelperPopup.getDefaultBitmapRect = function() {
+		if (!this._defaultBitmapRect) {
+			this._defaultBitmapRect = this.createDefaultBitmapRect();
+		} 
+
+		return this._defaultBitmapRect;
+	}
+
+	Sprite_HelperPopup.getInterpreterHelperSystemStatus = function() {
+		const systemStatus = InterpreterHelper.isSystemEnabled();
+		const statusText = systemStatus ? "Enabled" : "Disabled";
+		return `Interpreter Helper Status: ${statusText}`;
+	}
+
+	Sprite_HelperPopup.getPlayerHungerStatus = function() {
+		return `Player Hunger Updated: ${$gameParty.leader().nextRequiredExp()}`;
+	}
+
+	Sprite_HelperPopup.getTextDisplay = function(displayKey) {
+		const displayEntries = {
+			[this.TEXT_DISPLAY.SYSTEM_STATUS]: this.getInterpreterHelperSystemStatus(),
+			[this.TEXT_DISPLAY.HUNGER_STATUS]: this.getPlayerHungerStatus()
+		}
+
+		return displayEntries[displayKey] || "";
+	}
+
 	Sprite_HelperPopup.prototype.initialize = function() {
+
+		this.opacity = 0;
 
 		this._visibilityInterval = 0;
 
-		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+		const bitmapRect = Sprite_HelperPopup.getDefaultBitmapRect();
 		const bitmap = new Bitmap(bitmapRect.width, bitmapRect.height);
 
 		Sprite.prototype.initialize.call(this, bitmap);
 	}
 
 	Sprite_HelperPopup.prototype.refreshDisplay = function() {
-		const statusText = InterpreterHelper.getSystemStatusAsString();
-		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+		const text = Sprite_HelperPopup.getTextDisplay(this.mode);
+		const bitmapRect = Sprite_HelperPopup.getDefaultBitmapRect();
 
 		const textObject = {
-			text: statusText,
+			text,
 			x: 0,
 			y: 0,
 			maxWidth: bitmapRect.width,
@@ -288,7 +349,9 @@
 		if (this.bitmap) {
 			this.bitmap.clear();
 
-			this.bitmap.fillAll("rbga(0, 0, 0, 0.6)");
+			this.bitmap.paintOpacity = 192;
+			this.bitmap.fillAll("black");
+			this.bitmap.paintOpacity = 255;
 			
 			this.bitmap.fontFace = Window_Base.prototype.standardFontFace();
 			this.bitmap.fontSize = Window_Base.prototype.standardFontSize() - 6;
@@ -296,7 +359,7 @@
 		}
 
 		this.opacity = 255;
-		this._visibilityInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL;
+		this._visibilityInterval = Sprite_HelperPopup.VISIBILITY_INTERVAL;
 	}
 
 	Sprite_HelperPopup.prototype.update = function() {
@@ -307,7 +370,7 @@
 	Sprite_HelperPopup.prototype.updateVisibility = function() {
 		if (this._visibilityInterval > 0) {
 
-			const fadeInterval = InterpreterHelper.POPUP_VISIBILITY_INTERVAL / 2;
+			const fadeInterval = Sprite_HelperPopup.VISIBILITY_INTERVAL / 2;
 
 			this._visibilityInterval--;
 
@@ -325,21 +388,47 @@
 	Scene_Map.prototype.createDisplayObjects = function() {
 		TY_Scene_Map_createDisplayObjects.call(this);
 
-		this.createHelperPopupSprites();
+		this.createSystemStatusPopup();
+		this.createHungerStatusPopup();
 	};
 
-	Scene_Map.prototype.createHelperPopupSprites = function() {
-		const bitmapRect = InterpreterHelper.getPopupBitmapRect();
+	Scene_Map.prototype.createSystemStatusPopup = function() {
+		const bitmapRect = Sprite_HelperPopup.getDefaultBitmapRect();
 
-	    this.systemStatusPopup = new Sprite_HelperPopup();
-	    this.systemStatusPopup.x = bitmapRect.x;
-		this.systemStatusPopup.y = bitmapRect.y;
+	    this._systemStatusPopup = new Sprite_HelperPopup();
+	    this._systemStatusPopup.mode = Sprite_HelperPopup.TEXT_DISPLAY.SYSTEM_STATUS;
+	    this._systemStatusPopup.x = bitmapRect.x;
+		this._systemStatusPopup.y = bitmapRect.y;
 
-	    this.addChild(this.systemStatusPopup);
+	    this.addChild(this._systemStatusPopup);
+	};
+
+	Scene_Map.prototype.createHungerStatusPopup = function() {
+		const bitmapRect = Sprite_HelperPopup.getDefaultBitmapRect();
+		const padding = 8;
+
+	    this._hungerStatusPopup = new Sprite_HelperPopup();
+	    this._hungerStatusPopup.mode = Sprite_HelperPopup.TEXT_DISPLAY.HUNGER_STATUS;
+	    this._hungerStatusPopup.x = bitmapRect.x;
+		this._hungerStatusPopup.y = bitmapRect.y + bitmapRect.height + padding;
+
+	    this.addChild(this._hungerStatusPopup);
 	};
 
 	Scene_Map.prototype.refreshHelperPopupSprites = function() {
-	    this.systemStatusPopup.refreshDisplay();
+	    this._systemStatusPopup.refreshDisplay();
+	};
+
+	const TY_Scene_Map_update = Scene_Map.prototype.update;
+	Scene_Map.prototype.update = function() {
+		TY_Scene_Map_update.call(this);
+
+		this._playerRequiredExp = this._playerRequiredExp || null;
+
+		if ($gameParty.leader().nextRequiredExp() !== this._playerRequiredExp) {
+			this._hungerStatusPopup.refreshDisplay();
+			this._playerRequiredExp = $gameParty.leader().nextRequiredExp();
+		}
 	};
 
 	//==========================================================
