@@ -1,20 +1,24 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.2.0 -- by Toby Yasha
+		// VERSION 2.0.0 -- by Toby Yasha
 	//==========================================================
 	
 		// This mod has been commissioned by s0mthinG.
 
 	//==========================================================
-		// Mod Parameters -- 
+		// Mod Parameters 
 	//==========================================================
 
 	/**
-	 * Parallel Map Events that are not allowed
-	 * to update while dialogue is being displayed.
+	 * The name of Parallel Map Events that are not allowed
+	 * to update while a dialogue is being displayed.
+	 * 
+	 * These are named the same in both games, thankfully.
+	 * 
+	 * @type {string[]}
 	 */
-	const restrictedEvents = [
+	const restrictedMapEvents = [
 		"blood",
 		"blood2",
 		"bleeding",
@@ -23,6 +27,144 @@
 		"sanity",
 		"regain_sanity"
 	]
+
+	/**
+	 * The name of Parallel Map Events that are not allowed
+	 * to update while a dialogue is being displayed.
+	 * 
+	 * NOTE(For Users): Feel free to remove the hound timer
+	 * from here if you don't like it.
+	 * 
+	 * This is for Fear and Hunger 1.
+	 * 
+	 * @type {string[]}
+	 */
+	const fnh1RestrictedMapEvents = [
+		...restrictedMapEvents,
+		"hound_TIMER",
+		"hound_TIMER2",
+		"mahabre_TIMER",
+		"mahabre_TIMER2"
+	]
+
+	/**
+	 * Because the Yellow Mage Dance Parallel Map Events don't
+	 * have a proper naming convention, we instead make use
+	 * of the switch to determine if the event should update or not.
+	 * 
+	 * This is for Fear and Hunger 1.
+	 * 
+	 * @type {number[]}
+	 */
+	const fnh1RestrictedGameSwitches = [343]; // Yellow Mage Dance
+
+	/**
+	 * The name of Parallel Common Events that are not allowed
+	 * to update while a dialogue is being displayed.
+	 * 
+	 * This is for Fear and Hunger 1.
+	 * 
+	 * @type {string[]}
+	 */
+	const fnh1RestrictedCommonEvents = [
+		"HUNGER_of_GIRL",
+		"HUNGER_of_KNIGHT",
+		"HUNGER_of_Mercenary",
+		"HUNGER_of_DKPRIEST",
+		"HUNGER_of_OUTLANDER",
+		"HUNGER_of_LEGARDE",
+		"HUNGER_of_MOONLESS",
+		"HUNGER_of_KIDDEMON",
+		"HUNGER_of_MARRIAGE",
+		"HUNGER_of_FUSION",
+		"HUNGER_of_BABYDEMON",
+		"HUNGER_of_Ghoul1",
+		"HUNGER_of_Ghoul2",
+		"HUNGER_of_Ghoul3"
+	]
+
+	/**
+	 * The name of Parallel Common Events that are not allowed
+	 * to update while a dialogue is being displayed.
+	 * 
+	 * This is for Fear and Hunger 2.
+	 * 
+	 * @type {string[]}
+	 */
+	const fnh2RestrictedCommonEvents = [
+		"HUNGER_of_OCCULTIST", // Marina
+		"HUNGER_of_MERCENARY", // Levi
+		"HUNGER_of_DOCTOR", // Daan
+		"HUNGER_of_MECHANIC", // Abella
+		"HUNGER_of_YELLOW_PRIEST", // O'saa
+		"HUNGER_of_BLACK_KALEV", // Black Kalev
+		"HUNGER_of_Ghoul1", // Ghoul
+		"HUNGER_of_Ghoul2", // Ghoul
+		"HUNGER_of_Ghoul3", // Ghoul
+		"HUNGER_of_Thug", // Marcoh
+		"HUNGER_of_Journalist", // Karin
+		"HUNGER_of_Botanist", // Olivia
+		"HUNGER_of_Villager1", // Villager
+		"HUNGER_of_Villager2", // Villager
+		"HUNGER_of_Villager3" // Villager
+	]
+
+	//==========================================================
+		// Mod Utility Methods
+	//==========================================================
+
+	/**
+	 * Checks which FnH game instance is currently being played.
+	 * 
+	 * @returns {boolean} True if the current FnH instance is Termina.
+	 */
+	function isGameTermina() {
+		return $dataSystem.gameTitle.match(/TERMINA/gi);
+	}
+
+	/**
+	 * Get the current list of restricted Parallel Map Events by their map name.
+	 * 
+	 * @returns {string[]} A list with the names of the restricted
+	 * Parallel Map Events based on the Fear and Hunger game.
+	 */
+	function getRestrictedMapEventNames() {
+		return isGameTermina() ? restrictedMapEvents : fnh1RestrictedMapEvents;
+	}
+
+	/**
+	 * Get the current list of restricted Parallel Common Events by their map name.
+	 * 
+	 * @returns {string[]} A list with the names of the restricted
+	 * Parallel Common Events based on the Fear and Hunger game.
+	 */
+	function getRestrictedCommonEventNames() {
+		return isGameTermina() ? fnh2RestrictedCommonEvents : fnh1RestrictedCommonEvents;
+	}
+
+	/**
+	 * Check if a Game_Event should be treated as a restricted event.
+	 * 
+	 * @param {Game_Event} gameEvent - The Game_Event instance to verify.
+	 * @returns {boolean} True if the Game_Event is going to be a restricted event.
+	 */
+	function isRestrictedMapEvent(gameEvent) {
+		const eventNames = getRestrictedMapEventNames();
+		const eventData = gameEvent.event();
+		return eventNames.includes(eventData.name);
+	}
+
+	/**
+	 * Check if a Game_CommonEvent should be treated as a restricted event.
+	 * 
+	 * @param {Game_CommonEvent} gameEvent - The Game_CommonEvent instance to verify.
+	 * @returns {boolean} True if the Game_CommonEvent is going to be a restricted event. 
+	 */
+	function isRestrictedCommonEvent(commonEvent) {
+		const commonEventNames = getRestrictedCommonEventNames();
+		const commonEventData = commonEvent.event();
+		return commonEventNames.includes(commonEventData.name);
+	}
 
 	//==========================================================
 		// InterpreterHelper
@@ -108,7 +250,7 @@
 	 * 
 	 * @returns {boolean} True if the Game_Interpreter's command is allowed to run.
 	 */
-	InterpreterHelper.canInterpreterRunCommand = function(eventId, commonEventId) {
+	InterpreterHelper.canInterpreterRun = function(eventId, commonEventId) {
 		if (this.isSystemEnabled() && this.isMapInterpreterBusy()) {
 			return (
 				this.isMatchingEventId(eventId) && 
@@ -122,16 +264,43 @@
 		// Game_Map 
 	//==========================================================
 
+	/**
+	 * Call the methods for handling the restricted events when entering on a map.
+	 */
 	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
 	Game_Map.prototype.setupEvents = function() {
 	    TY_Game_Map_setupEvents.call(this);
 
+	    this.setupRestrictedMapEvents();
+	    this.setupRestrictedCommonEvents();
+
+	};
+
+	/**
+	 * Iterate over the Parallel Map Events and check which ones need to have
+	 * their updates restricted when the Map Interpreter is running and showing text.
+	 */
+	Game_Map.prototype.setupRestrictedMapEvents = function() {
 	    for (const event of this.events()) {
-	    	if (!!event._interpreter && restrictedEvents.includes(event.event().name)) {
-	    		event._interpreter.setRestricted(true);
+	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
+	    		event._interpreter.restrictUpdates(true);
 	    	}
 	    }
+	};
 
+	/**
+	 * Iterate over the Parallel Common Events and check which ones need to have
+	 * their updates restricted when the Map Interpreter is running and showing text. 
+	 */
+	Game_Map.prototype.setupRestrictedCommonEvents = function() {
+	    for (const event of this._commonEvents) {
+	    	if (!!event && !!event._interpreter && isRestrictedCommonEvent(event)) {
+	    		event._interpreter.restrictUpdates(true);
+	    	} else {
+	    		console.log(`Couldn't restrict the following event: ${event.event().name}`);
+	    		console.log(`Interpreter Status: ${!!event._interpreter}`);
+	    	}
+	    }
 	};
 
 	//==========================================================
@@ -139,13 +308,14 @@
 	//==========================================================
 
 	/**
-	 * Define the new "_commonEventId" property.
+	 * Define new properties for the Game_Interpreter class.
 	 */
 	const TY_Game_Interpreter_clear = Game_Interpreter.prototype.clear;
 	Game_Interpreter.prototype.clear = function() {
 		TY_Game_Interpreter_clear.call(this);
 
 	    this._commonEventId = 0;
+	    this._updatesRestricted = false;
 	};
 
 	/**
@@ -180,32 +350,59 @@
 	    return this._commonEventId;
 	};
 
-	Game_Interpreter.prototype._restricted = false;
-
-	Game_Interpreter.prototype.setRestricted = function(restricted) {
-		this._restricted = restricted;
+	/**
+	 * Restricts when an interpreter instance is allowed to 
+	 * update and run its commands. 
+	 * 
+	 * @param {boolean} isRestricted - Whether or not the interpreter
+	 * should have restricted update cycles.
+	 */
+	Game_Interpreter.prototype.restrictUpdates = function(isRestricted) {
+		this._updatesRestricted = isRestricted;
 	}
 
-	Game_Interpreter.prototype.isRestricted = function() {
-		return this._restricted;
+	/**
+	 * Check if an interpreter's update cycles are restricted.
+	 * 
+	 * @returns {boolean} True if the current interpreter instance
+	 * has restricted update cycles.
+	 */
+	Game_Interpreter.prototype.areUpdatesRestricted = function() {
+		return this._updatesRestricted;
 	}
 
-	Game_Interpreter.prototype.isAllowedToRun = function() {
-		return !this.isRestricted() || (
-			this.isRestricted() && 
-			InterpreterHelper.canInterpreterRunCommand(this.eventId(), this.commonEventId())
-		);
+	/**
+	 * Check if an interpreter is allowed to run its commands,
+	 * if the current interpreter is set to have restricted update cycles.
+	 * 
+	 * @returns {boolean} True if the interpreter can run its commands normally.
+	 */
+	Game_Interpreter.prototype.canRunCommands = function() {
+		if (!this.areUpdatesRestricted()) return true;
+		return InterpreterHelper.canInterpreterRun(this.eventId(), this.commonEventId());
 	}
 
+	/**
+	 * Adds conditional interpreter updates for parallel events in order to prevent
+	 * unecessary update cycles from being run and potentially improve performance
+	 * while parallel events are stopped.
+	 * 
+	 * But the primary goal of conditional interpreter updates besides the potential
+	 * performance benefits, is to prevent some events from running
+	 * (ex: Blood Trails, Hounds, Mahabre Timer, etc).
+	 */
 	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
 	Game_Interpreter.prototype.update = function() {
-		if (this.isAllowedToRun()) {
+		if (this.canRunCommands()) {
 			TY_Game_Interpreter_update.call(this);
 		}
 	};
 
 	/**
 	 * Check if an interpreter instance is allowed to change an actor's hp(body).
+	 * 
+	 * NOTE: This is a fallback in case a restricted event does not conform to
+	 * the naming conventions established in the "Mod Parameters" section of the mod.
 	 */
 	const TY_Game_Interpreter_command311 = Game_Interpreter.prototype.command311;
 	Game_Interpreter.prototype.command311 = function() {
@@ -213,7 +410,7 @@
 		const eventId = this.eventId();
 		const commonEventId = this.commonEventId();
 
-		if (InterpreterHelper.canInterpreterRunCommand(eventId, commonEventId)) {
+		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
 			return TY_Game_Interpreter_command311.call(this);
 		}
 
@@ -222,6 +419,9 @@
 	
 	/**
 	 * Check if an interpreter instance is allowed to change an actor's mp(mind).
+	 * 
+	 * NOTE: This is a fallback in case a restricted event does not conform to
+	 * the naming conventions established in the "Mod Parameters" section of the mod.
 	 */
 	const TY_Game_Interpreter_command312 = Game_Interpreter.prototype.command312;
 	Game_Interpreter.prototype.command312 = function() {
@@ -229,7 +429,7 @@
 		const eventId = this.eventId();
 		const commonEventId = this.commonEventId();
 
-		if (InterpreterHelper.canInterpreterRunCommand(eventId, commonEventId)) {
+		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
 	    	return TY_Game_Interpreter_command312.call(this);
 		}
 
@@ -238,19 +438,22 @@
 
 	/**
 	 * Check if an interpreter instance is allowed to change an actor's exp(hunger).
+	 * 
+	 * NOTE: This is a fallback in case a restricted event does not conform to
+	 * the naming conventions established in the "Mod Parameters" section of the mod.
 	 */
-	const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
+	/*const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
 	Game_Interpreter.prototype.command315 = function() {
 
 		const eventId = this.eventId();
 		const commonEventId = this.commonEventId();
 
-		if (InterpreterHelper.canInterpreterRunCommand(eventId, commonEventId)) {
+		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
 	    	return TY_Game_Interpreter_command315.call(this);
 		}
 
 	    return true;
-	};
+	};*/
 
 	//==========================================================
 		// Sprite_HelperPopup
