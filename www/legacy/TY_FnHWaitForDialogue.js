@@ -343,6 +343,19 @@
 	}
 
 	/**
+	 * 
+	 */
+	InterpreterHelper._eventEmitter = new PIXI.utils.EventEmitter();
+
+	/**
+	 * 
+	 */
+	InterpreterHelper.EVENTS = {
+		MAP_BUSY: "mapBusy",
+		MAP_IDLE: "mapIdle"
+	}
+
+	/**
 	 * The amount of frames to delay the interpreter by 
 	 * before it can resume its updates cycles.
 	 * 
@@ -441,6 +454,48 @@
 		return true;
 	}
 
+	/*InterpreterHelper.updateMapInterpreterState = function() {
+		this._wasInterpreterBusy = this._wasInterpreterBusy || this.isMapInterpreterBusy();
+		const isInterpreterBusy = this.isMapInterpreterBusy();
+
+		if (!this._wasInterpreterBusy && isInterpreterBusy) {
+			this._eventEmitter.emit(this.EVENTS.MAP_BUSY);
+		} else if (this._wasInterpreterBusy && !isInterpreterBusy) {
+			this._eventEmitter.emit(this.EVENTS.MAP_IDLE);
+		}
+	}*/
+
+	InterpreterHelper.updateMapInterpreterState = function() {
+
+		this._isMapInterpreterBusy = this._isMapInterpreterBusy || null;
+
+		if (this._isMapInterpreterBusy === this.isMapInterpreterBusy()) return;
+
+		//console.log("trigger count");
+		
+		this._isMapInterpreterBusy = this.isMapInterpreterBusy();
+
+		if (this._isMapInterpreterBusy) {
+			this._eventEmitter.emit(this.EVENTS.MAP_BUSY);
+		} else {
+			this._eventEmitter.emit(this.EVENTS.MAP_IDLE);
+		}
+
+	}
+
+	/*var value1 = null;
+	var value2 = true;
+
+	if (value1 === value2) return;
+
+	value1 = value2 // value1 = true;
+
+	if (value1) {
+		// code 1
+	} else {
+		// code 2
+	}*/
+
 	//==========================================================
 		// Game_Map 
 	//==========================================================
@@ -449,13 +504,56 @@
 	 * Search all Game_Event for restricted switches and convert
 	 * the events that use them into restricted map events. 
 	 */
-	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+	/*const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
 	Game_Map.prototype.setupEvents = function() {
 	    TY_Game_Map_setupEvents.call(this);
 
 	    for (const event of this.events()) {
 	    	EventHelper.searchForRestrictedSwitches(event);
 	    }
+
+	};*/
+
+	const TY_Game_Map_refresh = Game_Map.prototype.refresh;
+	Game_Map.prototype.refresh = function() {
+	    TY_Game_Map_refresh.call(this);
+
+	    this._restrictedSystemInit = this._restrictedSystemInit || null;
+	    if (this._restrictedSystemInit) return;
+
+	    const restrictedEvents = getRestrictedMapEvents();
+	    const restrictedCommonEvents = getRestrictedCommonEvents();
+
+	    for (const event of this.events()) {
+	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
+	    		event._interpreter.initRestrictedUpdates();
+	    	}
+	    }
+
+	    for (const event of this._commonEvents) {
+	    	if (!!event && !!event._interpreter && isRestrictedCommonEvent(event)) {
+	    		event._interpreter.initRestrictedUpdates();
+	    	}
+	    }
+
+	    this._restrictedSystemInit = true;
+
+	};
+
+	const TY_Game_Map_updateInterpreter = Game_Map.prototype.updateInterpreter;
+	Game_Map.prototype.updateInterpreter = function() {
+		TY_Game_Map_updateInterpreter.call(this);
+
+		InterpreterHelper.updateMapInterpreterState();
+
+		/*this._wasInterpreterBusy = this._wasInterpreterBusy || InterpreterHelper.isMapInterpreterBusy();
+		const isInterpreterBusy = InterpreterHelper.isMapInterpreterBusy();
+
+		if (!this._wasInterpreterBusy && isInterpreterBusy) {
+			InterpreterHelper._eventEmitter.emit(InterpreterHelper.EVENTS.MAP_BUSY);
+		} else if (this._wasInterpreterBusy && !isInterpreterBusy) {
+			InterpreterHelper._eventEmitter.emit(InterpreterHelper.EVENTS.MAP_IDLE);
+		}*/
 
 	};
 
@@ -471,12 +569,22 @@
 	 * method means the interpreter is not yet available since 
 	 * no "refresh" called by the game just yet.
 	 */
-	const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
+	/*const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
 	Game_CommonEvent.prototype.refresh = function() {
 		TY_Game_CommonEvent_refresh.call(this);
 
 		if (this._interpreter && isRestrictedCommonEvent(this)) {
 			this._interpreter.setRestrictedUpdates(true);
+		}
+
+	};*/
+
+	const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
+	Game_CommonEvent.prototype.refresh = function() {
+		TY_Game_CommonEvent_refresh.call(this);
+
+		if (this._interpreter && this._interpreter._commonEventId === 0) {
+			this._interpreter._commonEventId = this._commonEventId;
 		}
 
 	};
@@ -495,7 +603,7 @@
 	 * method means the interpreter is not yet available since 
 	 * no "refresh" called by the game just yet.
 	 */
-	const TY_Game_Event_refresh = Game_Event.prototype.refresh;
+	/*const TY_Game_Event_refresh = Game_Event.prototype.refresh;
 	Game_Event.prototype.refresh = function() {
 	    TY_Game_Event_refresh.call(this);
 
@@ -508,11 +616,27 @@
 			this._interpreter.setDelayedUpdates(true);
 		}
 
-	};
+	};*/
 
 	//==========================================================
 		// Game_Interpreter 
 	//==========================================================
+
+	Game_Interpreter.prototype.initRestrictedUpdates = function() {
+
+		console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got subbed`);
+
+		InterpreterHelper._eventEmitter.on(InterpreterHelper.EVENTS.MAP_BUSY, () => {
+			console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got locked`);
+			this._updateLocked = true;
+		});
+
+		InterpreterHelper._eventEmitter.on(InterpreterHelper.EVENTS.MAP_IDLE, () => {
+			console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got unlocked`);
+			this._updateLocked = false;
+		});	
+
+	};
 
 	/**
 	 * Define new properties for the Game_Interpreter class.
@@ -522,10 +646,11 @@
 		TY_Game_Interpreter_clear.call(this);
 
 	    this._commonEventId = 0;
-	    this._updatesRestricted = false;
-	    this._updatesDelayed = false;
+	    this._updateLocked = false;
+	    //this._updatesRestricted = false;
+	    //this._updatesDelayed = false;
 
-	    this._updateDelayInterval = 0;
+	    //this._updateDelayInterval = 0;
 	};
 
 	/**
@@ -567,9 +692,9 @@
 	 * @param {boolean} isRestricted - Whether or not the interpreter
 	 * should have restricted update cycles.
 	 */
-	Game_Interpreter.prototype.setRestrictedUpdates = function(isRestricted) {
+	/*Game_Interpreter.prototype.setRestrictedUpdates = function(isRestricted) {
 		this._updatesRestricted = isRestricted;
-	}
+	}*/
 
 	/**
 	 * Check if an interpreter's update cycles are restricted.
@@ -577,20 +702,20 @@
 	 * @returns {boolean} True if the current interpreter instance
 	 * has restricted update cycles.
 	 */
-	Game_Interpreter.prototype.areUpdatesRestricted = function() {
+	/*Game_Interpreter.prototype.areUpdatesRestricted = function() {
 		return this._updatesRestricted;
-	}
+	}*/
 
 	/**
 	 * 
 	 */
-	Game_Interpreter.prototype.setDelayedUpdates = function(isDelayed) {
+	/*Game_Interpreter.prototype.setDelayedUpdates = function(isDelayed) {
 		this._updatesDelayed = isDelayed;
-	}
+	}*/
 
-	Game_Interpreter.prototype.areUpdatesDelayed = function() {
+	/*Game_Interpreter.prototype.areUpdatesDelayed = function() {
 		return this._updatesDelayed;
-	}
+	}*/
 
 	/**
 	 * Check if an interpreter is allowed to run its commands,
@@ -598,10 +723,10 @@
 	 * 
 	 * @returns {boolean} True if the interpreter can run its commands normally.
 	 */
-	Game_Interpreter.prototype.canRunCommands = function() {
+	/*Game_Interpreter.prototype.canRunCommands = function() {
 		if (!this.areUpdatesRestricted()) return true;
 		return InterpreterHelper.canInterpreterRun(this.eventId(), this.commonEventId());
-	}
+	}*/
 
 	/**
 	 * Adds conditional interpreter updates for parallel events in order to prevent
@@ -612,7 +737,7 @@
 	 * performance benefits, is to prevent some events from running
 	 * (ex: Blood Trails, Hounds, Mahabre Timer, etc).
 	 */
-	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
+	/*const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
 	Game_Interpreter.prototype.update = function() {
 		if (!this.canRunCommands() && this.areUpdatesDelayed() && this._updateDelayInterval <= 0) {
 			this._updateDelayInterval = InterpreterHelper.UPDATE_DELAY_INTERVAL;
@@ -627,6 +752,13 @@
 		if (this.canRunCommands()) {
 			TY_Game_Interpreter_update.call(this);
 		}
+	};*/
+
+	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
+	Game_Interpreter.prototype.update = function() {
+		if (this._updateLocked) return;
+
+		TY_Game_Interpreter_update.call(this);
 	};
 
 	/**
@@ -673,7 +805,7 @@
 	 * NOTE: This is a fallback in case a restricted event does not conform to
 	 * the naming conventions established in the "Mod Parameters" section of the mod.
 	 */
-	const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
+	/*const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
 	Game_Interpreter.prototype.command315 = function() {
 
 		const eventId = this.eventId();
@@ -684,7 +816,7 @@
 		}
 
 	    return true;
-	};
+	};*/
 
 	//==========================================================
 		// Sprite_HelperPopup
@@ -871,6 +1003,11 @@
 
 	const TY_SceneManager_onKeyDown = SceneManager.onKeyDown;
 	SceneManager.onKeyDown = function(event) {
+
+		if (!event.ctrlKey && !event.altKey && event.keyCode === 117) { // F6
+			// Teleport to the mines near the Yellow Mage
+			$gamePlayer.reserveTransfer(11, 30, 24, 0, 0);
+		}
 
     	if (!event.ctrlKey && !event.altKey && event.keyCode === 118) { // F7
 
