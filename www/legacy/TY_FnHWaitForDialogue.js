@@ -486,61 +486,6 @@
 		return Object.values(this._systems).some(isLocked => isLocked);
 	}
 
-	/*
-
-	InteractionHelper.lockSystem = function(type) {
-		if (this.isSystemLocked(type)) return;
-
-		const oldStatus = this.isAnySystemLocked();
-
-		this._systems[type] = true;
-
-		const newStatus = this.isAnySystemLocked();
-
-		if (oldStatus === newStatus) return;
-		this.eventEmitter.emit(this.EVENT_TYPES.LOCK);
-	}
-
-	InteractionHelper.unlockSystem = function(type) {
-		if (!this.isSystemLocked(type)) return;
-		
-		const oldStatus = this.isAnySystemLocked();
-
-		this._systems[type] = false;
-
-		const newStatus = this.isAnySystemLocked();
-
-		if (oldStatus === newStatus) return;
-		this.eventEmitter.emit(this.EVENT_TYPES.UNLOCK);
-	}
-
-	*/
-
-	/*
-	InteractionHelper._locked = false;
-
-	InteractionHelper.reset = function() {
-		this._locked = false;
-	}
-
-	InteractionHelper.lock = function() {
-		if (this._locked) return;
-
-		this._locked = true;
-		this.eventEmitter.emit(this.EVENTS.LOCK);
-	}
-
-	InteractionHelper.unlock = function() {
-		if (!this._locked) return;
-		
-		this._locked = false;
-		this.eventEmitter.emit(this.EVENTS.UNLOCK);
-	}
-
-	InteractionHelper.isLocked = function() {
-		return this._locked;
-	}*/
-
 	//==========================================================
 		// Scene_Map 
 	//==========================================================
@@ -565,55 +510,71 @@
 		// Game_Map 
 	//==========================================================
 
-	Game_Map.prototype._restrictedEventsSubscribed = false;
-
 	/**
-	 * Search all Game_Event for restricted switches and convert
-	 * the events that use them into restricted map events. 
+	 * Adds an internal flag to check if 
+	 * restricted events have already been initialized.
+	 * 
+	 * This is to prevent re-initializing the restricted events for no reason.
 	 */
-	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
-	Game_Map.prototype.setupEvents = function() {
-	    TY_Game_Map_setupEvents.call(this);
-
-	    for (const event of this.events()) {
-	    	EventHelper.searchForRestrictedSwitches(event);
-	    }
-
+	const TY_Game_Map_setup = Game_Map.prototype.setup;
+	Game_Map.prototype.setup = function(mapId) {
+		TY_Game_Map_setup.call(this, mapId);
+	    this._restrictedEventsReady = false;
 	};
 
 	/**
+	 * Because the interpreter of Game_Event or Game_CommonEvent
+	 * instances is not available when they are created,
+	 * this is a workaround for that.
 	 * 
+	 * The interpreter gets created after the events are refreshed.
+	 * (usually, although there exists the possibility of that not being the case).
+	 * ... that does sound like a problem, doesn't it?
 	 */
 	const TY_Game_Map_refresh = Game_Map.prototype.refresh;
 	Game_Map.prototype.refresh = function() {
 	    TY_Game_Map_refresh.call(this);
 
-	    if (this._restrictedEventsSubscribed) return;
-	    this.subscribeRestrictedEvents();
+	    if (this._restrictedEventsReady) return;
 
+	    this.prepareRestrictedSwitches();
+	    this.setupRestrictedMapEvents();
+	    this.setupRestrictedCommonEvents();
+
+	    this._restrictedEventsReady = true;
+	};
+
+	/**
+	 * Search all Game_Event for restricted switches and convert
+	 * the events that use them into restricted map events. 
+	 */
+	Game_Map.prototype.prepareRestrictedSwitches = function() {
+	    for (const event of this.events()) {
+	    	EventHelper.searchForRestrictedSwitches(event);
+	    }
 	};
 
 	/**
 	 * 
 	 */
-	Game_Map.prototype.subscribeRestrictedEvents = function() {
+	Game_Map.prototype.setupRestrictedMapEvents = function() {
 	    const restrictedEvents = getRestrictedMapEvents();
-	    const restrictedCommonEvents = getRestrictedCommonEvents();
 
 	    for (const event of this.events()) {
 	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
-	    		event._interpreter.initRestrictedUpdates();
-	    		//event._interpreter.subscribeAsRestrictedEvent();
+	    		event._interpreter.setupRestrictedEventHooks();
 	    	}
 	    }
+	};
+
+	Game_Map.prototype.setupRestrictedCommonEvents = function() {
+	    const restrictedCommonEvents = getRestrictedCommonEvents();
 
 	    for (const event of this._commonEvents) {
-	    	if (!!event && !!event._interpreter && isRestrictedCommonEvent(event)) {
-	    		event._interpreter.initRestrictedUpdates();
+	    	if (!!event._interpreter && isRestrictedCommonEvent(event)) {
+	    		event._interpreter.setupRestrictedEventHooks();
 	    	}
 	    }
-
-	    this._restrictedEventsSubscribed = true;
 	};
 
 	//==========================================================
@@ -625,10 +586,11 @@
 	Game_CommonEvent.prototype.refresh = function() {
 	    TY_Game_CommonEvent_refresh.call(this);
 
+	    if (!this._interpreter && !isRestrictedCommonEvent(this)) return;
+
 	    if (this._interpreter && this._interpreter._commonEventId === 0) {
 	    	this._interpreter._commonEventId = this._commonEventId;
 	    }
-
 	};
 
 	//==========================================================
@@ -666,7 +628,8 @@
 	/**
 	 * 
 	 */
-	Game_Interpreter.prototype.initRestrictedUpdates = function() {
+	Game_Interpreter.prototype.setupRestrictedEventHooks = function() {
+	//Game_Interpreter.prototype.initRestrictedUpdates = function() {
 
 		console.log(`Interpreter with EVENT ID: ${this._eventId} and 
 			COMMON EVENT ID: ${this._commonEventId} got subbed`);
