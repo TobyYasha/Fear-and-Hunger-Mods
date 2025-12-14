@@ -335,176 +335,243 @@
 	}
 
 	//==========================================================
-		// InterpreterHelper
+		// InteractionHelper
 	//==========================================================
 
-	function InterpreterHelper() {
+	function InteractionHelper() {
     	throw new Error("This is a static class");
 	}
 
 	/**
 	 * 
+	 * @type {number}
 	 */
-	InterpreterHelper._eventEmitter = new PIXI.utils.EventEmitter();
+	InteractionHelper.DELAY_FRAMES = 120;
 
 	/**
-	 * 
+	 * @typedef {Object} EVENT_TYPES
+	 * @property {string} LOCK - Emitter event used to prevent
+	 * restricted events from updating until unlocked. 
+	 * @property {string} UNLOCK - Emitter event used to allow
+	 * restricted events to update after being locked. 
 	 */
-	InterpreterHelper.EVENTS = {
-		MAP_BUSY: "mapBusy",
-		MAP_IDLE: "mapIdle"
+	InteractionHelper.EVENT_TYPES = {
+		LOCK: "lock",
+		UNLOCK: "unlock"
 	}
 
 	/**
-	 * The amount of frames to delay the interpreter by 
-	 * before it can resume its updates cycles.
-	 * 
-	 * NOTE: This will only be taken into consideration
-	 * if the following Interpreter flags are enabled:
-	 * - Restricted Updates
-	 * - Delayed Updates
-	 * 
-	 * @type {number}
+	 * @typedef {Object} SYSTEM_TYPES
+	 * @property {string} MESSAGE - Identifier used for the message window system.
+	 * @property {string} MAP_INTERPRETER - Identifier used for the map interpreter system.
 	 */
-	InterpreterHelper.UPDATE_DELAY_INTERVAL = 120;
+	InteractionHelper.SYSTEM_TYPES = {
+		MESSAGE: "messageWindow",
+		MAP_INTERPRETER: "mapInterpreter"
+	}
 
 	/**
-	 * Flag that determines if the system is currently working.
-	 * NOTE: The role of this feature is for debugging purposes.
+	 * Internal state used to check if the 
+	 * state of all systems has meaningfully changed.
 	 * 
 	 * @type {boolean}
 	 * @private
 	 */
-	InterpreterHelper._systemEnabled = true;
+	InteractionHelper._locked = false;
 
 	/**
-	 * Check whether the system is currently working or not.
+	 * Container for managing the status of systems.
 	 * 
-	 * @returns {boolean} True if the system is working.
+	 * This is done by locking a system when it starts
+	 * and unlocking it when it finishes operating.
+	 * 
+	 * When a system is locked, it will prevent map events and 
+	 * common events that are considered restricted from updating.  
+	 * 
+	 * True is used if a system is currently locked.
+	 * False is used if a system is currently unlocked.
+	 * 
+	 * @type {Object<string, boolean>}
+	 * @private
 	 */
-	InterpreterHelper.isSystemEnabled = function() {
-		return this._systemEnabled;
-	}
+	InteractionHelper._systems = {};
 
 	/**
-	 * Set whether the system should be working or not.
+	 * Event Emitter implementation from PIXI.
 	 * 
-	 * @param {boolean} isEnabled - Boolean flag to determine
-	 * if the system should be working or not.
+	 * This is the back bone of the whole "InteractionHelper" class.
+	 * Without it we wouldn't be able to send signals to restricted
+	 * events and tell them to lock/unlock when necessary.
+	 * 
+	 * @type {EventEmitter}
 	 */
-	InterpreterHelper.setSystemStatus = function(isEnabled) {
-		this._systemEnabled = isEnabled;
-	}
+	InteractionHelper.eventEmitter = new PIXI.utils.EventEmitter();
 
 	/**
-	 * Check if the Map Interpreter's event id matches a given event id.
-	 * 
-	 * @param {number} eventId - The event id from another "Game_Interpreter" instance.
-	 * NOTE: This refers to on-map events. 
-	 * 
-	 * @returns {boolean} True if the two event ids are the exact same.
+	 * Initializes or resets the existing systems to a default state.
+	 * Also resets the internal state used to track the system state changes. 
 	 */
-	InterpreterHelper.isMatchingEventId = function(eventId) {
-		return $gameMap._interpreter.eventId() === eventId;
-	}
+	InteractionHelper.resetAllSystems = function() {
+		this._locked = false;
 
-	/**
-	 * Check if the Map Interpreter's common event id matches a given common event id.
-	 * 
-	 * @param {number} eventId - The common event id from another "Game_Interpreter" instance.
-	 * NOTE: This refers to Common Events from the database.
-	 * 
-	 * @returns {boolean} True if the two common event ids are the exact same.
-	 */
-	InterpreterHelper.isMatchingCommonEventId = function(commonEventId) {
-		return $gameMap._interpreter.commonEventId() === commonEventId;
-	}
-
-	/**
-	 * Check if the Map Interpreter is currently running and potentially showing text.
-	 * 
-	 * NOTE: We will be assuming that if the Message Window
-	 * is busy it is because of the Map Interpreter, even
-	 * if technically a Parallel Event could in theory ever show text.
-	 * 
-	 * @returns {boolean} True if the Map Interpreter is busy.
-	 */
-	InterpreterHelper.isMapInterpreterBusy = function() {
-		return $gameMap._interpreter.isRunning() && $gameMessage.isBusy();
-	}
-
-	/**
-	 * Check if a "Game_Interpreter" instance is allowed to run a given command.
-	 * 
-	 * NOTE: If the system is enabled, only the Map Interpreter 
-	 * will be allowed to run restricted commands freely.
-	 * 
-	 * @see {@link eventId} in the "isMatchingEventId" method for more details.
-	 * @see {@link commonEventId} in the "isMatchingCommonEventId" method for more details.
-	 * 
-	 * @returns {boolean} True if the Game_Interpreter's command is allowed to run.
-	 */
-	InterpreterHelper.canInterpreterRun = function(eventId, commonEventId) {
-		if (this.isSystemEnabled() && this.isMapInterpreterBusy()) {
-			return (
-				this.isMatchingEventId(eventId) && 
-				this.isMatchingCommonEventId(commonEventId)
-			);
+		for (const type of Object.values(this.SYSTEM_TYPES)) {
+			this._systems[type] = false;
 		}
-		return true;
 	}
 
-	/*InterpreterHelper.updateMapInterpreterState = function() {
-		this._wasInterpreterBusy = this._wasInterpreterBusy || this.isMapInterpreterBusy();
-		const isInterpreterBusy = this.isMapInterpreterBusy();
+	/**
+	 * Check if a given system is currently locked or not.
+	 * 
+	 * @param {string} type - An entry from the "SYSTEM_TYPES" object.
+	 * @returns {boolean} True if the inspected system is locked.
+	 */
+	InteractionHelper.isSystemLocked = function(type) {
+		return this._systems[type];
+	}
 
-		if (!this._wasInterpreterBusy && isInterpreterBusy) {
-			this._eventEmitter.emit(this.EVENTS.MAP_BUSY);
-		} else if (this._wasInterpreterBusy && !isInterpreterBusy) {
-			this._eventEmitter.emit(this.EVENTS.MAP_IDLE);
-		}
-	}*/
+	/**
+	 * Lock a given system if it's not already locked.
+	 * 
+	 * @see {@link type} in the "isSystemLocked" method for more details.
+	 */
+	InteractionHelper.lockSystem = function(type) {
+		if (this.isSystemLocked(type)) return;
 
-	InterpreterHelper.updateMapInterpreterState = function() {
+		this._systems[type] = true;
+		this._onSystemStateChanged();
+	}
 
-		this._isMapInterpreterBusy = this._isMapInterpreterBusy || null;
+	/**
+	 * Unlock a given system if it's not already unlocked.
+	 * 
+	 * @see {@link type} in the "isSystemLocked" method for more details.
+	 */
+	InteractionHelper.unlockSystem = function(type) {
+		if (!this.isSystemLocked(type)) return;
 
-		if (this._isMapInterpreterBusy === this.isMapInterpreterBusy()) return;
+		this._systems[type] = false;
+		this._onSystemStateChanged();
+	}
 
-		//console.log("trigger count");
+	/**
+	 * When a system has changed its state we need to check
+	 * if that state has made any meaningful difference internally.
+	 * 
+	 * If the current state of the combined systems is different
+	 * from the previously saved state, then we can emit a signal
+	 * to the restricted events.
+	 * 
+	 * @private
+	 */
+	InteractionHelper._onSystemStateChanged = function() {
+		const oldState = this._locked;
+		const newState = this.isAnySystemLocked();
+
+		if (oldState === newState) return;
+
+		this._locked = newState;
+
+		this.eventEmitter.emit(newState ? 
+			this.EVENT_TYPES.LOCK : 
+			this.EVENT_TYPES.UNLOCK
+		);
+	}
+
+	/**
+	 * Check any existing system is currently in a locked state.
+	 * 
+	 * @returns {boolean} True if at least 1 system is currently in a locked state.
+	 */
+	InteractionHelper.isAnySystemLocked = function() {
+		return Object.values(this._systems).some(isLocked => isLocked);
+	}
+
+	/*
+
+	InteractionHelper.lockSystem = function(type) {
+		if (this.isSystemLocked(type)) return;
+
+		const oldStatus = this.isAnySystemLocked();
+
+		this._systems[type] = true;
+
+		const newStatus = this.isAnySystemLocked();
+
+		if (oldStatus === newStatus) return;
+		this.eventEmitter.emit(this.EVENT_TYPES.LOCK);
+	}
+
+	InteractionHelper.unlockSystem = function(type) {
+		if (!this.isSystemLocked(type)) return;
 		
-		this._isMapInterpreterBusy = this.isMapInterpreterBusy();
+		const oldStatus = this.isAnySystemLocked();
 
-		if (this._isMapInterpreterBusy) {
-			this._eventEmitter.emit(this.EVENTS.MAP_BUSY);
-		} else {
-			this._eventEmitter.emit(this.EVENTS.MAP_IDLE);
-		}
+		this._systems[type] = false;
 
+		const newStatus = this.isAnySystemLocked();
+
+		if (oldStatus === newStatus) return;
+		this.eventEmitter.emit(this.EVENT_TYPES.UNLOCK);
 	}
 
-	/*var value1 = null;
-	var value2 = true;
+	*/
 
-	if (value1 === value2) return;
+	/*
+	InteractionHelper._locked = false;
 
-	value1 = value2 // value1 = true;
+	InteractionHelper.reset = function() {
+		this._locked = false;
+	}
 
-	if (value1) {
-		// code 1
-	} else {
-		// code 2
+	InteractionHelper.lock = function() {
+		if (this._locked) return;
+
+		this._locked = true;
+		this.eventEmitter.emit(this.EVENTS.LOCK);
+	}
+
+	InteractionHelper.unlock = function() {
+		if (!this._locked) return;
+		
+		this._locked = false;
+		this.eventEmitter.emit(this.EVENTS.UNLOCK);
+	}
+
+	InteractionHelper.isLocked = function() {
+		return this._locked;
 	}*/
+
+	//==========================================================
+		// Scene_Map 
+	//==========================================================
+
+	/**
+	 * When the player leaves the map and the Game_Interpreter was running,
+	 * the InteractionHelper might have its last state be the locked one.
+	 * 
+	 * The issue with that is that every first interaction on a new map
+	 * won't emit the "locked" signal to the restricted events.
+	 * 
+	 * This is a fix for this issue.
+	 */
+	const TY_Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+	Scene_Map.prototype.onMapLoaded = function() {
+	    TY_Scene_Map_onMapLoaded.call(this);
+
+	    InteractionHelper.resetAllSystems();
+	};
 
 	//==========================================================
 		// Game_Map 
 	//==========================================================
 
+	Game_Map.prototype._restrictedEventsSubscribed = false;
+
 	/**
 	 * Search all Game_Event for restricted switches and convert
 	 * the events that use them into restricted map events. 
 	 */
-	/*const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
 	Game_Map.prototype.setupEvents = function() {
 	    TY_Game_Map_setupEvents.call(this);
 
@@ -512,21 +579,31 @@
 	    	EventHelper.searchForRestrictedSwitches(event);
 	    }
 
-	};*/
+	};
 
+	/**
+	 * 
+	 */
 	const TY_Game_Map_refresh = Game_Map.prototype.refresh;
 	Game_Map.prototype.refresh = function() {
 	    TY_Game_Map_refresh.call(this);
 
-	    this._restrictedSystemInit = this._restrictedSystemInit || null;
-	    if (this._restrictedSystemInit) return;
+	    if (this._restrictedEventsSubscribed) return;
+	    this.subscribeRestrictedEvents();
 
+	};
+
+	/**
+	 * 
+	 */
+	Game_Map.prototype.subscribeRestrictedEvents = function() {
 	    const restrictedEvents = getRestrictedMapEvents();
 	    const restrictedCommonEvents = getRestrictedCommonEvents();
 
 	    for (const event of this.events()) {
 	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
 	    		event._interpreter.initRestrictedUpdates();
+	    		//event._interpreter.subscribeAsRestrictedEvent();
 	    	}
 	    }
 
@@ -536,106 +613,75 @@
 	    	}
 	    }
 
-	    this._restrictedSystemInit = true;
-
-	};
-
-	const TY_Game_Map_updateInterpreter = Game_Map.prototype.updateInterpreter;
-	Game_Map.prototype.updateInterpreter = function() {
-		TY_Game_Map_updateInterpreter.call(this);
-
-		InterpreterHelper.updateMapInterpreterState();
-
-		/*this._wasInterpreterBusy = this._wasInterpreterBusy || InterpreterHelper.isMapInterpreterBusy();
-		const isInterpreterBusy = InterpreterHelper.isMapInterpreterBusy();
-
-		if (!this._wasInterpreterBusy && isInterpreterBusy) {
-			InterpreterHelper._eventEmitter.emit(InterpreterHelper.EVENTS.MAP_BUSY);
-		} else if (this._wasInterpreterBusy && !isInterpreterBusy) {
-			InterpreterHelper._eventEmitter.emit(InterpreterHelper.EVENTS.MAP_IDLE);
-		}*/
-
+	    this._restrictedEventsSubscribed = true;
 	};
 
 	//==========================================================
 		// Game_CommonEvent 
 	//==========================================================
 
-	/**
-	 * Ensure that the interpreter exists before 
-	 * putting restricting the updates of a parallel common event.
-	 * 
-	 * NOTE: Doing this in the "Game_Map.prototype.setupEvents" 
-	 * method means the interpreter is not yet available since 
-	 * no "refresh" called by the game just yet.
-	 */
-	/*const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
-	Game_CommonEvent.prototype.refresh = function() {
-		TY_Game_CommonEvent_refresh.call(this);
-
-		if (this._interpreter && isRestrictedCommonEvent(this)) {
-			this._interpreter.setRestrictedUpdates(true);
-		}
-
-	};*/
-
+	// for debugging purposes
 	const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
 	Game_CommonEvent.prototype.refresh = function() {
-		TY_Game_CommonEvent_refresh.call(this);
+	    TY_Game_CommonEvent_refresh.call(this);
 
-		if (this._interpreter && this._interpreter._commonEventId === 0) {
-			this._interpreter._commonEventId = this._commonEventId;
-		}
+	    if (this._interpreter && this._interpreter._commonEventId === 0) {
+	    	this._interpreter._commonEventId = this._commonEventId;
+	    }
 
 	};
 
 	//==========================================================
-		// Game_Event 
+		// Window_Message 
 	//==========================================================
 
 	/**
-	 * Ensure that the interpreter exists before 
-	 * putting restricting the updates of a parallel map event.
 	 * 
-	 * 
-	 * 
-	 * NOTE: Doing this in the "Game_Map.prototype.setupEvents" 
-	 * method means the interpreter is not yet available since 
-	 * no "refresh" called by the game just yet.
 	 */
-	/*const TY_Game_Event_refresh = Game_Event.prototype.refresh;
-	Game_Event.prototype.refresh = function() {
-	    TY_Game_Event_refresh.call(this);
+	const TY_Window_Message_startMessage = Window_Message.prototype.startMessage;
+	Window_Message.prototype.startMessage = function() {
+		TY_Window_Message_startMessage.call(this);
 
-	    if (!this._interpreter) return;
-	    if (!isRestrictedMapEvent(this)) return;
+		const systemType = InteractionHelper.SYSTEM_TYPES.MESSAGE_WINDOW;
+		InteractionHelper.lockSystem(systemType);
+	};
 
-		this._interpreter.setRestrictedUpdates(true);
+	/**
+	 * 
+	 */
+	const TY_Window_Message_terminateMessage = Window_Message.prototype.terminateMessage;
+	Window_Message.prototype.terminateMessage = function() {
+		TY_Window_Message_terminateMessage.call(this);
 
-		if (needsDelayedInterpreterUpdates(this)) {
-			this._interpreter.setDelayedUpdates(true);
+		if (!this.doesContinue()) {
+			const systemType = InteractionHelper.SYSTEM_TYPES.MESSAGE_WINDOW;
+			InteractionHelper.unlockSystem(systemType);
 		}
-
-	};*/
+	};
 
 	//==========================================================
 		// Game_Interpreter 
 	//==========================================================
 
+	/**
+	 * 
+	 */
 	Game_Interpreter.prototype.initRestrictedUpdates = function() {
 
-		console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got subbed`);
+		console.log(`Interpreter with EVENT ID: ${this._eventId} and 
+			COMMON EVENT ID: ${this._commonEventId} got subbed`);
 
-		InterpreterHelper._eventEmitter.on(InterpreterHelper.EVENTS.MAP_BUSY, () => {
-			console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got locked`);
+		InteractionHelper.eventEmitter.on(InteractionHelper.EVENT_TYPES.LOCK, () => {
+			console.log(`Interpreter with EVENT ID: ${this._eventId} and 
+				COMMON EVENT ID: ${this._commonEventId} got locked`);
 			this._updateLocked = true;
 		});
 
-		InterpreterHelper._eventEmitter.on(InterpreterHelper.EVENTS.MAP_IDLE, () => {
-			console.log(`Interpreter with EVENT ID: ${this._eventId} and COMMON EVENT ID: ${this._commonEventId} got unlocked`);
+		InteractionHelper.eventEmitter.on(InteractionHelper.EVENT_TYPES.UNLOCK, () => {
+			console.log(`Interpreter with EVENT ID: ${this._eventId} and 
+				COMMON EVENT ID: ${this._commonEventId} got unlocked`);
 			this._updateLocked = false;
 		});	
-
 	};
 
 	/**
@@ -645,25 +691,14 @@
 	Game_Interpreter.prototype.clear = function() {
 		TY_Game_Interpreter_clear.call(this);
 
-	    this._commonEventId = 0;
+		this._commonEventId = 0;
 	    this._updateLocked = false;
-	    //this._updatesRestricted = false;
-	    //this._updatesDelayed = false;
 
+	    //this._updatesDelayed = false;
 	    //this._updateDelayInterval = 0;
 	};
 
-	/**
-	 * Set the commonEventId used by the 
-	 * interpreter when a common event is reserved.
-	 * 
-	 * NOTE: This doesn't take into account parallel common events
-	 * because the Map Interpreter doesn't even run them.
-	 * (see "Game_Map.prototype.setupEvents")
-	 * 
-	 * But if the "isMapInterpreterBusy" method returns true, then
-	 * parallel common events won't be able to run restricted commands.
-	 */
+	// for debugging purposes
 	const TY_Game_Interpreter_setupReservedCommonEvent = 
 		Game_Interpreter.prototype.setupReservedCommonEvent;
 	Game_Interpreter.prototype.setupReservedCommonEvent = function() {
@@ -671,89 +706,44 @@
 		if ($gameTemp.isCommonEventReserved()) {
 			this._commonEventId = $gameTemp.reservedCommonEvent();
 		}
-
+	    
 		return TY_Game_Interpreter_setupReservedCommonEvent.call(this);
 	};
 
 	/**
-	 * Get the commonEventId used by the interpreter.
-	 * NOTE: A value of 0 means no common event is used.
 	 * 
-	 * @returns {number} The commonEventId used by the interpreter.
 	 */
-	Game_Interpreter.prototype.commonEventId = function() {
-	    return this._commonEventId;
+	const TY_Game_Interpreter_setup = Game_Interpreter.prototype.setup;
+	Game_Interpreter.prototype.setup = function(list, eventId) {
+		TY_Game_Interpreter_setup.call(this, list, eventId);
+
+		if (this === $gameMap._interpreter) {
+			console.log(`Called lock on map id ${$gameMap.mapId()}`);
+
+			const systemType = InteractionHelper.SYSTEM_TYPES.MAP_INTERPRETER;
+			InteractionHelper.lockSystem(systemType);
+		}
 	};
 
 	/**
-	 * Restricts when an interpreter instance is allowed to 
-	 * update and run its commands. 
-	 * 
-	 * @param {boolean} isRestricted - Whether or not the interpreter
-	 * should have restricted update cycles.
-	 */
-	/*Game_Interpreter.prototype.setRestrictedUpdates = function(isRestricted) {
-		this._updatesRestricted = isRestricted;
-	}*/
-
-	/**
-	 * Check if an interpreter's update cycles are restricted.
-	 * 
-	 * @returns {boolean} True if the current interpreter instance
-	 * has restricted update cycles.
-	 */
-	/*Game_Interpreter.prototype.areUpdatesRestricted = function() {
-		return this._updatesRestricted;
-	}*/
-
-	/**
 	 * 
 	 */
-	/*Game_Interpreter.prototype.setDelayedUpdates = function(isDelayed) {
-		this._updatesDelayed = isDelayed;
-	}*/
+	const TY_Game_Interpreter_terminate = Game_Interpreter.prototype.terminate;
+	Game_Interpreter.prototype.terminate = function() {
+		TY_Game_Interpreter_terminate.call(this);
 
-	/*Game_Interpreter.prototype.areUpdatesDelayed = function() {
-		return this._updatesDelayed;
-	}*/
+	    if (this === $gameMap._interpreter) {
+	    	console.log(`Called unlock on map id ${$gameMap.mapId()}`);
 
-	/**
-	 * Check if an interpreter is allowed to run its commands,
-	 * if the current interpreter is set to have restricted update cycles.
-	 * 
-	 * @returns {boolean} True if the interpreter can run its commands normally.
-	 */
-	/*Game_Interpreter.prototype.canRunCommands = function() {
-		if (!this.areUpdatesRestricted()) return true;
-		return InterpreterHelper.canInterpreterRun(this.eventId(), this.commonEventId());
-	}*/
-
-	/**
-	 * Adds conditional interpreter updates for parallel events in order to prevent
-	 * unecessary update cycles from being run and potentially improve performance
-	 * while parallel events are stopped.
-	 * 
-	 * But the primary goal of conditional interpreter updates besides the potential
-	 * performance benefits, is to prevent some events from running
-	 * (ex: Blood Trails, Hounds, Mahabre Timer, etc).
-	 */
-	/*const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
-	Game_Interpreter.prototype.update = function() {
-		if (!this.canRunCommands() && this.areUpdatesDelayed() && this._updateDelayInterval <= 0) {
-			this._updateDelayInterval = InterpreterHelper.UPDATE_DELAY_INTERVAL;
-			return;
+	    	const systemType = InteractionHelper.SYSTEM_TYPES.MAP_INTERPRETER;
+	    	InteractionHelper.unlockSystem(systemType);
 		}
 
-		if (this.canRunCommands() && this._updateDelayInterval > 0) {
-			this._updateDelayInterval--;
-			return;
-		}
+	};
 
-		if (this.canRunCommands()) {
-			TY_Game_Interpreter_update.call(this);
-		}
-	};*/
-
+	/**
+	 * 
+	 */
 	const TY_Game_Interpreter_update = Game_Interpreter.prototype.update;
 	Game_Interpreter.prototype.update = function() {
 		if (this._updateLocked) return;
@@ -770,10 +760,7 @@
 	const TY_Game_Interpreter_command311 = Game_Interpreter.prototype.command311;
 	Game_Interpreter.prototype.command311 = function() {
 
-		const eventId = this.eventId();
-		const commonEventId = this.commonEventId();
-
-		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
+		if (!InteractionHelper.isAnySystemLocked()) {
 			return TY_Game_Interpreter_command311.call(this);
 		}
 
@@ -789,10 +776,7 @@
 	const TY_Game_Interpreter_command312 = Game_Interpreter.prototype.command312;
 	Game_Interpreter.prototype.command312 = function() {
 
-		const eventId = this.eventId();
-		const commonEventId = this.commonEventId();
-
-		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
+		if (!InteractionHelper.isAnySystemLocked()) {
 	    	return TY_Game_Interpreter_command312.call(this);
 		}
 
@@ -808,10 +792,7 @@
 	/*const TY_Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
 	Game_Interpreter.prototype.command315 = function() {
 
-		const eventId = this.eventId();
-		const commonEventId = this.commonEventId();
-
-		if (InterpreterHelper.canInterpreterRun(eventId, commonEventId)) {
+		if (!InteractionHelper.isAnySystemLocked()) {
 	    	return TY_Game_Interpreter_command315.call(this);
 		}
 
@@ -869,7 +850,8 @@
 	}
 
 	Sprite_HelperPopup.getInterpreterHelperSystemStatus = function() {
-		const systemStatus = InterpreterHelper.isSystemEnabled();
+		//const systemStatus = InterpreterHelper.isSystemEnabled();
+		const systemStatus = true;
 		const statusText = systemStatus ? "Enabled" : "Disabled";
 		return `Interpreter Helper Status: ${statusText}`;
 	}
@@ -954,19 +936,19 @@
 	Scene_Map.prototype.createDisplayObjects = function() {
 		TY_Scene_Map_createDisplayObjects.call(this);
 
-		this.createSystemStatusPopup();
+		//this.createSystemStatusPopup();
 		this.createHungerStatusPopup();
 	};
 
 	Scene_Map.prototype.createSystemStatusPopup = function() {
 		const bitmapRect = Sprite_HelperPopup.getDefaultBitmapRect();
 
-	    this._systemStatusPopup = new Sprite_HelperPopup();
-	    this._systemStatusPopup.mode = Sprite_HelperPopup.TEXT_DISPLAY.SYSTEM_STATUS;
-	    this._systemStatusPopup.x = bitmapRect.x;
-		this._systemStatusPopup.y = bitmapRect.y;
+	    this._systemstatusPopup = new Sprite_HelperPopup();
+	    this._systemstatusPopup.mode = Sprite_HelperPopup.TEXT_DISPLAY.SYSTEM_STATUS;
+	    this._systemstatusPopup.x = bitmapRect.x;
+		this._systemstatusPopup.y = bitmapRect.y;
 
-	    this.addChild(this._systemStatusPopup);
+	    this.addChild(this._systemstatusPopup);
 	};
 
 	Scene_Map.prototype.createHungerStatusPopup = function() {
@@ -982,7 +964,7 @@
 	};
 
 	Scene_Map.prototype.refreshHelperPopupSprites = function() {
-	    this._systemStatusPopup.refreshDisplay();
+	    this._systemstatusPopup.refreshDisplay();
 	};
 
 	const TY_Scene_Map_update = Scene_Map.prototype.update;
