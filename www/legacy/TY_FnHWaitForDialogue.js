@@ -205,14 +205,17 @@
 	}
 
 	/**
-	 * Check if a Game_Event needs to have their update cycles
-	 * delayed after the Map Interpreter is no longer busy.
+	 * Check if the Interpreter of a Game_Event needs to have their 
+	 * update cycles delayed after the Map Interpreter is no longer busy.
+	 * 
+	 * NOTE: I am aware that this is technically hardcoded at the moment,
+	 * but unless more events need a delay then this will remain as is.
 	 * 
 	 * @see {@link gameEvent} in the "isRestrictedMapEvent" method for more details.
 	 * @returns {boolean} True if the Game_Event interpreter will resume running its
 	 * commands after a certain delay interval.
 	 */
-	function needsDelayedInterpreterUpdates(gameEvent) {
+	function isInterpreterDelayed(gameEvent) {
 		const eventNames = EventHelper.getRestrictedMapEvents();
 		const eventData = gameEvent.event();
 		return eventNames.includes(eventData.name); 
@@ -343,10 +346,14 @@
 	}
 
 	/**
+	 * The amount of frames to pause an interpreter instance by
+	 * after the map interpreter is no longer busy.
+	 * 
+	 * 60 Frames = 1 Second
 	 * 
 	 * @type {number}
 	 */
-	InteractionHelper.DELAY_FRAMES = 120;
+	InteractionHelper.INTERPRETER_DELAY_FRAMES = 120;
 
 	/**
 	 * @typedef {Object} EVENT_TYPES
@@ -511,42 +518,18 @@
 	//==========================================================
 
 	/**
-	 * Adds an internal flag to check if 
-	 * restricted events have already been initialized.
-	 * 
-	 * This is to prevent re-initializing the restricted events for no reason.
+	 * Call the method for preparing the 
+	 * restricted switches based on the map events.
 	 */
-	const TY_Game_Map_setup = Game_Map.prototype.setup;
-	Game_Map.prototype.setup = function(mapId) {
-		TY_Game_Map_setup.call(this, mapId);
-	    this._restrictedEventsReady = false;
-	};
-
-	/**
-	 * Because the interpreter of Game_Event or Game_CommonEvent
-	 * instances is not available when they are created,
-	 * this is a workaround for that.
-	 * 
-	 * The interpreter gets created after the events are refreshed.
-	 * (usually, although there exists the possibility of that not being the case).
-	 * ... that does sound like a problem, doesn't it?
-	 */
-	const TY_Game_Map_refresh = Game_Map.prototype.refresh;
-	Game_Map.prototype.refresh = function() {
-	    TY_Game_Map_refresh.call(this);
-
-	    if (this._restrictedEventsReady) return;
-
+	const TY_Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+	Game_Map.prototype.setupEvents = function() {
+		TY_Game_Map_setupEvents.call(this);
 	    this.prepareRestrictedSwitches();
-	    this.setupRestrictedMapEvents();
-	    this.setupRestrictedCommonEvents();
-
-	    this._restrictedEventsReady = true;
 	};
 
 	/**
-	 * Search all Game_Event for restricted switches and convert
-	 * the events that use them into restricted map events. 
+	 * Search all Game_Event instances for restricted switches and
+	 * convert the events that use them into restricted map events. 
 	 */
 	Game_Map.prototype.prepareRestrictedSwitches = function() {
 	    for (const event of this.events()) {
@@ -554,26 +537,37 @@
 	    }
 	};
 
+	//==========================================================
+		// Game_Event
+	//==========================================================
+
 	/**
+	 * Internal flag that is used to check if 
+	 * a restricted event has been initialized.
+	 * 
+	 * @type {boolean}
+	 * @private
+	 */
+	Game_Event.prototype._isRestrictModeReady = false;
+
+	/**
+	 * Ensure that the interpreter exists before
+	 * putting restriction on the updates of a parallel map events.
+	 * 
+	 * NOTE: The reason we do this here and not in the 
+	 * "Game_Map.prototype.setupEvents" method is because the
+	 * interpreter is not available until the refresh method is called.
 	 * 
 	 */
-	Game_Map.prototype.setupRestrictedMapEvents = function() {
-	    const restrictedEvents = getRestrictedMapEvents();
+	const TY_Game_Event_refresh = Game_Event.prototype.refresh;
+	Game_Event.prototype.refresh = function() {
+	    TY_Game_Event_refresh.call(this);
 
-	    for (const event of this.events()) {
-	    	if (!!event._interpreter && isRestrictedMapEvent(event)) {
-	    		event._interpreter.setupRestrictedEventHooks();
-	    	}
-	    }
-	};
+	    if (this._isRestrictModeReady) return;
 
-	Game_Map.prototype.setupRestrictedCommonEvents = function() {
-	    const restrictedCommonEvents = getRestrictedCommonEvents();
-
-	    for (const event of this._commonEvents) {
-	    	if (!!event._interpreter && isRestrictedCommonEvent(event)) {
-	    		event._interpreter.setupRestrictedEventHooks();
-	    	}
+	    if (this._interpreter && isRestrictedMapEvent(this)) {
+	    	this._interpreter.setupRestrictedEventHooks();
+	    	this._isRestrictModeReady = true;
 	    }
 	};
 
@@ -581,15 +575,39 @@
 		// Game_CommonEvent 
 	//==========================================================
 
-	// for debugging purposes
+	/**
+	 * Internal flag that is used to check if 
+	 * a restricted common event has been initialized.
+	 * 
+	 * @type {boolean}
+	 * @private
+	 */
+	Game_CommonEvent.prototype._isRestrictModeReady = false;
+
+	/**
+	 * Ensure that the interpreter exists before
+	 * putting restriction on the updates of a parallel common events.
+	 * 
+	 * NOTE: Unlike Game_Event, Game_CommonEvent need to have all conditions
+	 * from "isActive" met before the interpreter is created.
+	 * 
+	 * So simply refreshing the Game_Map might not active them
+	 * (because of the switch condition).
+	 */
 	const TY_Game_CommonEvent_refresh = Game_CommonEvent.prototype.refresh;
 	Game_CommonEvent.prototype.refresh = function() {
 	    TY_Game_CommonEvent_refresh.call(this);
 
-	    if (!this._interpreter && !isRestrictedCommonEvent(this)) return;
-
+	    // for debug purposes
 	    if (this._interpreter && this._interpreter._commonEventId === 0) {
 	    	this._interpreter._commonEventId = this._commonEventId;
+	    }
+
+	    if (this._isRestrictModeReady) return;
+
+	    if (this._interpreter && isRestrictedCommonEvent(this)) {
+			this._interpreter.setupRestrictedEventHooks();
+			this._isRestrictModeReady = true;
 	    }
 	};
 
@@ -598,7 +616,12 @@
 	//==========================================================
 
 	/**
+	 * When a message window starts processing text, send a signal to
+	 * lock the system(if its not already locked).
 	 * 
+	 * NOTE: Usually the Map Interpreter locking the system should be enough,
+	 * but in case anything wants to display text and doesn't depend on the 
+	 * Map Interpreter, this is a way to ensure that restricted events are locked.  
 	 */
 	const TY_Window_Message_startMessage = Window_Message.prototype.startMessage;
 	Window_Message.prototype.startMessage = function() {
@@ -609,13 +632,20 @@
 	};
 
 	/**
+	 * When a message window ends processing text, send a signal to
+	 * unlock the system(if its not already unlocked).
 	 * 
+	 * NOTE: The message window can be a bit janky in that it might trigger
+	 * an unlock signal even though the interpreter may want to display more text after.
+	 * 
+	 * Don't depend on this too much to be correct for critical operations.
 	 */
 	const TY_Window_Message_terminateMessage = Window_Message.prototype.terminateMessage;
 	Window_Message.prototype.terminateMessage = function() {
 		TY_Window_Message_terminateMessage.call(this);
 
-		if (!this.doesContinue()) {
+		if (!$gameMessage.isBusy()) {
+			console.log("not busy anymore");
 			const systemType = InteractionHelper.SYSTEM_TYPES.MESSAGE_WINDOW;
 			InteractionHelper.unlockSystem(systemType);
 		}
