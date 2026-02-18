@@ -55,26 +55,8 @@ I know the Gain All Skills mod already exists, but I think it would be more inte
 DEV NOTE: CastroGamer also suggested this
 STATUS: Completed
 
-
-Reinhard Heydrich -- discord
-8/17/2025
-(Infinite Stamina Mod - BUG)
-Fix "updateDashToggle" method working when using double coin flip.
-Fix "allowDrawStaminaBar" const not being used.
-(could fix by modifying the "makeCommonEventFilterList" method).
-
-bugfix was posted for the "updateDashToggle" bug.
-
-STATUS: On hold until next update
-
 ME
 8/21/2025
 The mod that shows the HP of limbs could be updated to use more accurate information for the torso HP.
 basically, search inside troop events the HP requirement for when the torso dies and use that value to determine the torso HP.
 if there is no such event page, just use the default enemy HP.
-
-Abyss -- discord
-11/6/2025
-Inside the "isHexenExitCalled" method change the "escape" string with "cancel" to ensure compatibility with Controllers.
-
-STATUS: On hold until next update
