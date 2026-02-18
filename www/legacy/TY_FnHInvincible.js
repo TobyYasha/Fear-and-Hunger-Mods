@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.5.1 -- by Toby Yasha
+		// VERSION 1.5.2 -- by Toby Yasha
 	//==========================================================
 
 	/**
@@ -405,8 +405,7 @@
 	 * Checks if a State is safe to be applied to a Player Character.
 	 * 
 	 * If a Player Character is allowed to die then the Dead State will apply.
-	 * If a Player Character is immune to a State then it will not apply. 
-	 * 
+	 * If a Player Character is immune to a State then it will not apply.
 	 */
 	const TY_Game_Actor_addState = Game_Actor.prototype.addState;
 	Game_Actor.prototype.addState = function(stateId) {
@@ -451,16 +450,26 @@
 	Game_Actor.prototype.useItem = function(item) {};
 
 	/**
-	 * Prevents the Player Character from gaining/losing hunger.
+	 * Prevents the Player Character's hunger value from ever changing.
+	 * (Used in 'Game_Interpreter.prototype.gameDataOperand' to get actor hunger).
+	 * 
+	 * NOTE: Responsability has been shifted from the
+	 * 'changeExp' method to 'currentExp'.
+	 * 
+	 * This is in order to prevent an issue in Fear & Hunger: Termina
+	 * where the character would become dizzy and die
+	 * (after a couple of frames, even on the 'Character Selection Screen').
+	 * 
+	 * So we ensure the value always remains at 156 and never goes to 57.
 	 */
-	Game_Actor.prototype.gainExp = function(exp) {};
+	Game_Actor.prototype.currentExp = function() {
+	    return 156; // This makes the hunger be 1
+	};
 	
 	/**
 	 * Prevents the Player Character from gaining/losing hunger.
 	 */
-	Game_Actor.prototype.changeExp = function(exp, show) {
-		this._exp[this._classId] = 156; // This makes the hunger be 1.
-	};
+	Game_Actor.prototype.changeExp = function(exp, show) {};
 
 	/**
 	 * Gives the Player Character full REV points at the start of the battle.
