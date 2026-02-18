@@ -1,7 +1,7 @@
 (function() {
 	
 	//==========================================================
-		// VERSION 1.1.0 -- by Toby Yasha
+		// VERSION 1.1.1 -- by Toby Yasha
 	//==========================================================
 		
 	// The following settings are meant to be edited by users:
@@ -75,9 +75,14 @@
 		);
 	}
 
-	// Toggle the auto dashing feature ON/OFF
+	/**
+	 * Toggle the auto dashing feature ON/OFF
+	 * 
+	 * NOTE: In order to allow Lucky Coins to be used properly,
+	 * we check if message system is busy.
+	 */
 	function updateDashToggle() {
-		if (Input.isTriggered("shift")) {
+		if (Input.isTriggered("shift") && !$gameMessage.isBusy()) {
 			autoDashToggle = !autoDashToggle;
 			updateDashState();
 		}
@@ -111,10 +116,14 @@
 		574 - Stamina Bar Graphic
 		575 - Stamina Bar Graphic
 	*/
-	// This is a list of common events that
-	// we want to remove based on a condition
+	/**
+	 * This is a list of common events that
+	 * we want to remove based on a condition.
+	 * 
+	 * Here we also check if the stamina bar is allowed to be drawn or not.
+	 */
 	function makeCommonEventFilterList() {
-		const commonEventIds = [573, 574, 575];
+		const commonEventIds = !allowDrawStaminaBar ? [573, 574, 575] : [];
 
 		return commonEventIds;
 	}
@@ -154,6 +163,7 @@
 	const TY_Game_Map_Setup = Game_Map.prototype.setup;
 	Game_Map.prototype.setup = function(mapId) {
 		TY_Game_Map_Setup.call(this, ...arguments);
+
 		refreshDashState();
 	}
 
@@ -161,6 +171,7 @@
 	const TY_Game_Map_Update = Game_Map.prototype.update;
 	Game_Map.prototype.update = function(sceneActive) {
 		TY_Game_Map_Update.call(this, ...arguments);
+
 		updateDashToggle();
 		updateDashState();
 		updateStaminaMeter();
