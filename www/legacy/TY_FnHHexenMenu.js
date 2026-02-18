@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.0.0 -- by Toby Yasha
+		// VERSION 1.0.1 -- by Toby Yasha
 	//==========================================================
 
 		// This mod lets you open the hexen from the menu
@@ -161,6 +161,8 @@
 		function onHexenStart() {
 			$gameSystem.disableMenu();
 			$gameSwitches.setValue(2420, true); // Hexen GFX
+			$gameSwitches.setValue(202, true) // Suicide in process
+			$gameSwitches.setValue(410, true) // CannotUse_Bow
 		}
 
 		function clearFogOverlay() {
@@ -215,7 +217,7 @@
 		}
 
 		function isHexenExitCalled() {
-			return Input.isTriggered('escape') || Input.isPressed('escape');
+			return Input.isTriggered('cancel') || Input.isPressed('cancel');
 		}
 
 		// Check if the player is trying to exit the hexen
@@ -236,8 +238,11 @@
 		}
 
 		function onHexenEnd() {
+			$gameScreen.startTint([-255,-255,-255,0], 60);
 			$gameSystem.enableMenu();
 			$gameSwitches.setValue(2420, false); // Hexen GFX
+			$gameSwitches.setValue(202, false) // Suicide in process
+			$gameSwitches.setValue(410, false) // CannotUse_Bow
 		}
 
 		function clearHexenCursor() {
@@ -265,6 +270,7 @@
 
 		function returnToOriginMap() {
 			$gamePlayer.reserveTransfer(...Object.values(originMapData));
+			$gameScreen.startTint([0,0,0,0], 60);
 		}
 
 		function getLayerOpacity(variableId, value) {
@@ -350,6 +356,7 @@
 
 		// Method called upon interacting with the "Hexen" command
 		Scene_Menu.prototype.commandHexen = function() {
+			$gameScreen.startTint([-255,-255,-255,0], 0);
 			SceneManager.pop();
 			saveOriginMap();
 			resetHexenTimer();
