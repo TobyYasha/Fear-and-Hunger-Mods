@@ -1,12 +1,3 @@
-CastroGamer -- itch.io
-6/24/2024
-I ask you if it would be possible to make a version of the free skills mod, specifically for termina,
-where every skill is unlocked from the start, meaning I never need to kill other contestants for their abilities,
-but I still need to unlock the skills with soul stones.
-edit: if it can be made for both, it would be even better, but prioritize termina if you can't
-STATUS: Completed
-
-
 Chandler Voss -- discord
 6/20/2024
 is it possible to add two slots in the first game just like in termina
@@ -44,16 +35,6 @@ It works perfectly fine in a new game
 
 DEV NOTE: This might be a problem in other mods as well
 STATUS: On hold until i go back to work on this
-
-
-Atlas20 -- itch.io
-4/12/2025
-Hello, I wanted to ask if it's possible to create a mod that gives you access to all the Charaters Skills in the Hexen in Termina without having to kill anyone.
-
-I know the Gain All Skills mod already exists, but I think it would be more interesting to gradually acquire the skills little by little with the added benefit of not having to kill anyone else.
-
-DEV NOTE: CastroGamer also suggested this
-STATUS: Completed
 
 ME
 8/21/2025
