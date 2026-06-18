@@ -1,5 +1,5 @@
 //==========================================================
-      // VERSION 1.0.0 -- By Toby Yasha
+      // VERSION 1.1.0 -- By Toby Yasha
 //==========================================================
 
 var TY = TY || {};
@@ -14,14 +14,22 @@ Imported.TY_FnHUnlockCharacterSkills = true;
       // Mod Constants --
 //==========================================================
 
-_.FNH_1_HEXEN_MAP_ID = 0; // Not available for now // NOTE: This requires all maps with a hexen table
-_.FNH_2_HEXEN_MAP_ID = 31; // NOTE: Might transform both map id constants into arrays
+// The id of the map used for the hexen.
+// Used Exclusively for Fear and hunger 2.
+_.FNH_2_HEXEN_MAP_ID = 31;
 
-_.FNH_1_CHARACTER_SWITCHES = [
-      // Not available for now
+// The switch ids of the character souls
+// Used in Fear and hunger 1.
+_.FNH_1_CHARACTER_SOUL_SWITCH_IDS = [
+      1181, // Domination_soul -- D'arce
+      1182, // Endless_soul -- Cahara
+      1183, // tormented_soul -- Ragnvaldr
+      1184, // Enlightened_soul -- Enki
 ];
 
-_.FNH_2_CHARACTER_SWITCHES = [
+// The switch ids of the character souls
+// Used in Fear and hunger 2.
+_.FNH_2_CHARACTER_SOUL_SWITCH_IDS = [
       493, // botanist_SOUL -- Olivia
       494, // exsoldier_SOUL -- Levi
       495, // Occultist_SOUL -- Marina
@@ -42,12 +50,21 @@ _.FNH_2_CHARACTER_SWITCHES = [
       // Mod Members --
 //==========================================================
 
-_.lastMapId = 0;
+// the previous map visited by the player.
+// Used Exclusively for Fear and hunger 2.
+let _lastMapId = 0;
 
-_.characterSwitchesCache = {};
+// check if the hexen event is currently ongoing
+// Used Exclusively for Fear and hunger 1.
+let _hexenEventActive = false;
+
+// this is a container for the character soul switches
+// it is used to preserve the state of the switches before
+// going to the hexen scene.
+_.characterSoulCache = {};
 
 //==========================================================
-      // Mod Methods -- 
+      // Mod Methods -- Common
 //==========================================================
 
 // Check if the game is Fear & Hunger 2: Termina
@@ -55,56 +72,17 @@ function isGameTermina() {
       return $dataSystem.gameTitle.match(/TERMINA/gi);
 }
 
-// Get the id of the hexen map based on the Fear & Hunger game
-_.getHexenMapId = function() {
-      return isGameTermina() ? _.FNH_2_HEXEN_MAP_ID : _.FNH_1_HEXEN_MAP_ID;
-}
-
 // Get the character game switches based on the Fear & Hunger game
 _.getCharacterSwitches = function() {
-      return isGameTermina() ? _.FNH_2_CHARACTER_SWITCHES : _.FNH_1_CHARACTER_SWITCHES;
+      return isGameTermina() ? _.FNH_2_CHARACTER_SOUL_SWITCH_IDS : _.FNH_1_CHARACTER_SOUL_SWITCH_IDS;
 }
 
-// Keep track of the last accessed map 
-_.setLastMapId = function(mapId) {
-      _.lastMapId = mapId;
-}
-
-// Get the last accessed map 
-_.getLastMapId = function() {
-      return _.lastMapId;
-}
-
-// Do something with the character game switches
-// depending on which map the player is going to
-_.onMapTransfer = function(mapId) {
-      const hexenMapId = _.getHexenMapId();
-      const lastMapId = _.getLastMapId();
-
-      if (hexenMapId === mapId) {
-            _.onHexenCurrentTransfer();
-      } else if (hexenMapId === lastMapId) {
-            _.onHexenPreviousTransfer();
-      }
-}
-
-// What happens when we the player transfers to the hexen map
-_.onHexenCurrentTransfer = function() {
-      _.saveCharacterSwitches();
-      _.enableCharacterSwitches();
-}
-
-// What happens when the player leaves the hexen map 
-_.onHexenPreviousTransfer = function() {
-      _.restoreCharacterSwitches();
-}
-
-// Save the state of the character game switches before going to the hexen map.
+// Save the state of the character game switches before any hexen interactions.
 // NOTE: This ensures that game switches are not permanently altered.
 _.saveCharacterSwitches = function() {
       const switchIds = _.getCharacterSwitches();
       for (const switchId of switchIds) {
-            _.characterSwitchesCache[switchId] = $gameSwitches.value(switchId);
+            _.characterSoulCache[switchId] = $gameSwitches.value(switchId);
       }
 }
 
@@ -117,26 +95,114 @@ _.enableCharacterSwitches = function() {
       }
 }
 
-// Restore the state of the character game switches to normal
-// upon leaving the hexen map.
+// Restore the state of the character game switches to their original values.
 // NOTE: This is done in order to ensure normal game functionality.
 _.restoreCharacterSwitches = function() {
-      const switchIds = Object.keys(_.characterSwitchesCache);
+      const switchIds = Object.keys(_.characterSoulCache);
       for (const switchId of switchIds) {
-            const value = _.characterSwitchesCache[switchId];
+            const value = _.characterSoulCache[switchId];
             $gameSwitches.setValue(switchId, value);
       }
 }
 
+// Triggered when the player activates the hexen table(in fear and hunger 1)
+// Triggered when the player goes to the hexen map(in fear and hunger 2)
+_.prepareHexenInteraction = function() {
+      _.saveCharacterSwitches();
+      _.enableCharacterSwitches();
+}
+
+// Triggered when the player deactivates the hexen table(in fear and hunger 1)
+// Triggered when the player leaves to the hexen map(in fear and hunger 2)
+_.concludeHexenInteraction = function() {
+      _.restoreCharacterSwitches();
+}
+
 //==========================================================
-      // Game Configurations -- 
+      // Mod Methods -- Fear and Hunger 1
 //==========================================================
 
+// Check if the current event mentions variable 167 in its list of commands.
+// May or not be the best approach for this, but it will have to do.
+_.isHexenTableEvent = function(interpreterList) {
+      // Code 122 = Control Variables
+      // Parameter Index 0 - Variable 167 - HEXEN_soul_gem - Amount of "lesser soul" items
+      return interpreterList && interpreterList.some(command => 
+            command && command.code === 122 && command.parameters[0] === 167);
+}
+
+//==========================================================
+      // Game Configurations -- Game_Interpreter
+//==========================================================
+
+// Check if the map event / common event is the hexen table event
+const TY_Game_Interpreter_setup = Game_Interpreter.prototype.setup;
+Game_Interpreter.prototype.setup = function(list, eventId) {
+      TY_Game_Interpreter_setup.call(this, list, eventId);
+
+      if (!_hexenEventActive && _.isHexenTableEvent(list)) {
+            _.prepareHexenInteraction();
+            _hexenEventActive = true;
+      }
+};
+
+// conclude the hexen table event, if it was active
+const TY_Game_Interpreter_terminate = Game_Interpreter.prototype.terminate;
+Game_Interpreter.prototype.terminate = function() {
+      TY_Game_Interpreter_terminate.call(this);
+
+      if (_hexenEventActive) {
+            _.concludeHexenInteraction();
+            _hexenEventActive = false;
+      }
+};
+
+const TY_Game_Switches_onChange = Game_Switches.prototype.onChange;
+Game_Switches.prototype.onChange = function() {
+      Game_Switches.prototype.onChange.call(this);
+
+      
+};
+
+//==========================================================
+      // Mod Methods -- Fear and Hunger 2
+//==========================================================
+
+// Get the id of the hexen map based on the Fear & Hunger game
+_.getHexenMapId = function() {
+      return isGameTermina() ? _.FNH_2_HEXEN_MAP_ID : 0;
+}
+
+// Do something with the character game switches
+// depending on which map the player is going to
+_.onMapTransfer = function(mapId) {
+      const hexenMapId = _.getHexenMapId();
+
+      // going to hexen
+      if (hexenMapId === mapId) {
+            _.prepareHexenInteraction();
+
+      // leaving the hexen
+      } else if (hexenMapId === _lastMapId) {
+            _.concludeHexenInteraction();
+      }
+
+      _lastMapId = mapId;
+}
+
+//==========================================================
+      // Game Configurations -- Game_Player
+//==========================================================
+
+// check if the player is going to or leaving the hexen map.
+// Used Exclusively for Fear and hunger 2.
 const TY_Game_Player_reserveTransfer = Game_Player.prototype.reserveTransfer;
 Game_Player.prototype.reserveTransfer = function(mapId, x, y, d, fadeType) {
       TY_Game_Player_reserveTransfer.call(this, mapId, x, y, d, fadeType);
+
+      if (!isGameTermina()) return;
+
       _.onMapTransfer(mapId);
-      _.setLastMapId(mapId);
 };
 
 //==========================================================
