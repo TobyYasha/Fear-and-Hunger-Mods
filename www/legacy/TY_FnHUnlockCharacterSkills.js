@@ -14,11 +14,6 @@ Imported.TY_FnHUnlockCharacterSkills = true;
       // Mod Constants --
 //==========================================================
 
-// This switch will turn on when the player 
-// interacts with a hexen table.
-// Used Exclusively for Fear and hunger 1
-_.FNH_1_HEXEN_CURSOR_SWITCH_ID = 1210;
-
 // The id of the map used for the hexen.
 // Used Exclusively for Fear and hunger 2.
 _.FNH_2_HEXEN_MAP_ID = 31;
@@ -61,7 +56,7 @@ let _lastMapId = 0;
 
 // check if the hexen cursor switch is active
 // Used Exclusively for Fear and hunger 1.
-let _hexenCursorActive = false;
+let _hexenTableEventId = 0;
 
 // this is a container for the character soul switches
 // it is used to preserve the state of the switches before
@@ -127,39 +122,42 @@ _.concludeHexenInteraction = function() {
       // Mod Methods -- Fear and Hunger 1
 //==========================================================
 
-// Called whenever a game switch changes its value.
-// Used to track if the hexen cursor's switch value has changed
-_.onSwitchChanged = function() {
-      const switchId = _.FNH_1_HEXEN_CURSOR_SWITCH_ID;
-      const value = $gameSwitches.value(switchId);
+_.isHexenTableEvent = function(eventId) {
+      const mapEvent = $gameMap.event(eventId);
 
-      if (value !== _hexenCursorActive) {
-
-            // going to hexen
-            if (value) {
-                  _.prepareHexenInteraction();
-
-            // leaving the hexen
-            } else {
-                  _.concludeHexenInteraction();
-            }
-
-            _hexenCursorActive = value;
-      }
+      return (
+            mapEvent &&
+            mapEvent.characterName() === "!blood3" &&
+            mapEvent.characterIndex() === 6
+      );
 }
 
 //==========================================================
       // Game Configurations -- Game_Interpreter
 //==========================================================
 
-// Used Exclusively for Fear and hunger 1.
-const TY_Game_Switches_onChange = Game_Switches.prototype.onChange;
-Game_Switches.prototype.onChange = function() {
-      TY_Game_Switches_onChange.call(this);
+const TY_Game_Map_unlockEvent = Game_Map.prototype.unlockEvent;
+Game_Map.prototype.unlockEvent = function(eventId) {
+      TY_Game_Map_unlockEvent.call(this, eventId);
 
-      if (isGameTermina()) return;
+      if (_hexenTableEventId === eventId) {
+            _.concludeHexenInteraction();
+            _hexenTableEventId = 0;
+      }
+};
 
-      _.onSwitchChanged();
+const TY_Game_Map_setupStartingMapEvent = Game_Map.prototype.setupStartingMapEvent;
+Game_Map.prototype.setupStartingMapEvent = function() {
+      const result = TY_Game_Map_setupStartingMapEvent.call(this);
+
+      const eventId = this._interpreter.eventId();
+
+      if (result && _.isHexenTableEvent(eventId)) {
+            _.prepareHexenInteraction();
+            _hexenTableEventId = eventId;
+      }
+
+      return result;
 };
 
 //==========================================================
