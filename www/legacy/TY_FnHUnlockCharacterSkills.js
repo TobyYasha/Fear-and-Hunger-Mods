@@ -14,6 +14,11 @@ Imported.TY_FnHUnlockCharacterSkills = true;
       // Mod Constants --
 //==========================================================
 
+// This switch will turn on when the player 
+// interacts with a hexen table.
+// Used Exclusively for Fear and hunger 1
+_.FNH_1_HEXEN_CURSOR_SWITCH_ID = 1210;
+
 // The id of the map used for the hexen.
 // Used Exclusively for Fear and hunger 2.
 _.FNH_2_HEXEN_MAP_ID = 31;
@@ -54,9 +59,9 @@ _.FNH_2_CHARACTER_SOUL_SWITCH_IDS = [
 // Used Exclusively for Fear and hunger 2.
 let _lastMapId = 0;
 
-// check if the hexen event is currently ongoing
+// check if the hexen cursor switch is active
 // Used Exclusively for Fear and hunger 1.
-let _hexenEventActive = false;
+let _hexenCursorActive = false;
 
 // this is a container for the character soul switches
 // it is used to preserve the state of the switches before
@@ -122,46 +127,39 @@ _.concludeHexenInteraction = function() {
       // Mod Methods -- Fear and Hunger 1
 //==========================================================
 
-// Check if the current event mentions variable 167 in its list of commands.
-// May or not be the best approach for this, but it will have to do.
-_.isHexenTableEvent = function(interpreterList) {
-      // Code 122 = Control Variables
-      // Parameter Index 0 - Variable 167 - HEXEN_soul_gem - Amount of "lesser soul" items
-      return interpreterList && interpreterList.some(command => 
-            command && command.code === 122 && command.parameters[0] === 167);
+// Called whenever a game switch changes its value.
+// Used to track if the hexen cursor's switch value has changed
+_.onSwitchChanged = function() {
+      const switchId = _.FNH_1_HEXEN_CURSOR_SWITCH_ID;
+      const value = $gameSwitches.value(switchId);
+
+      if (value !== _hexenCursorActive) {
+
+            // going to hexen
+            if (value) {
+                  _.prepareHexenInteraction();
+
+            // leaving the hexen
+            } else {
+                  _.concludeHexenInteraction();
+            }
+
+            _hexenCursorActive = value;
+      }
 }
 
 //==========================================================
       // Game Configurations -- Game_Interpreter
 //==========================================================
 
-// Check if the map event / common event is the hexen table event
-const TY_Game_Interpreter_setup = Game_Interpreter.prototype.setup;
-Game_Interpreter.prototype.setup = function(list, eventId) {
-      TY_Game_Interpreter_setup.call(this, list, eventId);
-
-      if (!_hexenEventActive && _.isHexenTableEvent(list)) {
-            _.prepareHexenInteraction();
-            _hexenEventActive = true;
-      }
-};
-
-// conclude the hexen table event, if it was active
-const TY_Game_Interpreter_terminate = Game_Interpreter.prototype.terminate;
-Game_Interpreter.prototype.terminate = function() {
-      TY_Game_Interpreter_terminate.call(this);
-
-      if (_hexenEventActive) {
-            _.concludeHexenInteraction();
-            _hexenEventActive = false;
-      }
-};
-
+// Used Exclusively for Fear and hunger 1.
 const TY_Game_Switches_onChange = Game_Switches.prototype.onChange;
 Game_Switches.prototype.onChange = function() {
-      Game_Switches.prototype.onChange.call(this);
+      TY_Game_Switches_onChange.call(this);
 
-      
+      if (isGameTermina()) return;
+
+      _.onSwitchChanged();
 };
 
 //==========================================================
