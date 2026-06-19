@@ -439,7 +439,7 @@
     	let stateResistSet = Game_Actor_stateResistSet.call(this);
 
     	// handle normal state
-    	stateResistSet.push(getStateImmunitiesList());
+    	stateResistSet = [...stateResistSet, ...getStateImmunitiesList()];
 
     	// handle death state
     	if (!canApplyDeadState(this.hp)) stateResistSet.push(this.deathStateId());
