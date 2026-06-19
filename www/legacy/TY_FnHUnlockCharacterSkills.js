@@ -14,6 +14,12 @@ Imported.TY_FnHUnlockCharacterSkills = true;
       // Mod Constants --
 //==========================================================
 
+// The id of the switch used by the hexen system cursor.
+// This is used to track whether or not the hexen table is in use.
+//
+// Used Exclusively for Fear and hunger 1.
+_.FNH_1_HEXEN_CURSOR_SWITCH_ID = 1210;
+
 // The id of the map used for the hexen.
 // Used Exclusively for Fear and hunger 2.
 _.FNH_2_HEXEN_MAP_ID = 31;
@@ -53,10 +59,6 @@ _.FNH_2_CHARACTER_SOUL_SWITCH_IDS = [
 // the previous map visited by the player.
 // Used Exclusively for Fear and hunger 2.
 let _lastMapId = 0;
-
-// check if the hexen cursor switch is active
-// Used Exclusively for Fear and hunger 1.
-let _hexenTableEventId = 0;
 
 // this is a container for the character soul switches
 // it is used to preserve the state of the switches before
@@ -122,6 +124,7 @@ _.concludeHexenInteraction = function() {
       // Mod Methods -- Fear and Hunger 1
 //==========================================================
 
+// Check if an event matches the graphic used by the hexen table
 _.isHexenTableEvent = function(eventId) {
       const mapEvent = $gameMap.event(eventId);
 
@@ -132,32 +135,60 @@ _.isHexenTableEvent = function(eventId) {
       );
 }
 
+// Called whenever a map event may be starting
+// Check if the event that's about to start is the hexen table event.
+_.onMapEventStart = function(eventId, isStarting) {
+      if (isGameTermina()) return;
+
+      if (isStarting && _.isHexenTableEvent(eventId)) {
+            _.prepareHexenInteraction();
+      }
+}
+
+// Called whenever a game switch changes its value.
+// Check if the hexen cursor switch has been set to OFF.
+//
+// NOTE: if the hexen cursor switch is OFF that means the hexen interaction has ended.
+_.onSwitchUpdated = function(switchId, newValue) {
+      if (isGameTermina()) return;
+      if (_.FNH_1_HEXEN_CURSOR_SWITCH_ID !== switchId) return;
+
+      if (!newValue) _.concludeHexenInteraction();
+}
+
+//==========================================================
+      // Game Configurations -- Game_Map
+//==========================================================
+
+// Whenever an event is about to start, send a signal
+//
+// Used Exclusively for Fear and hunger 1.
+const TY_Game_Map_setupStartingMapEvent = Game_Map.prototype.setupStartingMapEvent;
+Game_Map.prototype.setupStartingMapEvent = function() {
+      const isStarting = TY_Game_Map_setupStartingMapEvent.call(this);
+
+      const eventId = this._interpreter.eventId();
+      _.onMapEventStart(eventId, isStarting);
+
+      return isStarting;
+};
+
 //==========================================================
       // Game Configurations -- Game_Interpreter
 //==========================================================
 
-const TY_Game_Map_unlockEvent = Game_Map.prototype.unlockEvent;
-Game_Map.prototype.unlockEvent = function(eventId) {
-      TY_Game_Map_unlockEvent.call(this, eventId);
+// Whenever a switch's value is changed via eventing, send a signal
+//
+// Used Exclusively for Fear and hunger 1.
+const TY_Game_Interpreter_command121 = Game_Interpreter.prototype.command121;
+Game_Interpreter.prototype.command121 = function() {
+      
+      const switchId = this._params[0];
+      const newValue = this._params[2] === 0; // 0 = true, 1 = false
 
-      if (_hexenTableEventId === eventId) {
-            _.concludeHexenInteraction();
-            _hexenTableEventId = 0;
-      }
-};
+      _.onSwitchUpdated(switchId, newValue);
 
-const TY_Game_Map_setupStartingMapEvent = Game_Map.prototype.setupStartingMapEvent;
-Game_Map.prototype.setupStartingMapEvent = function() {
-      const result = TY_Game_Map_setupStartingMapEvent.call(this);
-
-      const eventId = this._interpreter.eventId();
-
-      if (result && _.isHexenTableEvent(eventId)) {
-            _.prepareHexenInteraction();
-            _hexenTableEventId = eventId;
-      }
-
-      return result;
+      return TY_Game_Interpreter_command121.call(this);
 };
 
 //==========================================================
