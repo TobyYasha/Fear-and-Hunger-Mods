@@ -1,7 +1,7 @@
 (function() { 
 
 	//==========================================================
-		// VERSION 1.5.2 -- by Toby Yasha
+		// VERSION 1.5.3 -- by Toby Yasha
 	//==========================================================
 
 	/**
@@ -156,13 +156,15 @@
 	//==========================================================
 
 	/**
-	 * A list of FnH(1 and 2) State Ids for 
-	 * Harmful Effects that the Player will be immune to.
+	 * A list of State Ids for Harmful Effects
+	 * that the Player will be immune to.
+	 * 
+	 * NOTE: This list is shared across both Fear and Hunger games.
 	 * 
 	 * NOTE: The "DEAD" state is now specially handled
 	 * inside the "canApplyDeadState" function.
 	 */
-	const stateImmunityIds = [
+	const commonStateImmunityIds = [
 		3,   // ARM CUT
 		5,   // BLEEDING
 		14,  // LEG CUT
@@ -182,7 +184,37 @@
 		97,  // RUIN2
 		98,  // RUINED1
 		99,  // BRAIN FLOWER
+	];
+
+	/**
+	 * This list contains common state ids, 
+	 * as well as exclusive ones found only in Fear and Hunger 1. 
+	 * 
+	 * NOTE: This is in order to prevent an issue with state ids
+	 * having different functionalities across both games.
+	 * ex:
+	 * FNH 1 - STATE ID 105 - TENTACLES(STUN)
+	 * FNH 2 - STATE ID 105 - HEROIN (this can softlock the menu)
+	 */
+	const fnh1StateImmunityIds = [
+		...commonStateImmunityIds,
 		105, // TENTACLES(STUN)
+	];
+
+	/**
+	 * This list contains common state ids, 
+	 * as well as exclusive ones found only in Fear and Hunger 2.
+	 */
+	const fnh2StateImmunityIds = [
+		...commonStateImmunityIds,
+		109, // WITHDRAWL SYMPTOM
+		110, // WITHDRAWL SYMPTOM
+		111, // NAUSEA
+		173, // MILD POISONING
+		174, // IRRITATION
+		185, // LIGHT SENSITIVE 1
+		186, // LIGHT SENSITIVE 2
+		193, // BURNING SMALL
 	];
 	
 	//==========================================================
@@ -236,13 +268,12 @@
 	}
 
 	/**
-	 * Checks if a Player Character is immune to a given State.
+	 * Get a list of state ids the player should be immune to.
 	 * 
-	 * @param {number} stateId - The database id for the State.
-	 * @returns {boolean} True if the Player Character will resist the State.
+	 * @returns {number[]} An array of state ids to prevent applying.
 	 */
-	function isImmuneToState(stateId) {
-		return stateImmunityIds.includes(stateId);
+	function getStateImmunitiesList() {
+		return isGameTermina() ? fnh2StateImmunityIds : fnh1StateImmunityIds;
 	}
 
 	/**
@@ -361,12 +392,8 @@
 	 * @returns {boolean} True if the Dead State Id can 
 	 * be applied to the Player Character.
 	 */
-	function canApplyDeadState(actorHp, stateId) {
-		const STATE_ID_DEAD = Game_BattlerBase.prototype.deathStateId();
-		return (
-			stateId === STATE_ID_DEAD && 
-			(actorHp === 0 || isCoinFlipDeathAllowed())
-		);
+	function canApplyDeadState(actorHp) {
+		return actorHp === 0 || isCoinFlipDeathAllowed();
 	}
 	
 	//==========================================================
@@ -407,15 +434,17 @@
 	 * If a Player Character is allowed to die then the Dead State will apply.
 	 * If a Player Character is immune to a State then it will not apply.
 	 */
-	const TY_Game_Actor_addState = Game_Actor.prototype.addState;
-	Game_Actor.prototype.addState = function(stateId) {
+	const Game_Actor_stateResistSet = Game_Actor.prototype.stateResistSet;
+	Game_Actor.prototype.stateResistSet = function() {
+    	let stateResistSet = Game_Actor_stateResistSet.call(this);
 
-		if (
-			!canApplyDeadState(this.hp, stateId) || 
-			isImmuneToState(stateId)
-		) return;
+    	// handle normal state
+    	stateResistSet.push(getStateImmunitiesList());
 
-		TY_Game_Actor_addState.call(this, stateId);
+    	// handle death state
+    	if (!canApplyDeadState(this.hp)) stateResistSet.push(this.deathStateId());
+
+    	return stateResistSet;
 	};
 	
 	/**
