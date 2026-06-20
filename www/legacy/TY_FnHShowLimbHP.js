@@ -24,7 +24,7 @@ Imported.TY_FnHShowLimbHP = true;
 	
 // The following settings are meant to be edited by users:
 	
-_.valueDrawMode = 2; // 0 | 1 | 2 -- DEFAULT: 1
+_.valueDrawMode = 1; // 0 | 1 | 2 -- DEFAULT: 1
 
 /*
 	EXPLANATION:
@@ -46,7 +46,6 @@ _.valueDrawMode = 2; // 0 | 1 | 2 -- DEFAULT: 1
 
 		NOTE: If the setting doesn't contain one of the options
 		mentioned above, then option no. 1 will be used by default.
-
 */
 
 //==========================================================
@@ -211,42 +210,38 @@ Window_Help.prototype.drawEnemyHp = function(enemy, x, y, width) {
 
 // Requires "PrettySleekGauges.js"
 // NOTE: This should realistically be used only in Termina.
-//
-// Good lord, this code is a mess...
 Window_Help.prototype.drawSleekEnemyHp = function(enemy, x, y, width) {
-	let hpValue = enemy.hp;
-	let mhpValue = enemy.mhp;
-
     // handle torso limb
     if (_.isEnemyTorsoLimb(enemy)) {
 
-    	const args = _.formatTorsoHP(enemy);
+    	width = width || 186;
 
-    	// adjust "health" and "max health" if its the torso limb
-    	hpValue = args.hp;
-		mhpValue = args.mhp;
-    	
-		width = width || 186;
+    	const args = _.formatTorsoHP(enemy);
     	this.drawAnimatedGauge(x, y, width, args.hpRate, this.hpGaugeColor1(), this.hpGaugeColor2(), "hp");
+    	this.configureSleekEnemyGauge(x, y, args.hp, args.mhp);
 
     // handle normal limb
 	} else {
 		Window_Base.prototype.drawActorHp.call(this, enemy, x, y, width);
+		this.configureSleekEnemyGauge(x, y, enemy.hp, enemy.mhp);
 	}
+};
 
+// Configure how the hp value will be displayed by the sleek gauge
+Window_Help.prototype.configureSleekEnemyGauge = function(gaugeX, gaugeY, hpValue, mhpValue) {
 	const drawHpTerm = _.canDrawSleekHpTerm();
     const drawHpNumber = _.canDrawSleekHpValue();
 
    	// NOTE: If the format is "percent" mode, include the enemy's max hp for calculation reasons.
     const isPercentMode = _.isSleekHpPercentMode();
-    const mhpValue = isPercentMode ? mhpValue : null;
+    const finalMhpValue = isPercentMode ? mhpValue : 0;
 
 	// gauge configurations -- apply to any limb
-	const gaugeInstance = this._gauges[this.makeGaugeKey(x, y)];
-	gaugeInstance.setExtra(TextManager.hpA, hpValue, mhpValue);
+	const gaugeInstance = this._gauges[this.makeGaugeKey(gaugeX, gaugeY)];
+	gaugeInstance.setExtra(TextManager.hpA, hpValue, finalMhpValue);
    	gaugeInstance.setTextVisibility(drawHpTerm, drawHpNumber);
    	gaugeInstance.setPercentMode(isPercentMode);
-};
+}
 
 Window_Help.prototype.drawNormalEnemyHp = function(enemy, x, y, width) {
 	// handle torso limb
@@ -304,7 +299,8 @@ Window_Help.prototype.drawHealthPercentage = function(
 	current, max, x, y, width, color1, color2
 ) {
 	// [NOTE] "toFixed" corrects weird looking float values
-	const value = 100 * (current / max).toFixed(2);
+	let value = 100 * (current / max).toFixed(2);
+	    value = Math.trunc(value);
     const valueWidth = this.textWidth(value);
 
     const percentSymbol = "%";
@@ -357,6 +353,17 @@ Special_Gauge.prototype.shouldntAnimate = function() {
     }
 };
 
+// Allow the "_maxVal" to be assigned "0" value as well.
+//
+// This way it can be included for calculations(for percent mode)
+// And can be ignored otherwise(since 0 is the same as "false").
+const Special_Gauge_setExtra = Special_Gauge.prototype.setExtra;
+Special_Gauge.prototype.setExtra = function(text, val, max, yOffset) {
+    if (typeof max === "number") this._maxVal = max;
+
+    Special_Gauge_setExtra.call(this, ...arguments);
+}
+
 // Check whether to draw hp normally or as percentage
 const Special_Gauge_drawText = Special_Gauge.prototype.drawText;
 Special_Gauge.prototype.drawText = function() {
@@ -394,16 +401,33 @@ Special_Gauge.prototype.drawTextAsPercent = function() {
                 }
             }
 
-            if (!this._maxVal || this._width < 186) {
+            // draw the percentage value
+            const percentSymbol = "%";
+            let value = 100 * (this._curVal / this._maxVal).toFixed(2);
+                value = Math.trunc(value);
 
-            	const percentSymbol = "%";
-            	const value = 100 * (this._curVal / this._maxVal).toFixed(2);
-
-                this._window.drawText(value + percentSymbol, x, this._y + this._yOffset, width, "right");
-            }
+            this._window.drawText(value + percentSymbol, x, this._y + this._yOffset, width, "right");
         }
 
         this._window.contents.fontSize = storeFontSize;
+    }
+}
+
+// Fixed gauges not clearing number values when updating.
+//
+// NOTE: This fix will be already available in a future termina update,
+// but for version 1.9.1(which doesn't include "TY_TerminaTweaks.js"), it will be added here.
+if (!TY.terminaTweaks) {
+    Special_Gauge.prototype.refresh = function() {
+        var gy = this._y + this._window.lineHeight() - 2;
+        if (this._vocab) {
+    		this._window.contents.clearRect(this._x - 1, this._y, this._width + 2, this._window.lineHeight()); // Fixed Here
+        } else {
+            gy -= this._height;
+            this._window.contents.clearRect(this._x, gy, this._width + 2, this._height);
+        }
+        this.drawGauge();
+        this.drawText();
     }
 }
 
