@@ -211,8 +211,8 @@ Imported.TY_QuickSave = true;
 	 * 
 	 * @type number
 	*/
-	const _saveTimeInterval = 15; // TEST ONLY
-	//const _saveTimeInterval = Number(params["Quick Save Time"]);
+	//const _saveTimeInterval = 15; // TEST ONLY
+	const _saveTimeInterval = Number(params["Quick Save Time"]);
 
 	/**
 	 * The reserved local storage key for the "Quick Save" cooldown timer 
