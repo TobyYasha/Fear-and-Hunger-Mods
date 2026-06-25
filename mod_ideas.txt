@@ -75,3 +75,16 @@
   5.1 When you create your character, you can give them x amount of stats.
     - NOTE: Base Stats might be nerfed as a consequence.
     - There might be ways to increase your stats again, in-game, not just when creating your character.
+
+6. Lightweight Save Files
+  - Alters the save file system from the Data Manager to only save a portion of the game's total data.
+  6.1 The main idea is: Instead of saving whole game classes, ex(Game_Party, Game_System, etc), only certain property values are saved.
+    - The obvious risk is that not all data will be preserved, which could pose an issue in certain cases.
+      - But it could be fixed by simply patching up the code to include said assumptions.
+  6.2 One possible benefit could technically be the game being less likely to break when plugins are added/removed and wanting to play on existing save files.
+  6.3 To ensure proper behavior and compatibility with both RPG Maker and other mods/plugins. Lightweight Save Files might be stored under a different name.
+    - So that in case this mod is removed, the game should be able to behave the same as before.
+    - The compromise will be that if the mod is removed, so is your access to the save's contents.
+      - Instead, whenever you perform a save file, there could be the option to:
+        - Make Partial Save
+        - Make Complete Save
