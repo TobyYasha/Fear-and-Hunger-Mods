@@ -2,7 +2,8 @@ Chandler Voss -- discord
 6/20/2024
 is it possible to add two slots in the first game just like in termina
 two slots of accessories
-STATUS: -
+STATUS: On hold
+
 
 
 Mithara_Crabu -- itch.io
@@ -10,12 +11,22 @@ Mithara_Crabu -- itch.io
 Hello, Can I bother you with these? I have downloaded the "Playable Non-Playables" mod and they do not seem to work with your mods.
 previously,  before I downloaded the "Playable Non-Playables" mod, your mod works just fine but when I downloaded the mentioned mod, it now doesn't.
 
+STATUS: On hold(it's a more complex issue).
+DEV NOTE: I think the issue was that the mod in question modifies a certain in-game events to behave differently.
+
+
 
 Donkarasu -- itch.io
 6/10/2024
 For funger 1 is there i way for the mod to give me the items at a slower pace? (other than just setting the amount to 1 as opposed to 99)
 Perhaps even say like a 1 time thing?
+
 STATUS: On hold until i figure this out
+
+POSSIBLE SOLUTION: 
+- Inventory/Character/Game Manager mod which lets you add/remove items, skills, characters(don't forget to maybe enable/disable switches tied to characters).
+- Could also have an option to restore lost limbs.
+
 
 
 Donkarasu -- itch.io
@@ -24,7 +35,15 @@ So if I set items to be given to 1 over 99 I still hit 99 in amount fairly quick
 For example if I got 1 every other map change or perhaps on battle start instead.
 Also perhaps a mod for slower  hunger and mind decay rate would be sweet. 
 Cut preferably by half.
+
 STATUS: On hold
+
+POSSIBLE SOLUTION(s): 
+- Might require disabling the original common event which updates the hunger/mind and creating a similar behaving environment code-wise.
+- Another quicker albeit more "dirty" solution would probably be to simply add a delay to how often the event is updated.
+  - The only fear i have here is the possibility for inaccuracies, or negatively affecting other hunger/mind altering effects.
+    (Which is more relevant in Fear and Hunger 2: Termina).
+
 
 
 Alucard -- discord
@@ -33,11 +52,8 @@ Alucard -- discord
 The mod didn't work unless you entered a fight on an old save
 It works perfectly fine in a new game
 
-DEV NOTE: This might be a problem in other mods as well
-STATUS: On hold until i go back to work on this
+STATUS: On hold
 
-ME
-8/21/2025
-The mod that shows the HP of limbs could be updated to use more accurate information for the torso HP.
-basically, search inside troop events the HP requirement for when the torso dies and use that value to determine the torso HP.
-if there is no such event page, just use the default enemy HP.
+DEV NOTE: 
+- This might be a problem in other mods as well(?)
+- Unsure on how the behavior is triggered as it worked completely fine on an existing game file without the mod installed.
